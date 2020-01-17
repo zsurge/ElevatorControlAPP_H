@@ -1,0 +1,75 @@
+/******************************************************************************
+
+                  版权所有 (C), 2013-2023, 深圳博思高科技有限公司
+
+ ******************************************************************************
+  文 件 名   : comm.h
+  版 本 号   : 初稿
+  作    者   : 张舵
+  生成日期   : 2019年6月18日
+  最近修改   :
+  功能描述   : 串口通讯协议解析及处理
+  函数列表   :
+  修改历史   :
+  1.日    期   : 2019年6月18日
+    作    者   : 张舵
+    修改内容   : 创建文件
+
+******************************************************************************/
+#ifndef __COMM_H
+#define __COMM_H
+
+/*----------------------------------------------*
+ * 包含头文件                                   *
+ *----------------------------------------------*/
+#include "errorcode.h"
+#include "FreeRTOS.h"
+#include "task.h"
+#include "queue.h"
+
+
+extern QueueHandle_t xTransQueue;
+
+/*----------------------------------------------*
+ * 宏定义                                       *
+ *----------------------------------------------*/
+#define MQTT_MAX_LEN 1024*2
+
+
+#define AUTH_MODE_CARD      2
+#define AUTH_MODE_REMOTE    3
+#define AUTH_MODE_UNBIND    4
+#define AUTH_MODE_BIND      5
+
+#define AUTH_MODE_QR        7
+
+
+
+#define QUEUE_BUF_LEN   64
+
+
+
+#pragma pack(1)
+typedef struct
+{
+    uint8_t data[QUEUE_BUF_LEN];         //需要发送给服务器的数据
+    uint8_t authMode;                     //鉴权模式,刷卡=2；QR=7
+    uint8_t dataLen;                     //数据长度    
+}READER_BUFF_T;
+#pragma pack()
+
+extern READER_BUFF_T gReaderMsg;
+
+
+
+extern int gConnectStatus;
+extern int  gMySock;
+
+//发送消息到服务器
+int PublishData(uint8_t *payload_out,uint16_t payload_out_len); 
+
+SYSERRORCODE_E exec_proc ( char* cmd_id, uint8_t *msg_buf );
+
+
+#endif
+
