@@ -31,6 +31,7 @@
 #include "stmflash.h"
 #include "easyflash.h"
 //#include "sfud.h"
+#include "malloc.h"
 
 #include "lwip_comm.h"
 #include "lwip/netif.h"

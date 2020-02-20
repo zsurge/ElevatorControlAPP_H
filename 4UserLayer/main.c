@@ -112,20 +112,6 @@ int main(void)
 
     EasyLogInit();  
     
-	mymem_init(SRAMIN);								//初始化内部内存池
-	mymem_init(SRAMEX);								//初始化外部内存池
-	mymem_init(SRAMCCM);	  					    //初始化CCM内存池
-
-	while(lwip_comm_init() != 0) //lwip初始化
-	{
-        log_d("lwip init error!\r\n");
-		delay_ms(1200);
-	}
-
-    log_d("lwip init success!\r\n");
-
-     
-     
 	/* 创建任务通信机制 */
 	AppObjCreate();
 
@@ -148,9 +134,7 @@ int main(void)
 static void AppTaskCreate (void)
 {
 
-#if LWIP_DHCP
-        lwip_comm_dhcp_creat();                             //创建DHCP任务
-#endif
+    StartEthernet();   
 
     //跟android握手
     xTaskCreate((TaskFunction_t )vTaskHandShake,
@@ -423,19 +407,6 @@ static void vTaskLed(void *pvParameters)
         LED2=!LED2; 
         LED3=!LED3; 
         LED4=!LED4; 
-
-//        Eth_Link_ITHandler(&lwip_netif);
-
-//         if(!(ETH_ReadPHYRegister(LAN8720_PHY_ADDRESS, PHY_BSR) & PHY_Linked_Status)) //没有接网线
-//         {
-//                BEEP = 1;
-//                vTaskDelay(1000);
-//                BEEP = 0;
-//                vTaskDelay(300);
-//                BEEP = 1;
-//                vTaskDelay(300);
-//                BEEP = 0;     
-//         }
         
 		/* 发送事件标志，表示任务正常运行 */        
 		xEventGroupSetBits(xCreatedEventGroup, TASK_BIT_0);  

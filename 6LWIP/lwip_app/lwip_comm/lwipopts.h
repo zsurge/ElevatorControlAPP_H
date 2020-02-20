@@ -51,6 +51,7 @@
 #define LWIP_STATS 0
 #define LWIP_PROVIDE_ERRNO 1
 
+#define LWIP_NETIF_LINK_CALLBACK        1
 
 //帧校验和选项，STM32F4x7允许通过硬件识别和计算IP,UDP和ICMP的帧校验和
 #define CHECKSUM_BY_HARDWARE //定义CHECKSUM_BY_HARDWARE,使用硬件帧校验

@@ -37,6 +37,15 @@
 /*----------------------------------------------*
  * 内部函数原型说明                             *
  *----------------------------------------------*/
+
+static void my_mem_init(void)
+{
+	mymem_init(SRAMIN);								//初始化内部内存池
+	mymem_init(SRAMEX);								//初始化外部内存池
+	mymem_init(SRAMCCM);	  					    //初始化CCM内存池
+}
+
+
  void bsp_Init(void)
 {
     NVIC_SetVectorTable(NVIC_VectTab_FLASH,0x00000);
@@ -67,6 +76,8 @@
     bsp_beep_init();            //蜂鸣器初始化        
 
     bsp_WiegandInit();          //韦根读卡器初始化
+
+    my_mem_init();                  //对内存进行初始化
 
 }
 

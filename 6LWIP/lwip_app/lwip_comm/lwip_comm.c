@@ -1,4 +1,9 @@
+#include "lan8720.h" 
 #include "lwip_comm.h"
+
+#include	"LwipDHCP_Task.h"
+#include	"LwipCom_Task.h"
+
 #include "netif/etharp.h"
 #include "lwip/dhcp.h"
 #include "lwip/mem.h"
@@ -17,23 +22,16 @@
 #include "tool.h"
 
 __lwip_dev lwipdev;						//lwip控制结构体
+
 struct netif lwip_netif;				//定义一个全局的网络接口
+
+static LinkState_TypeDef GB_LinkState = Link_Down; 
+void ETH_link_callback(struct netif *netif);
+
 
 extern u32 memp_get_memorysize ( void );	//在memp.c里面定义
 extern u8_t* memp_memory;				//在memp.c里面定义.
 extern u8_t* ram_heap;					//在mem.c里面定义.
-
-/////////////////////////////////////////////////////////////////////////////////
-//lwip两个任务定义(内核任务和DHCP任务)
-
-//lwip DHCP任务
-//设置任务优先级
-#define LWIP_DHCP_TASK_PRIO       		7
-#define LWIP_DHCP_STK_SIZE  		    256
-TaskHandle_t LWIP_DHCP_TaskHandler;
-
-//任务函数
-void lwip_dhcp_task ( void* pdata );
 
 //用于以太网中断调用
 void lwip_pkt_handle ( void )
@@ -113,7 +111,7 @@ void lwip_comm_default_ip_set ( __lwip_dev* lwipx )
 //      3,网卡添加失败.
 u8 lwip_comm_init ( void )
 {
-	u8 retry=0;
+
 	struct netif* Netif_Init_Flag;		//调用netif_add()函数时的返回值,用于判断网络初始化是否成功
 	struct ip_addr ipaddr;  			//ip地址
 	struct ip_addr netmask; 			//子网掩码
@@ -134,21 +132,7 @@ u8 lwip_comm_init ( void )
 	lwip_comm_default_ip_set ( &lwipdev );	//设置默认IP等信息
 	printf ( "lwip_comm_default_ip_set\r\n" );
 
-    EthInitStatus = LAN8720_Init();
-//	while ( LAN8720_Init() )		     //初始化LAN8720,如果失败的话就重试5次
-    while (EthInitStatus )             //初始化LAN8720,如果失败的话就重试5次
-	{
-        EthInitStatus = LAN8720_Init();
-		printf ( "LAN8720_Init\r\n" );
-		retry++;
-		if ( retry>5 )
-		{
-			retry=0; //LAN8720初始化失败
-			printf ( "网卡初始化失败\n" );
-			return 3;
-		}
-	}
-
+    LAN8720_Init();
     
 	tcpip_init ( NULL,NULL );				//初始化tcp ip内核,该函数里面会创建tcpip_thread内核任务
 	printf ( "tcpip_init\r\n" );
@@ -166,6 +150,7 @@ u8 lwip_comm_init ( void )
 	printf ( "子网掩码..........................%d.%d.%d.%d\r\n",lwipdev.netmask[0],lwipdev.netmask[1],lwipdev.netmask[2],lwipdev.netmask[3] );
 	printf ( "默认网关..........................%d.%d.%d.%d\r\n",lwipdev.gateway[0],lwipdev.gateway[1],lwipdev.gateway[2],lwipdev.gateway[3] );
 #endif
+
 	Netif_Init_Flag=netif_add ( &lwip_netif,&ipaddr,&netmask,&gw,NULL,&ethernetif_init,&tcpip_input ); //向网卡列表中添加一个网口
 	if ( Netif_Init_Flag==NULL )
 	{
@@ -173,11 +158,36 @@ u8 lwip_comm_init ( void )
 	}
 	else//网口添加成功后,设置netif为默认值,并且打开netif网口
 	{
-		netif_set_default ( &lwip_netif ); //设置netif为默认网口
-		netif_set_up ( &lwip_netif );		//打开netif网口
+		netif_set_default ( &lwip_netif ); //设置netif为默认网口	
 	}
+
+	if(Link_Down == GetGB_LinkState())
+	{
+		netif_set_up(&lwip_netif); //打开netif网口
+		
+		#ifdef LWIP_DHCP
+			SetGB_DHCPState(DHCP_START);
+		#endif
+	}
+	else
+	{
+		/*  When the netif link is down this function must be called.*/
+		netif_set_down(&lwip_netif);
+		
+		#ifdef USE_DHCP
+			SetGB_DHCPState(DHCP_LINK_DOWN);
+		#endif
+	}    
+
+	/* Set the link callback function, this function is called on change of link status*/
+	netif_set_link_callback(&lwip_netif, ETH_link_callback);
+
+    
 	return 0;//操作OK.
 }
+
+
+#if 0
 //如果使能了DHCP
 #if LWIP_DHCP
 //创建DHCP任务
@@ -252,3 +262,117 @@ void lwip_dhcp_task ( void* pdata )
 	lwip_comm_dhcp_delete();//删除DHCP任务
 }
 #endif
+#endif
+
+/***************************************************************************************************
+*FunctionName：SetGB_LinkState
+*Description：更新网线连接状态
+*Input：None
+*Output：None
+*Author：xsx
+*Data：2016年3月9日15:16:33
+***************************************************************************************************/
+void SetGB_LinkState(LinkState_TypeDef linkstate)
+{
+	GB_LinkState = linkstate;
+}
+/***************************************************************************************************
+*FunctionName：GetGB_LinkState
+*Description：获取网线连接状态
+*Input：None
+*Output：None
+*Author：xsx
+*Data：2016年3月9日15:16:48
+***************************************************************************************************/
+LinkState_TypeDef GetGB_LinkState(void)
+{
+	return GB_LinkState;
+}
+
+/***************************************************************************************************
+*FunctionName：ETH_link_callback
+*Description：网线连接状态改变回调函数
+*Input：None
+*Output：None
+*Author：xsx
+*Data：2016年3月9日17:02:01
+***************************************************************************************************/
+void ETH_link_callback(struct netif *netif)
+{
+
+	struct ip_addr ipaddr;
+	struct ip_addr netmask;
+	struct ip_addr gw;
+	#ifndef LWIP_DHCP
+		uint8_t iptab[4] = {0};
+		uint8_t iptxt[20];
+	#endif /* LWIP_DHCP */
+
+
+	if(netif_is_link_up(netif))
+	{
+		printf("link up \r\n");
+		/* Restart MAC interface */
+		ETH_Start();
+
+		#ifdef LWIP_DHCP
+			ipaddr.addr = 0;
+			netmask.addr = 0;
+			gw.addr = 0;
+
+			SetGB_DHCPState(DHCP_START);
+		#else
+			IP4_ADDR(&ipaddr, IP_ADDR0, IP_ADDR1, IP_ADDR2, IP_ADDR3);
+			IP4_ADDR(&netmask, NETMASK_ADDR0, NETMASK_ADDR1 , NETMASK_ADDR2, NETMASK_ADDR3);
+			IP4_ADDR(&gw, GW_ADDR0, GW_ADDR1, GW_ADDR2, GW_ADDR3);
+		#endif /* USE_DHCP */
+
+		netif_set_addr(&lwip_netif, &ipaddr , &netmask, &gw);
+    
+		/* When the netif is fully configured this function must be called.*/
+		netif_set_up(&lwip_netif);    
+	}
+	else
+	{
+		printf("link down \r\n");
+		ETH_Stop();
+		#ifdef LWIP_DHCP
+			SetGB_DHCPState(DHCP_LINK_DOWN);
+			dhcp_stop(netif);
+
+		#endif /* USE_DHCP */
+
+		/*  When the netif link is down this function must be called.*/
+		netif_set_down(&lwip_netif);
+	}
+}
+
+
+void StartEthernet(void){
+
+
+    printf("start ethernet opt\r\n");
+	//* 初始化LwIP
+	lwip_comm_init();
+	
+#if LWIP_DHCP
+    StartvLwipDHCPTask(&lwip_netif);
+#endif
+	
+	StartvLwipComTask(&lwip_netif);
+	//Work in TCPServer mode
+//	StartTcpServerTask();
+	
+	//Work in web mode
+//	StartBasicWEBTask();
+	
+	
+//	StartUdpClientTask();
+	
+//	StartUdpServerTask();
+}
+
+
+
+
+
