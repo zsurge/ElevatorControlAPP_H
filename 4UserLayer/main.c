@@ -473,9 +473,6 @@ static void vTaskKey(void *pvParameters)
 //                    calcRunTime();           
                     log_d("current time =%s\r\n",bsp_ds1302_readtime());
 
-
-
-                    
 					break;
 				case KEY_OK_PRES:    
 //                    test_env();
