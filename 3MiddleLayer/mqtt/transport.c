@@ -254,14 +254,16 @@ int transport_open(char* addr, int port)
 	memcpy(&serv_addr.sin_addr.s_addr,server->h_addr,server->h_length);
 	if(connect(*sock,(struct sockaddr *)&serv_addr,sizeof(serv_addr)) < 0)
 	{
+		//¹Ø±ÕÁ´½Ó
+		close(*sock);        
 		printf("[ERROR] connect failed\n");
         return -1;
 	}
 	tv.tv_sec = 10;  /* 1 second Timeout */
 	tv.tv_usec = 0; 
-	setsockopt(my_sock, SOL_SOCKET, SO_RCVTIMEO, (char*)&timeout,sizeof(timeout));
+	setsockopt(*sock, SOL_SOCKET, SO_RCVTIMEO, (char*)&timeout,sizeof(timeout));
     
-    return my_sock;
+    return *sock;
 }
 
 int transport_close(int sock)

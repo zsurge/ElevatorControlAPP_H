@@ -47,7 +47,7 @@
 //#define TOPIC_ERROR          "/"PRODUCT_KEY"/"DEVICE_NAME"/update/error"
 //#define TOPIC_GET            "/"PRODUCT_KEY"/"DEVICE_NAME"/get"
 
-void mqtt_thread(void);
+//void mqtt_thread(void);
 //u32 PublishData(float temp, float humid, unsigned char *payloadbuf);
 
 

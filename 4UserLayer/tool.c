@@ -470,32 +470,32 @@ int clearbit(int num, int bit)
 
 void calcMac(unsigned char *mac)
 {
-    uint16_t crc_value = 0;
-    unsigned int chipid[3] = { 0 };   
-    unsigned char buf[6] = {0x02,0x00,0x00,0x00,0x00,0x00};  
-    char id[30] = {0};    
-    
-    char id1[10] = { 0 };
-    char id2[10] = { 0 };
-    char id3[10] = { 0 };  
-    
-    chipid[0] = *(volatile uint32_t *)(0x1FFF7A10 + 0x00);
-    chipid[1] = *(volatile uint32_t *)(0x1FFF7A10 + 0x04);
-    chipid[2] = *(volatile uint32_t *)(0x1FFF7A10 + 0x08); 
+//    uint16_t crc_value = 0;
+//    unsigned int chipid[3] = { 0 };   
+    unsigned char buf[6] = {0x02,0x00,0x00,0x39,0x8E,0x20};  
+//    char id[30] = {0};    
+//    
+//    char id1[10] = { 0 };
+//    char id2[10] = { 0 };
+//    char id3[10] = { 0 };  
+//    
+//    chipid[0] = *(volatile uint32_t *)(0x1FFF7A10 + 0x00);
+//    chipid[1] = *(volatile uint32_t *)(0x1FFF7A10 + 0x04);
+//    chipid[2] = *(volatile uint32_t *)(0x1FFF7A10 + 0x08); 
 
-    sprintf(id1,"%d",chipid[0]);
-    sprintf(id2,"%d",chipid[1]);
-    sprintf(id3,"%d",chipid[2]);
+//    sprintf(id1,"%d",chipid[0]);
+//    sprintf(id2,"%d",chipid[1]);
+//    sprintf(id3,"%d",chipid[2]);
 
-    strcpy(id,(char *)id1);
-    strcat(id,(char *)id2);
-    strcat(id,(char *)id3);    
-    
-    crc_value = CRC16_Modbus((uint8_t *)id, strlen((const char*)id));
+//    strcpy(id,(char *)id1);
+//    strcat(id,(char *)id2);
+//    strcat(id,(char *)id3);    
+//    
+//    crc_value = CRC16_Modbus((uint8_t *)id, strlen((const char*)id));
 
-    buf[3] =  crc_value & 0xff;
-    buf[4] =  crc_value>>8;
-    buf[5] =  chipid[0]&0xff;
+//    buf[3] =  crc_value & 0xff;
+//    buf[4] =  crc_value>>8;
+//    buf[5] =  chipid[0]&0xff;    
 
     memcpy(mac,buf,6);
 

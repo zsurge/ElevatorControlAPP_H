@@ -150,6 +150,8 @@ static void vLwipDHCPTask( void *pvParameters )
                         lwipdevgateway[1]= ( uint8_t ) ( gww>>8 );
                         lwipdevgateway[0]= ( uint8_t ) ( gww );
                         printf ( "通过DHCP获取到的默认网关..........%d.%d.%d.%d\r\n",lwipdevgateway[0],lwipdevgateway[1],lwipdevgateway[2],lwipdevgateway[3] );
+                        
+                        printf ( "网卡的MAC地址为:................%02x.%02x.%02x.%02x.%02x.%02x\r\n",lwipdev.mac[0],lwipdev.mac[1],lwipdev.mac[2],lwipdev.mac[3],lwipdev.mac[4],lwipdev.mac[5] );
 						/* Stop DHCP */
 						dhcp_stop(tempnetif);
 					}

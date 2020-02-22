@@ -40,6 +40,8 @@
 #define DEVICE_SN           "3E51E8848A4C00863617"
 //#define DEVICE_SN           "0BF49D025715AFB3B0A1"
 //#define DEVICE_SN           "33F85538F0EB8D1796F6"
+                              //5056E1CB67136EA3E1B0
+
 
 
 #define DEV_FACTORY_PUBLISH		"/smartCloud/production/msg/device"	

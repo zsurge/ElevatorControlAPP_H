@@ -413,9 +413,49 @@
               <FilePath>..\4UserLayer\test.c</FilePath>
             </File>
             <File>
-              <FileName>iap.c</FileName>
+              <FileName>comm.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\4UserLayer\iap.c</FilePath>
+              <FilePath>..\4UserLayer\comm.c</FilePath>
+            </File>
+            <File>
+              <FileName>tool.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\4UserLayer\tool.c</FilePath>
+            </File>
+            <File>
+              <FileName>errorcode.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\4UserLayer\errorcode.c</FilePath>
+            </File>
+            <File>
+              <FileName>mqtt_app.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\4UserLayer\mqtt_app.c</FilePath>
+            </File>
+            <File>
+              <FileName>version.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\4UserLayer\version.c</FilePath>
+            </File>
+            <File>
+              <FileName>mqtt_send.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\4UserLayer\mqtt_send.c</FilePath>
+            </File>
+            <File>
+              <FileName>rs485_process.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\4UserLayer\rs485_process.c</FilePath>
+            </File>
+            <File>
+              <FileName>eth_cfg.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\4UserLayer\eth_cfg.c</FilePath>
+            </File>
+            <File>
+              <FileName>mqttclient.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\4UserLayer\mqttclient.c</FilePath>
               <FileOption>
                 <CommonProperty>
                   <UseCPPCompiler>2</UseCPPCompiler>
@@ -467,46 +507,6 @@
                   </Cads>
                 </FileArmAds>
               </FileOption>
-            </File>
-            <File>
-              <FileName>comm.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\4UserLayer\comm.c</FilePath>
-            </File>
-            <File>
-              <FileName>tool.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\4UserLayer\tool.c</FilePath>
-            </File>
-            <File>
-              <FileName>errorcode.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\4UserLayer\errorcode.c</FilePath>
-            </File>
-            <File>
-              <FileName>mqtt_app.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\4UserLayer\mqtt_app.c</FilePath>
-            </File>
-            <File>
-              <FileName>version.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\4UserLayer\version.c</FilePath>
-            </File>
-            <File>
-              <FileName>mqtt_send.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\4UserLayer\mqtt_send.c</FilePath>
-            </File>
-            <File>
-              <FileName>rs485_process.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\4UserLayer\rs485_process.c</FilePath>
-            </File>
-            <File>
-              <FileName>eth_cfg.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\4UserLayer\eth_cfg.c</FilePath>
             </File>
           </Files>
         </Group>

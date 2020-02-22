@@ -170,8 +170,8 @@ static void AppTaskCreate (void)
                 (TaskHandle_t*  )&xHandleTaskDisplay);     
  
 
-    //MQTTͨѶ
-    xTaskCreate((TaskFunction_t )vTaskMqttTest,     
+    //MQTTͨѶ mqtt_thread
+    xTaskCreate((TaskFunction_t )vTaskMqttTest,//vTaskMqttTest, mqtt_thread    
                 (const char*    )"vMqttTest",   
                 (uint16_t       )MQTT_STK_SIZE, 
                 (void*          )NULL,
@@ -465,13 +465,15 @@ static void vTaskKey(void *pvParameters)
 //                    testSplit();
 
                       ee_test();
-			        
+//			        
 					break;
 				case KEY_LL_PRES:   
                     log_i("KEY_DOWN_K3\r\n");
 //                    ef_env_set_default();
 //                    calcRunTime();           
                     log_d("current time =%s\r\n",bsp_ds1302_readtime());
+
+                    ef_set_env_blob("sn_flag","0000",4);
 
 					break;
 				case KEY_OK_PRES:    

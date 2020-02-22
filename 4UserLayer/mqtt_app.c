@@ -71,9 +71,29 @@ void mqtt_thread ( void )
 	uint8_t msgtypes = CONNECT;		//消息状态初始化
 	uint8_t t=0;
 
+    
+MQTT_START:
 	log_d ( "socket connect to server\r\n" );
 	gMySock = transport_open ( ( char* ) HOST_NAME,HOST_PORT );
 	log_d ( "1.Sending to hostname %s port %d,gMySock = %d\r\n", HOST_NAME, HOST_PORT,gMySock );
+
+//	while ( 1 )
+//	{
+//		//连接服务器
+//        gMySock = transport_open ( ( char* ) HOST_NAME,HOST_PORT );
+//        log_d ( "1.Sending to hostname %s port %d,gMySock = %d\r\n", HOST_NAME, HOST_PORT,gMySock );
+//    
+//		//如果连接服务器成功
+//		if ( gMySock >= 0 )
+//		{
+//			printf ( "MQTT>>connet server success！\n" );
+//			break;
+//		}
+//		printf ( "MQTT>>conncet server error，try again 3 sec！\n" );
+//		//休息3秒
+//		vTaskDelay ( 3000/portTICK_RATE_MS );
+//	}
+    
 
 	len = MQTTSerialize_disconnect ( ( unsigned char* ) buf,buflen );
 	rc = transport_sendPacketBuffer ( gMySock, ( uint8_t* ) buf, len );
@@ -82,16 +102,21 @@ void mqtt_thread ( void )
 		log_d ( "send DISCONNECT Successfully,gMySock = %d\r\n", gMySock );
 	}
 	else
-	{
-        transport_close ( gMySock );
+	{     
 		log_d ( "send DISCONNECT failed,gMySock = %d\r\n", gMySock);
 	}
 
-	vTaskDelay ( 2500 );
+	vTaskDelay ( 3000 );
 
 	log_d ( "socket connect to server\r\n" );
 	gMySock = transport_open ( ( char* ) HOST_NAME,HOST_PORT );
 	log_d ( "2.Sending to hostname %s port %d,gMySock = %d\r\n", HOST_NAME, HOST_PORT,gMySock );
+
+    if(gMySock < 0)
+    {
+        log_d ( "MQTT>>connect server error...\r\n" );
+        goto MQTT_reconnect;
+    }
 
 	data.clientID.cstring = CLIENT_ID;              //随机
 	data.keepAliveInterval = KEEPLIVE_TIME;         //保持活跃
@@ -161,6 +186,7 @@ void mqtt_thread ( void )
 				else
 				{
 					log_d ( "send CONNECT failed\r\n" );
+                    goto MQTT_reconnect;
 				}
 				log_d ( "step = %d,MQTT concet to server!\r\n",CONNECT );
 				msgtypes = 0;
@@ -170,6 +196,7 @@ void mqtt_thread ( void )
 				if ( MQTTDeserialize_connack ( &sessionPresent, &connack_rc, ( unsigned char* ) buf, buflen ) != 1 || connack_rc != 0 )	//收到回执
 				{
 					log_d ( "Unable to connect, return code %d\r\n", connack_rc );		//回执不一致，连接失败
+		
 				}
 				else
 				{
@@ -259,11 +286,13 @@ void mqtt_thread ( void )
 				}
 				else
 				{
-					log_d ( "send PINGREQ failed, gMySock = %d\r\n",gMySock);
+					log_d ( "send PINGREQ failed, gMySock = %d,rc = %d,len = %d\r\n",gMySock,rc,len);
 
                     BEEP = 1;
                     vTaskDelay(1000);
                     BEEP = 0;
+
+                    goto MQTT_reconnect;
                     
 				}
 				msgtypes = 0;                
@@ -279,7 +308,7 @@ void mqtt_thread ( void )
 		}
 		memset ( buf,0,buflen );
 		rc=MQTTPacket_read ( ( unsigned char* ) buf, buflen, transport_getdata ); //轮询，读MQTT返回数据，
-//		log_d("MQTTPacket_read = %d\r\n",rc);
+		log_d("MQTTPacket_read = %d\r\n",rc);
 		if ( rc >0 ) //如果有数据，进入相应状态。
 		{
 			msgtypes = rc;
@@ -294,8 +323,11 @@ void mqtt_thread ( void )
 		xEventGroupSetBits ( xCreatedEventGroup, TASK_BIT_6 );
 
 	}
+
+MQTT_reconnect:    
 	transport_close ( gMySock );
 	log_d ( "mqtt thread exit.\r\n" );
+    goto MQTT_START;    
 }
 
 
@@ -320,6 +352,8 @@ static void ackUp ( void )
 }
 
 
+
+//{\"data\":{\"currentLayer\":2,\"identification\":\"20-6-1582360859332\",\"purposeLayer\":9,\"status\":\"1\"},\"commandCode\":\"3010\",\"deviceCode\":\"5056E1CB67136EA3E1B0\"}
 
 
 

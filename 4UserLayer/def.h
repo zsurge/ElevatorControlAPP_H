@@ -45,13 +45,12 @@
 
 
     
-    //用户层头文件
+//用户层头文件
 #include "test.h"
-#include "iap.h"
 #include "tool.h"
 #include "comm.h"
 #include "version.h"
-
+//#include "mqttclient.h"
 #include "mqtt_app.h"
 #include "mqtt_send.h"
 #include "rs485_process.h"

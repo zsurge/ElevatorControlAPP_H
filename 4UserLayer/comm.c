@@ -188,7 +188,8 @@ static SYSERRORCODE_E SendToQueue(uint8_t *buf,int len,uint8_t authMode)
 
 int PublishData(uint8_t *payload_out,uint16_t payload_out_len)
 {
-    
+
+   
 	MQTTString topicString = MQTTString_initializer;
     
 	uint32_t len = 0;
@@ -224,6 +225,7 @@ int PublishData(uint8_t *payload_out,uint16_t payload_out_len)
    {
         log_d("MQTT Lost the connect!!!\r\n");
    }
+  
 
    return len;
 }
@@ -649,7 +651,7 @@ static SYSERRORCODE_E GetServerIp ( uint8_t* msgBuf )
 
     //1.保存IP     
     strcpy((char *)ip,(const char *)GetJsonItem((const uint8_t *)msgBuf,(const uint8_t *)"ip",1));
-    log_d("server ip = %s\r\n",ip[0]);
+    log_d("server ip = %s\r\n",ip);
 
     //影响服务器
     result = modifyJsonItem((const uint8_t *)msgBuf,(const uint8_t *)"status",(const uint8_t *)"1",1,buf);
