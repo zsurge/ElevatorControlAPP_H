@@ -25,6 +25,8 @@
 ************************************************************************************************************/
 
 //#include <sys/types.h>
+#define LOG_TAG    "TRANSPORT"
+#include "elog.h"
 
 #if !defined(SOCKET_ERROR)
 	/** error in socket operation */
@@ -242,11 +244,11 @@ int transport_open(char* addr, int port)
 	fd_set writeset;
 	*sock = socket(AF_INET, SOCK_STREAM, 0);
 	if(*sock < 0)
-		printf("[ERROR] Create socket failed\n");
+		log_d("[ERROR] Create socket failed\r\n");
 	
 	server = gethostbyname(addr);
 	if(server == NULL)
-		printf("[ERROR] Get host ip failed\n");
+		log_d("[ERROR] Get host ip failed\r\n");
 	
 	memset(&serv_addr,0,sizeof(serv_addr));
 	serv_addr.sin_family = AF_INET;
@@ -256,7 +258,7 @@ int transport_open(char* addr, int port)
 	{
 		//¹Ø±ÕÁ´½Ó
 		close(*sock);        
-		printf("[ERROR] connect failed\n");
+		log_d("[ERROR] connect failed\r\n");
         return -1;
 	}
 	tv.tv_sec = 10;  /* 1 second Timeout */

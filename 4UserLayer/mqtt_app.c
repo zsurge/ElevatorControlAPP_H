@@ -72,32 +72,15 @@ void mqtt_thread ( void )
 	uint8_t t=0;
 
     
-MQTT_START:
+
 	log_d ( "socket connect to server\r\n" );
 	gMySock = transport_open ( ( char* ) HOST_NAME,HOST_PORT );
 	log_d ( "1.Sending to hostname %s port %d,gMySock = %d\r\n", HOST_NAME, HOST_PORT,gMySock );
-
-//	while ( 1 )
-//	{
-//		//连接服务器
-//        gMySock = transport_open ( ( char* ) HOST_NAME,HOST_PORT );
-//        log_d ( "1.Sending to hostname %s port %d,gMySock = %d\r\n", HOST_NAME, HOST_PORT,gMySock );
-//    
-//		//如果连接服务器成功
-//		if ( gMySock >= 0 )
-//		{
-//			printf ( "MQTT>>connet server success！\n" );
-//			break;
-//		}
-//		printf ( "MQTT>>conncet server error，try again 3 sec！\n" );
-//		//休息3秒
-//		vTaskDelay ( 3000/portTICK_RATE_MS );
-//	}
     
-
+MQTT_START:    
 	len = MQTTSerialize_disconnect ( ( unsigned char* ) buf,buflen );
 	rc = transport_sendPacketBuffer ( gMySock, ( uint8_t* ) buf, len );
-	if ( rc == len )															//
+	if ( rc == len )															
 	{
 		log_d ( "send DISCONNECT Successfully,gMySock = %d\r\n", gMySock );
 	}
@@ -106,7 +89,7 @@ MQTT_START:
 		log_d ( "send DISCONNECT failed,gMySock = %d\r\n", gMySock);
 	}
 
-	vTaskDelay ( 3000 );
+	vTaskDelay (3000);
 
 	log_d ( "socket connect to server\r\n" );
 	gMySock = transport_open ( ( char* ) HOST_NAME,HOST_PORT );
@@ -114,7 +97,7 @@ MQTT_START:
 
     if(gMySock < 0)
     {
-        log_d ( "MQTT>>connect server error...\r\n" );
+        log_d ( "MQTT>>connect server error...\r\n" );  
         goto MQTT_reconnect;
     }
 
@@ -140,10 +123,11 @@ MQTT_START:
 				curtick =  xTaskGetTickCount();
 				msgtypes = PINGREQ;
 				log_d ( "send heartbeat!!  set msgtypes = %d \r\n",msgtypes );
-				//showTask();
+				showTask();
 			}
 
 		}
+        
 //		if(connect_flag == 1)
 //		{
 //			if((xTaskGetTickCount() - sendtick) >= (send_duration*200))
@@ -174,12 +158,11 @@ MQTT_START:
 //		}
 		switch ( msgtypes )
 		{
-
 			//连接服务端 客户端请求连接服务端
-			case CONNECT:
-				len = MQTTSerialize_connect ( ( unsigned char* ) buf, buflen, &data ); 						//获取数据组长度		发送连接信息
+			case CONNECT://1
+				len = MQTTSerialize_connect ( ( unsigned char* ) buf, buflen, &data ); 			//获取数据组长度		发送连接信息
 				rc = transport_sendPacketBuffer ( gMySock, ( unsigned char* ) buf, len );		//发送 返回发送数组长度
-				if ( rc == len )															//
+				if ( rc == len )															
 				{
 					log_d ( "send CONNECT Successfully\r\n" );
 				}
@@ -192,7 +175,7 @@ MQTT_START:
 				msgtypes = 0;
 				break;
 			//确认连接请求
-			case CONNACK:
+			case CONNACK://2
 				if ( MQTTDeserialize_connack ( &sessionPresent, &connack_rc, ( unsigned char* ) buf, buflen ) != 1 || connack_rc != 0 )	//收到回执
 				{
 					log_d ( "Unable to connect, return code %d\r\n", connack_rc );		//回执不一致，连接失败
@@ -207,7 +190,7 @@ MQTT_START:
 				msgtypes = SUBSCRIBE;													//连接成功 执行 订阅 操作
 				break;
 			//订阅主题 客户端订阅请求
-			case SUBSCRIBE:
+			case SUBSCRIBE://8
 //                            topicString.cstring = DEVICE_SUBSCRIBE;
 				topicString.cstring = gMqttDevSn.subscribe;
 
@@ -243,72 +226,104 @@ MQTT_START:
 
 				break;
 			//订阅确认 订阅请求报文确认
-			case SUBACK:
+			case SUBACK://9
 				rc = MQTTDeserialize_suback ( &submsgid, 1, &subcount, &granted_qos, ( unsigned char* ) buf, buflen );	//有回执  QoS
 				log_d ( "step = %d,granted qos is %d\r\n",SUBACK, granted_qos );         								//打印 Qos
 				msgtypes = 0;
 				break;
 			//发布消息
-			case PUBLISH:
+			case PUBLISH://3
 				rc = MQTTDeserialize_publish ( &dup, &qos, &retained, &msgid, &receivedTopic,&payload_in, &payloadlen_in, ( unsigned char* ) buf, buflen );	//读取服务器推送信息
 				log_d ( "step = %d,message arrived : %s,len= %d\r\n",PUBLISH,payload_in,strlen ( ( const char* ) payload_in ) );
 
 				//这里是马上执行？还是发送到消息队列中，在读消息队列中执行？
 				//个人感觉在消息队列中会好点
 				exec_proc ( ( char* ) GetJsonItem ( ( const uint8_t* ) payload_in, ( const uint8_t* ) CMD_ID,0 ),payload_in );
+                if(qos == 1)
+                {
+                    printf("publish qos is 1,send publish ack.\r\n");							//Qos为1，进行回执 响应
+                    memset(buf,0,buflen);
+                    len = MQTTSerialize_ack((unsigned char*)buf,buflen,PUBACK,dup,msgid);   					//publish ack                       
+                    rc = transport_sendPacketBuffer(gMySock, (unsigned char*)buf, len);			//
+                    if(rc == len)
+                        printf("send PUBACK Successfully\r\n");
+                    else
+                        printf("send PUBACK failed\r\n");                                       
+                }
 				msgtypes = 0;
 				break;
 			//发布确认 QoS	1消息发布收到确认
-			case PUBACK:
+			case PUBACK://4
 				log_d ( "step = %d,PUBACK!\r\n",PUBACK );					//发布成功
 				msgtypes = 0;
 				break;
 			//发布收到 QoS2 第一步
-			case PUBREC:
+			case PUBREC://5
 				log_d ( "step = %d,PUBREC!\r\n",PUBREC );     				//just for qos2
 				break;
 			//发布释放 QoS2 第二步
-			case PUBREL:
+			case PUBREL://6
 				log_d ( "step = %d,PUBREL!\r\n",PUBREL );        			//just for qos2
 				break;
 			//发布完成 QoS2 第三步
-			case PUBCOMP:
+			case PUBCOMP://7
 				log_d ( "step = %d,PUBCOMP!\r\n",PUBCOMP );        			//just for qos2
 				break;
 			//心跳请求
-			case PINGREQ:
+			case PINGREQ://12
+                log_d("before :rc = %d,buf[0] = %02x,buf[1] = %02x,len = %d\r\n",rc,buf[0],buf[1],len);
+			
 				len = MQTTSerialize_pingreq ( ( unsigned char* ) buf, buflen );							//心跳
 				rc = transport_sendPacketBuffer ( gMySock, ( unsigned char* ) buf, len );
+                
+                   
+                
+                log_d("after :rc = %d,buf[0] = %02x,buf[1] = %02x,len = %d\r\n",rc,buf[0],buf[1],len);
 				if ( rc == len )
 				{
 					log_d ( "send PINGREQ Successfully\r\n" );
-                    log_d ( "step = %d,time to ping mqtt server to take alive!\r\n",PINGREQ );                    
+                    log_d ( "step = %d,time to ping mqtt server to take alive!\r\n",PINGREQ ); 
+                    msgtypes = 0; 
 				}
 				else
 				{
-					log_d ( "send PINGREQ failed, gMySock = %d,rc = %d,len = %d\r\n",gMySock,rc,len);
+					log_d ( "send PINGREQ failed, gMySock = %d,rc = %d,buf[0] = %02x,buf[1] = %02x,len = %d\r\n",gMySock,rc,buf[0],buf[1],len);
 
                     BEEP = 1;
                     vTaskDelay(1000);
                     BEEP = 0;
 
+                    msgtypes = 1; 
                     goto MQTT_reconnect;
                     
 				}
-				msgtypes = 0;                
+				            
 				break;
 			//心跳响应
-			case PINGRESP:
+			case PINGRESP://13
 				log_d ( "step = %d,mqtt server Pong\r\n",PINGRESP );  			//心跳回执，服务有响应
 				msgtypes = 0;
 				break;
+            case UNSUBSCRIBE:
+				log_d ( "step = %d,UNSUBSCRIBE!\r\n",UNSUBSCRIBE );					//发布成功
+				msgtypes = 0;                
+                break;
+            case UNSUBACK:                
+                log_d ( "step = %d,UNSUBACK!\r\n",UNSUBACK );                   //发布成功
+                msgtypes = 0;
+                break;
+            case DISCONNECT:                
+                log_d ( "step = %d,DISCONNECT!\r\n",DISCONNECT );                   //发布成功
+                msgtypes = 0;
+                break;
+            
 			default:
 				break;
 
 		}
 		memset ( buf,0,buflen );
 		rc=MQTTPacket_read ( ( unsigned char* ) buf, buflen, transport_getdata ); //轮询，读MQTT返回数据，
-		log_d("MQTTPacket_read = %d\r\n",rc);
+//		log_d("MQTTPacket_read = %d\r\n",rc);
 		if ( rc >0 ) //如果有数据，进入相应状态。
 		{
 			msgtypes = rc;
@@ -325,9 +340,10 @@ MQTT_START:
 	}
 
 MQTT_reconnect:    
-	transport_close ( gMySock );
-	log_d ( "mqtt thread exit.\r\n" );
-    goto MQTT_START;    
+	transport_close ( gMySock );    
+	log_d ( "mqtt thread exit.try again 3 sec\r\n" );  
+    vTaskDelay (500);
+    goto MQTT_START;        
 }
 
 

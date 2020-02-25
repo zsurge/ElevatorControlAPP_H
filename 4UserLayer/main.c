@@ -17,6 +17,7 @@
 
 ******************************************************************************/
 
+
 /*----------------------------------------------*
  * 包含头文件                                   *
  *----------------------------------------------*/
@@ -401,12 +402,7 @@ static void vTaskLed(void *pvParameters)
             i = 100;
         }
         i+=20;
-        bsp_SetTIMOutPWM(GPIOA, GPIO_Pin_8, TIM1, 1, 100, ((i) * 10000) /255);
-
-        LED1=!LED1;  
-        LED2=!LED2; 
-        LED3=!LED3; 
-        LED4=!LED4; 
+        bsp_SetTIMOutPWM(GPIOG, GPIO_Pin_8, TIM1, 1, 100, ((i) * 10000) /255);
         
 		/* 发送事件标志，表示任务正常运行 */        
 		xEventGroupSetBits(xCreatedEventGroup, TASK_BIT_0);  
@@ -509,7 +505,7 @@ static void vTaskMqttTest(void *pvParameters)
 
     while(1)
     {
-        vTaskDelay(300);        
+        vTaskDelay(1000);        
     }
     
 }
@@ -534,7 +530,7 @@ static void vTaskDisplay(void *pvParameters)
         bsp_HC595Show('d',3,4);   
         vTaskDelay(300);
         bsp_HC595Show(1,0,1);  
-        vTaskDelay(300);
+
         
         /* 发送事件标志，表示任务正常运行 */
 		xEventGroupSetBits(xCreatedEventGroup, TASK_BIT_3);     

@@ -174,7 +174,7 @@ u8 lwip_comm_init ( void )
 		/*  When the netif link is down this function must be called.*/
 		netif_set_down(&lwip_netif);
 		
-		#ifdef USE_DHCP
+		#ifdef LWIP_DHCP
 			SetGB_DHCPState(DHCP_LINK_DOWN);
 		#endif
 	}    
@@ -311,7 +311,7 @@ void ETH_link_callback(struct netif *netif)
 
 	if(netif_is_link_up(netif))
 	{
-		printf("link up \r\n");
+		printf("<<<<<<<<<<<<<<<<link up>>>>>>>>>>>>>>>>> \r\n");
 		/* Restart MAC interface */
 		ETH_Start();
 
@@ -325,7 +325,7 @@ void ETH_link_callback(struct netif *netif)
 			IP4_ADDR(&ipaddr, IP_ADDR0, IP_ADDR1, IP_ADDR2, IP_ADDR3);
 			IP4_ADDR(&netmask, NETMASK_ADDR0, NETMASK_ADDR1 , NETMASK_ADDR2, NETMASK_ADDR3);
 			IP4_ADDR(&gw, GW_ADDR0, GW_ADDR1, GW_ADDR2, GW_ADDR3);
-		#endif /* USE_DHCP */
+		#endif /* LWIP_DHCP */
 
 		netif_set_addr(&lwip_netif, &ipaddr , &netmask, &gw);
     
@@ -334,13 +334,12 @@ void ETH_link_callback(struct netif *netif)
 	}
 	else
 	{
-		printf("link down \r\n");
+		printf("<<<<<<<<<<<<<<<<link down>>>>>>>>>>>>>>>>> \r\n");
 		ETH_Stop();
 		#ifdef LWIP_DHCP
 			SetGB_DHCPState(DHCP_LINK_DOWN);
 			dhcp_stop(netif);
-
-		#endif /* USE_DHCP */
+		#endif /* LWIP_DHCP */
 
 		/*  When the netif link is down this function must be called.*/
 		netif_set_down(&lwip_netif);

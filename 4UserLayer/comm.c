@@ -216,9 +216,9 @@ int PublishData(uint8_t *payload_out,uint16_t payload_out_len)
        len = MQTTSerialize_publish((unsigned char*)buf, buflen, 0, req_qos, retained, msgid, topicString, payload_out, payload_out_len);//发布消息
        rc = transport_sendPacketBuffer(gMySock, (unsigned char*)buf, len);
        if(rc == len)                                                           //
-           log_d("send PUBLISH Successfully\r\n");
+           log_d("send PUBLISH Successfully,rc = %d,len = %d\r\n",rc,len);
        else
-           log_d("send PUBLISH failed\r\n");     
+           log_d("send PUBLISH failed,rc = %d,len = %d\r\n",rc,len);     
       
    }
    else
