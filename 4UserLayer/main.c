@@ -137,13 +137,7 @@ static void AppTaskCreate (void)
 
     StartEthernet();   
 
-    //跟android握手
-    xTaskCreate((TaskFunction_t )vTaskHandShake,
-                (const char*    )"vHandShake",       
-                (uint16_t       )HANDSHAKE_STK_SIZE, 
-                (void*          )NULL,              
-                (UBaseType_t    )HANDSHAKE_TASK_PRIO,    
-                (TaskHandle_t*  )&xHandleTaskHandShake);  
+
 
     //跟电梯通讯
     xTaskCreate((TaskFunction_t )vTaskComm,
@@ -151,24 +145,9 @@ static void AppTaskCreate (void)
                 (uint16_t       )COMM_STK_SIZE, 
                 (void*          )NULL,              
                 (UBaseType_t    )COMM_TASK_PRIO,    
-                (TaskHandle_t*  )&xHandleTaskComm);  
+                (TaskHandle_t*  )&xHandleTaskComm);              
 
-
-    //创建LED任务
-    xTaskCreate((TaskFunction_t )vTaskLed,         
-                (const char*    )"vTaskLed",       
-                (uint16_t       )LED_STK_SIZE, 
-                (void*          )NULL,              
-                (UBaseType_t    )LED_TASK_PRIO,    
-                (TaskHandle_t*  )&xHandleTaskLed);                   
-
-    //数码管
-    xTaskCreate((TaskFunction_t )vTaskDisplay,
-                (const char*    )"vTaskDisplay",       
-                (uint16_t       )DISPLAY_STK_SIZE, 
-                (void*          )NULL,              
-                (UBaseType_t    )DISPLAY_TASK_PRIO,    
-                (TaskHandle_t*  )&xHandleTaskDisplay);     
+  
  
 
     //MQTT通讯 mqtt_thread
@@ -178,39 +157,7 @@ static void AppTaskCreate (void)
                 (void*          )NULL,
                 (UBaseType_t    )MQTT_TASK_PRIO,
                 (TaskHandle_t*  )&xHandleTaskMqtt); 
-    
-    //韦根读卡器
-    xTaskCreate((TaskFunction_t )vTaskReader,     
-                (const char*    )"vReader",   
-                (uint16_t       )READER_STK_SIZE, 
-                (void*          )NULL,
-                (UBaseType_t    )READER_TASK_PRIO,
-                (TaskHandle_t*  )&xHandleTaskReader);    
 
-    //二维码扫码模块
-    xTaskCreate((TaskFunction_t )vTaskQR,     
-                (const char*    )"vTaskQR",   
-                (uint16_t       )QR_STK_SIZE, 
-                (void*          )NULL,
-                (UBaseType_t    )QR_TASK_PRIO,
-                (TaskHandle_t*  )&xHandleTaskQr);      
-
-    //按键
-    xTaskCreate((TaskFunction_t )vTaskKey,         
-                (const char*    )"vTaskKey",       
-                (uint16_t       )KEY_STK_SIZE, 
-                (void*          )NULL,              
-                (UBaseType_t    )KEY_TASK_PRIO,    
-                (TaskHandle_t*  )&xHandleTaskKey);   
-
-
-    //看门狗
-//	xTaskCreate((TaskFunction_t )vTaskStart,     		/* 任务函数  */
-//                (const char*    )"vTaskStart",   		/* 任务名    */
-//                (uint16_t       )START_STK_SIZE,        /* 任务栈大小，单位word，也就是4字节 */
-//                (void*          )NULL,           		/* 任务参数  */
-//                (UBaseType_t    )START_TASK_PRIO,       /* 任务优先级*/
-//                (TaskHandle_t*  )&xHandleTaskStart );   /* 任务句柄  */                
 
 }
 
