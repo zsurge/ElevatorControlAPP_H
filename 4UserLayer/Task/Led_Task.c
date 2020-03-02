@@ -22,17 +22,19 @@
  *----------------------------------------------*/
 #include "led_task.h"
 #include "bsp_tim_pwm.h"
+#include "bsp_beep.h" 
+
 
 /*----------------------------------------------*
  * 宏定义                                       *
  *----------------------------------------------*/
-#define LED_TASK_PRIO	    ( tskIDLE_PRIORITY)
+#define LED_TASK_PRIO	    (tskIDLE_PRIORITY)
 #define LED_STK_SIZE 		(configMINIMAL_STACK_SIZE*2)
 
 /*----------------------------------------------*
  * 常量定义                                     *
  *----------------------------------------------*/
-const char *ledTaskName = "vLedTask";      //看门狗任务名
+const char *ledTaskName = "vLedTask";      //LED任务名称
 
 
 /*----------------------------------------------*
@@ -46,16 +48,15 @@ TaskHandle_t xHandleTaskLed = NULL;      //LED灯
  *----------------------------------------------*/
 static void vTaskLed(void *pvParameters);
 
-void CreateLedTask(void *pvParameters)
+void CreateLedTask(void)
 {
     //创建LED任务
     xTaskCreate((TaskFunction_t )vTaskLed,         
                 (const char*    )ledTaskName,       
                 (uint16_t       )LED_STK_SIZE, 
-                (void*          )pvParameters,              
+                (void*          )NULL,              
                 (UBaseType_t    )LED_TASK_PRIO,    
-                (TaskHandle_t*  )&xHandleTaskLed);   
-
+                (TaskHandle_t*  )&xHandleTaskLed);
 }
 
 
@@ -80,6 +81,6 @@ static void vTaskLed(void *pvParameters)
 		xEventGroupSetBits(xCreatedEventGroup, TASK_BIT_0);  
         vTaskDelay(100); 
     }
-}   
+} 
 
 

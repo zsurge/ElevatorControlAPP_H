@@ -30,6 +30,7 @@
 /* Includes ------------------------------------------------------------------*/
 #include "stm32f4xx_it.h"
 #include "bsp_beep.h"
+#include "stdio.h"
 
 #define ERR_INFO "\r\nEnter HardFault_Handler, System Halt.\r\n"
 

@@ -20,9 +20,13 @@
 /*----------------------------------------------*
  * 包含头文件                                   *
  *----------------------------------------------*/
-#include "MsgParse_Task.h"
 #include "bsp_uart_fifo.h"
-#include "comm.h"
+#include "CmdHandle.h"
+#include "tool.h"
+
+#define LOG_TAG    "BarCode"
+#include "elog.h"
+
 /*----------------------------------------------*
  * 宏定义                                       *
  *----------------------------------------------*/
@@ -46,7 +50,7 @@ static void vTaskBarCode(void *pvParameters);
 
 void CreateBarCodeTask(void)
 {
-    //跟android通讯串口数据解析
+    //读取条码数据并处理
     xTaskCreate((TaskFunction_t )vTaskBarCode,     
                 (const char*    )BarCodeTaskName,   
                 (uint16_t       )BARCODE_STK_SIZE, 
@@ -59,40 +63,61 @@ void CreateBarCodeTask(void)
 
 static void vTaskBarCode(void *pvParameters)
 { 
-    uint8_t recv_buf[256] = {0};    
-    uint16_t len = 0;  
-    
-//    uint32_t FunState = 0;
-//    char *QrCodeState;
+    uint8_t recv_buf[255] = {0};
+    uint16_t len = 0; 
 
-//    QrCodeState = ef_get_env("QRSTATE");
-//    assert_param(QrCodeState);
-//    FunState = atol(QrCodeState);
+    READER_BUFF_T *ptQR; 
+ 	/* 初始化结构体指针 */
+	ptQR = &gReaderMsg;
+	
+	/* 清零 */
+    ptQR->authMode = AUTH_MODE_CARD; //默认为刷卡
+    ptQR->dataLen = 0;
+    memset(ptQR->data,0x00,sizeof(ptQR->data)); 
     
     while(1)
-    {
-//       if(FunState != 0x00)
-       {
+    {   
            memset(recv_buf,0x00,sizeof(recv_buf));
-           len = comRecvBuff(COM3,recv_buf,sizeof(recv_buf));
+           len = RS485_RecvAtTime(COM5,recv_buf,sizeof(recv_buf),800);
+           if(recv_buf[len-1] == 0x00 && len > 0)
+           {
+                len -= 1; //这里不知道为什么会多了一个0x00
+           }
            
-//           dbh("QR HEX", recv_buf, len);
-
-           if(len > 2  && recv_buf[len-1] == 0x0A && recv_buf[len-2] == 0x0D)
+           if(len > 0  && recv_buf[len-1] == 0x0A && recv_buf[len-2] == 0x0D)
            {
+                log_d("reader = %s\r\n",recv_buf);      
 
-                SendAsciiCodeToHost(QRREADER,NO_ERR,recv_buf);
+                //判定是刷卡还是QR
+                //if(strstr_t(recv_buf,"CARD") == NULL)
+                if(len > 50)
+                {
+                    //QR
+                    ptQR->authMode = AUTH_MODE_QR;
+                }                               
+
+                ptQR->dataLen = len;                
+                memcpy(ptQR->data,recv_buf,len);
+
+    			/* 使用消息队列实现指针变量的传递 */
+    			if(xQueueSend(xTransQueue,              /* 消息队列句柄 */
+    						 (void *) &ptQR,   /* 发送指针变量recv_buf的地址 */
+    						 (TickType_t)50) != pdPASS )
+    			{
+                    DBG("the queue is full!\r\n");                
+                    xQueueReset(xTransQueue);
+                } 
+                else
+                {
+                    dbh("QR",(char *)recv_buf,len);
+                }                
            }
-           else
-           {
-                comClearRxFifo(COM3);
-           }
+    
 
-       }
-
-        /* 发送事件标志，表示任务正常运行 */        
-        xEventGroupSetBits(xCreatedEventGroup, TASK_BIT_5);  
-        vTaskDelay(500);        
+		/* 发送事件标志，表示任务正常运行 */        
+		xEventGroupSetBits(xCreatedEventGroup, TASK_BIT_5);  
+        vTaskDelay(300);        
     }
 }
+
 

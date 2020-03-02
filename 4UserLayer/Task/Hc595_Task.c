@@ -43,13 +43,13 @@ const char *HC595TaskName = "vHC595Task";
  *----------------------------------------------*/
 void vTaskDisplay(void *pvParameters);
 
-void CreateHc595Task(void *pvParameters)
+void CreateHc595Task(void)
 {
     //ÊýÂë¹Ü
     xTaskCreate((TaskFunction_t )vTaskDisplay,
                 (const char*    )HC595TaskName,       
                 (uint16_t       )DISPLAY_STK_SIZE, 
-                (void*          )pvParameters,              
+                (void*          )NULL,              
                 (UBaseType_t    )DISPLAY_TASK_PRIO,    
                 (TaskHandle_t*  )&xHandleTaskDisplay);     
 

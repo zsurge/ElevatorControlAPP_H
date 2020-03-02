@@ -21,13 +21,22 @@
  * 包含头文件                                   *
  *----------------------------------------------*/
 #include "Comm_Task.h"
+#include "CmdHandle.h"
+#include "bsp_uart_fifo.h"
 
+
+#define LOG_TAG    "CommTask"
+#include "elog.h"
 
 /*----------------------------------------------*
  * 宏定义                                       *
  *----------------------------------------------*/
-#define COMM_STK_SIZE 		(1024*1)
-#define COMM_TASK_PRIO		( tskIDLE_PRIORITY + 4)
+#define MAX_RS485_LEN 37
+
+ 
+#define COMM_TASK_PRIO		(tskIDLE_PRIORITY + 4) 
+#define COMM_STK_SIZE 		(configMINIMAL_STACK_SIZE*8)
+
 /*----------------------------------------------*
  * 常量定义                                     *
  *----------------------------------------------*/
@@ -46,7 +55,12 @@ static void vTaskComm(void *pvParameters);
 
 void CreateCommTask(void)
 {
-
+    xTaskCreate((TaskFunction_t )vTaskComm,         
+                (const char*    )CommTaskName,       
+                (uint16_t       )COMM_STK_SIZE, 
+                (void*          )NULL,              
+                (UBaseType_t    )COMM_TASK_PRIO,    
+                (TaskHandle_t*  )&xHandleTaskComm);
 }
 
 static void vTaskComm(void *pvParameters)
@@ -100,7 +114,7 @@ static void vTaskComm(void *pvParameters)
                 packetDefaultSendBuf(sendBuf); //打包  
             }
 
-            RS485_SendBuf(COM4,sendBuf,MAX_SEND_LEN);
+            RS485_SendBuf(COM4,sendBuf,MAX_RS485_LEN);
 
         }
 

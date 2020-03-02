@@ -20,7 +20,7 @@
 /*----------------------------------------------*
  * 包含头文件                                   *
  *----------------------------------------------*/
-#include "comm.h"
+#include "cmdhandle.h"
 #include "tool.h"
 #include "bsp_led.h"
 #include "malloc.h"
@@ -54,7 +54,6 @@
 /*----------------------------------------------*
  * 模块级变量                                   *
  *----------------------------------------------*/
-QueueHandle_t xTransQueue = NULL; 
 int gConnectStatus = 0;
 int	gMySock = 0;
 READER_BUFF_T gReaderMsg;

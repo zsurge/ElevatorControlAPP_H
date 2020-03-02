@@ -40,6 +40,6 @@ extern TaskHandle_t xHandleTaskDisplay;      //数码管
 /*----------------------------------------------*
  * 内部函数原型说明                             *
  *----------------------------------------------*/
-void CreateHc595Task(void *pvParameters);
+void CreateHc595Task(void);
 
 #endif /* __HC595_TASK_H__ */

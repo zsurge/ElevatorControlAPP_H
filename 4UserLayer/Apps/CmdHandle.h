@@ -3,7 +3,7 @@
                   版权所有 (C), 2013-2023, 深圳博思高科技有限公司
 
  ******************************************************************************
-  文 件 名   : cmdhandle.h
+  文 件 名   : comm.h
   版 本 号   : 初稿
   作    者   : 张舵
   生成日期   : 2019年6月18日
@@ -22,13 +22,11 @@
 /*----------------------------------------------*
  * 包含头文件                                   *
  *----------------------------------------------*/
+#include "pub_options.h"
 #include "errorcode.h"
-#include "FreeRTOS.h"
-#include "task.h"
-#include "queue.h"
 
 
-extern QueueHandle_t xTransQueue;
+
 
 /*----------------------------------------------*
  * 宏定义                                       *
@@ -47,8 +45,6 @@ extern QueueHandle_t xTransQueue;
 
 #define QUEUE_BUF_LEN   64
 
-
-
 #pragma pack(1)
 typedef struct
 {
@@ -59,8 +55,6 @@ typedef struct
 #pragma pack()
 
 extern READER_BUFF_T gReaderMsg;
-
-
 
 extern int gConnectStatus;
 extern int  gMySock;

@@ -44,7 +44,7 @@ extern TaskHandle_t xHandleTaskLed;      //LEDµÆ
  *----------------------------------------------*/
 
 
-void CreateLedTask(void *pvParameters);
+void CreateLedTask(void);
 
 
 #endif /* __LED_TASK_H__ */

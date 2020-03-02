@@ -21,6 +21,14 @@
  * 包含头文件                                   *
  *----------------------------------------------*/
 #include "key_task.h"
+#include "bsp_key.h"
+#include "bsp_dipSwitch.h"
+#include "bsp_ds1302.h"
+#include "easyflash.h"
+#include "tool.h"
+
+#define LOG_TAG    "keyTask"
+#include "elog.h"
 
 /*----------------------------------------------*
  * 宏定义                                       *
@@ -42,9 +50,10 @@ TaskHandle_t xHandleTaskKey = NULL;
  * 内部函数原型说明                             *
  *----------------------------------------------*/
 static void vTaskKey(void *pvParameters);
+static void check_msg_queue(void);
 
 
-void CreateKeyTask(void *pvParameters)
+void CreateKeyTask(void)
 {
     //按键
     xTaskCreate((TaskFunction_t )vTaskKey,         
@@ -60,9 +69,7 @@ static void vTaskKey(void *pvParameters)
     
 	uint8_t ucKeyCode;
 	uint8_t pcWriteBuffer[500];
-
-    float sin_value = 0.0;
-
+    
     uint16_t crc_value = 0;
 
     uint8_t cm4[] = { 0x02,0x7B,0x22,0x63,0x6D,0x64,0x22,0x3A,0x22,0x75,0x70,0x64,0x61,0x74,0x65,0x22,0x2C,0x22,0x76,0x61,0x6C,0x75,0x65,0x22,0x3A,0x7B,0x22,0x75,0x70,0x64,0x61,0x74,0x65,0x22,0x3A,0x22,0x41,0x37,0x22,0x7D,0x2C,0x22,0x64,0x61,0x74,0x61,0x22,0x3A,0x22,0x30,0x30,0x22,0x7D,0x03 };
@@ -81,14 +88,14 @@ static void vTaskKey(void *pvParameters)
 			{
 				/* K1键按下 打印任务执行情况 */
 				case KEY_SET_PRES:	             
-					App_Printf("=================================================\r\n");
-					App_Printf("任务名      任务状态 优先级   剩余栈 任务序号\r\n");
+					printf("=================================================\r\n");
+					printf("任务名      任务状态 优先级   剩余栈 任务序号\r\n");
 					vTaskList((char *)&pcWriteBuffer);
-					App_Printf("%s\r\n", pcWriteBuffer);
+					printf("%s\r\n", pcWriteBuffer);
                     
-					App_Printf("\r\n任务名       运行计数         使用率\r\n");
+					printf("\r\n任务名       运行计数         使用率\r\n");
 					vTaskGetRunTimeStats((char *)&pcWriteBuffer);
-					App_Printf("%s\r\n", pcWriteBuffer);          
+					printf("%s\r\n", pcWriteBuffer);          
 
                     g_memsize = xPortGetFreeHeapSize();
                     printf("系统当前内存大小为 %d 字节，开始申请内存\n",g_memsize);
@@ -105,7 +112,7 @@ static void vTaskKey(void *pvParameters)
                     log_d("read gpio = %02x\r\n",bsp_dipswitch_read());
 //                    testSplit();
 
-                      ee_test();
+//                      ee_test();
 //			        
 					break;
 				case KEY_LL_PRES:   
@@ -142,5 +149,23 @@ static void vTaskKey(void *pvParameters)
 	}   
 
 }
+
+
+//查询Message_Queue队列中的总队列数量和剩余队列数量
+void check_msg_queue(void)
+{
+    
+	u8 msgq_remain_size;	//消息队列剩余大小
+    u8 msgq_total_size;     //消息队列总大小
+    
+    taskENTER_CRITICAL();   //进入临界区
+    msgq_remain_size=uxQueueSpacesAvailable(xTransQueue);//得到队列剩余大小
+    msgq_total_size=uxQueueMessagesWaiting(xTransQueue)+uxQueueSpacesAvailable(xTransQueue);//得到队列总大小，总大小=使用+剩余的。
+	printf("Total Size = %d, Remain Size = %d\r\n",msgq_total_size,msgq_remain_size);	//显示DATA_Msg消息队列总的大小
+
+    taskEXIT_CRITICAL();    //退出临界区
+}
+
+
 
 

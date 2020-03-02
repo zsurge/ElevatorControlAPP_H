@@ -3,7 +3,7 @@
                   版权所有 (C), 2013-2023, 深圳博思高科技有限公司
 
  ******************************************************************************
-  文 件 名   : rs485_process.h
+  文 件 名   : FloorDataProc.h
   版 本 号   : 初稿
   作    者   : 张舵
   生成日期   : 2019年12月23日
@@ -16,8 +16,8 @@
     修改内容   : 创建文件
 
 ******************************************************************************/
-#ifndef __RS485_PROCESS_H_
-#define __RS485_PROCESS_H_
+#ifndef __FLOORDATAPROC_H_
+#define __FLOORDATAPROC_H_
 
 
 /*----------------------------------------------*
@@ -28,7 +28,7 @@
 #include "tool.h"
 #include "bsp_dipSwitch.h"
 #include "easyflash.h"
-#include "comm.h"
+#include "cmdhandle.h"
 #include "MQTTPacket.h"
 #include "transport.h"
 #include "jsonUtils.h"

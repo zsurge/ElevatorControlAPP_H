@@ -19,8 +19,14 @@
 /*----------------------------------------------*
  * 包含头文件                                   *
  *----------------------------------------------*/
-#include "MsgParse_Task.h"
-#include "comm.h"
+#include "Reader_Task.h"
+#include "CmdHandle.h"
+#include "bsp_dipSwitch.h"
+#include "tool.h"
+
+#define LOG_TAG    "reader"
+#include "elog.h"
+
 
 /*----------------------------------------------*
  * 宏定义                                       *
@@ -60,43 +66,63 @@ static void vTaskReader(void *pvParameters)
 { 
     uint32_t CardID = 0;
     uint8_t dat[4] = {0};
-    
-//    uint32_t FunState = 0;
-//    char *IcReaderState;
+    uint8_t asc[9] = {0};
+    uint8_t tmp[26] ={ 0x43,0x41,0x52,0x44,0x20,0x32,0x33,0x30,0x30,0x30,0x30,0x30,0x30,0x30,0x30,0x38,0x39,0x30,0x30,0x30,0x30,0x30,0x30,0x0d,0x0a };
+    READER_BUFF_T *ptReader; 
+	/* 初始化结构体指针 */
+	ptReader = &gReaderMsg;
+	
+	/* 清零 */
+    ptReader->dataLen = 0;
+    ptReader->authMode = AUTH_MODE_CARD;
+    memset(ptReader->data,0x00,sizeof(ptReader->data)); 
 
-//    IcReaderState = ef_get_env("ICSTATE");
-//    assert_param(IcReaderState);
-//    FunState = atol(IcReaderState);
-    
     while(1)
     {
+        CardID = bsp_WeiGenScanf();
 
-//        if(FunState != 0x00)
+        if(CardID != 0)
         {
-            CardID = bsp_WeiGenScanf();
+            memset(dat,0x00,sizeof(dat));            
+            
+//			dat[0] = CardID>>24;
+			dat[0] = CardID>>16;
+			dat[1] = CardID>>8;
+			dat[2] = CardID&0XFF;    
 
-            if(CardID != 0)
+            dbh("card id",(char *)dat,3);
+            
+            bcd2asc(asc, dat, 6, 0);
+            log_d("asc = %s\r\n",asc);
+            
+            memcpy(tmp+17,asc,6);
+            log_d("tmp = %s\r\n",tmp);
+            
+            ptReader->dataLen = 25;
+            memcpy(ptReader->data,tmp,ptReader->dataLen);
+
+			/* 使用消息队列实现指针变量的传递 */
+			if(xQueueSend(xTransQueue,              /* 消息队列句柄 */
+						 (void *) &ptReader,   /* 发送结构体指针变量ptReader的地址 */
+						 (TickType_t)50) != pdPASS )
+			{
+                DBG("the queue is full!\r\n");                             
+            } 
+            else
             {
-                memset(dat,0x00,sizeof(dat));            
-                
-                dat[0] = CardID>>24;
-                dat[1] = CardID>>16;
-                dat[2] = CardID>>8;
-                dat[3] = CardID&0XFF; 
-                
-                send_to_host(WGREADER,dat,4);
-            }  
+                dbh("WGREADER",(char *)dat,4);
+            }          
+
+          
         }
-
-
-        /* 发送事件标志，表示任务正常运行 */        
-        xEventGroupSetBits(xCreatedEventGroup, TASK_BIT_4);        
         
-        vTaskDelay(100);
+    	/* 发送事件标志，表示任务正常运行 */        
+    	xEventGroupSetBits(xCreatedEventGroup, TASK_BIT_4);       
         
+        vTaskDelay(100);        
     }
 
-}
+}   
 
 
 

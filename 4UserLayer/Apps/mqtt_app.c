@@ -16,10 +16,12 @@
 #include <stdio.h>
 #include "cJSON.h"
 #include "ini.h"
-#include "comm.h"
+#include "cmdhandle.h"
 #include "eth_cfg.h"
-#include "msg.h"
+#include "pub_options.h"
 #include "bsp_beep.h"
+#include "jsonUtils.h"
+
 
 #define LOG_TAG    "MQTTAPP"
 #include "elog.h"
@@ -44,7 +46,6 @@ static void showTask ( void )
 
 void mqtt_thread ( void )
 {
-
 	MQTTPacket_connectData data = MQTTPacket_connectData_initializer;
 	MQTTString receivedTopic;
 	MQTTString topicString = MQTTString_initializer;
@@ -67,7 +68,10 @@ void mqtt_thread ( void )
 	int qos;
 	unsigned char retained = 0;
 
-	uint8_t connect_flag = 0;		//连接标志
+	//获取当前滴答，作为心跳包起始时间
+	uint32_t curtick  =	 xTaskGetTickCount();
+	uint32_t sendtick =  xTaskGetTickCount();    
+
 	uint8_t msgtypes = CONNECT;		//消息状态初始化
 	uint8_t t=0;
 
@@ -110,9 +114,6 @@ MQTT_START:
 
 	ReadLocalDevSn();
 
-	//获取当前滴答，作为心跳包起始时间
-	uint32_t curtick  =	 xTaskGetTickCount();
-	uint32_t sendtick =  xTaskGetTickCount();
 
 	while ( 1 )
 	{
@@ -183,8 +184,7 @@ MQTT_START:
 				}
 				else
 				{
-					log_d ( "step = %d,MQTT is concet OK!\r\n",CONNACK );									//连接成功
-					connect_flag = 1;
+					log_d ( "step = %d,MQTT is concet OK!\r\n",CONNACK );	
 					gConnectStatus = 1;
 				}
 				msgtypes = SUBSCRIBE;													//连接成功 执行 订阅 操作
@@ -294,8 +294,7 @@ MQTT_START:
                     BEEP = 0;
 
                     msgtypes = 1; 
-                    goto MQTT_reconnect;
-                    
+                    goto MQTT_reconnect;                    
 				}
 				            
 				break;
@@ -328,15 +327,11 @@ MQTT_START:
 		{
 			msgtypes = rc;
 			log_d ( "MQTT is get recv: msgtypes = %d\r\n",msgtypes );
-		}
-		else
-		{
-			vTaskDelay ( 300 );
-		}
+		}	
 
 		/* 发送事件标志，表示任务正常运行 */
 		xEventGroupSetBits ( xCreatedEventGroup, TASK_BIT_6 );
-
+        vTaskDelay ( 300 );
 	}
 
 MQTT_reconnect:    

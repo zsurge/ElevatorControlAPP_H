@@ -240,8 +240,7 @@ int transport_open(char* addr, int port)
 	struct sockaddr_in serv_addr;
 	static struct  timeval tv;
 	int timeout = 1000;
-	fd_set readset;
-	fd_set writeset;
+
 	*sock = socket(AF_INET, SOCK_STREAM, 0);
 	if(*sock < 0)
 		log_d("[ERROR] Create socket failed\r\n");

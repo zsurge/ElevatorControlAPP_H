@@ -71,8 +71,8 @@ void ReadLocalDevSn ( void )
 	else
 	{
 		//使用MAC做为SN
-		calcMac ( mac );
-		bcd2asc ( asc, mac, 12, 0 );
+		calcMac ( (unsigned char*)mac );
+		bcd2asc ( (unsigned char*)asc, (unsigned char*)mac, 12, 0 );
 		Insertchar ( asc,temp,':' );
 		memcpy ( gMqttDevSn.sn,temp,strlen ( temp )-1 );
 

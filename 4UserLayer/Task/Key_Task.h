@@ -41,7 +41,7 @@ extern  TaskHandle_t xHandleTaskKey  ;      //按键
  * 内部函数原型说明                             *
  *----------------------------------------------*/
 
-void CreateKeyTask(void *pvParameters);
+void CreateKeyTask(void);
 
 
 

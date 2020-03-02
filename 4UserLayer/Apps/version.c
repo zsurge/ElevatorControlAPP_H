@@ -80,8 +80,8 @@ static uint8_t * GetDevSn(void)
 
 static uint8_t * GetDevIP(void)
 {
-    static char localIP[16] = {0};
-    sprintf(localIP,"%d.%d.%d.%d",lwipdev.ip[0],lwipdev.ip[1],lwipdev.ip[2],lwipdev.ip[3]);
+    static uint8_t localIP[16] = {0};
+    sprintf((char *)localIP,"%d.%d.%d.%d",lwipdev.ip[0],lwipdev.ip[1],lwipdev.ip[2],lwipdev.ip[3]);
     return localIP;
 }
 

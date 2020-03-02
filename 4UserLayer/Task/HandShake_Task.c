@@ -22,7 +22,13 @@
  *----------------------------------------------*/
 #include "handshake_task.h"
 #include "easyflash.h"
-#include "comm.h"
+#include "stdlib.h"
+#include "tool.h"
+#include "bsp_ds1302.h"
+
+#define LOG_TAG    "handShake"
+#include "elog.h"
+
 /*----------------------------------------------*
  * 宏定义                                       *
  *----------------------------------------------*/
@@ -46,45 +52,42 @@ TaskHandle_t xHandleTaskHandShake = NULL;      //LED灯
  *----------------------------------------------*/
 static void vTaskHandShake(void *pvParameters);
 
-void vTaskHandShake(void *pvParameters)
+static void vTaskHandShake(void *pvParameters)
 {
-
     uint32_t i_boot_times = NULL;
     char *c_old_boot_times, c_new_boot_times[12] = {0};
-    uint8_t bcdbuf[6] = {0};
-
+    uint8_t bcdbuf[6] = {0};  
+    
     /* get the boot count number from Env */
-    c_old_boot_times = ef_get_env((const char*)"boot_times");
-    assert_param(c_old_boot_times);
-    i_boot_times = atol(c_old_boot_times);
+    c_old_boot_times = ef_get_env("boot_times");
 
+    i_boot_times = atol(c_old_boot_times);
+    
     /* boot count +1 */
     i_boot_times ++;
 
     /* interger to string */
     sprintf(c_new_boot_times,"%012ld", i_boot_times);
-
+    
     /* set and store the boot count number to Env */
     ef_set_env("boot_times", c_new_boot_times);    
 
     asc2bcd(bcdbuf,(uint8_t *)c_new_boot_times , 12, 0);
 
-    send_to_host(HANDSHAKE,bcdbuf,6);  
-
+    log_d("local time = %s\r\n",bsp_ds1302_readtime());
+    
     vTaskDelete( NULL ); //删除自己
 }
 
-
-
-
- void CreateHandShakeTask(void)
-{    //跟android握手
+void CreateHandShakeTask(void)
+{  
+    //跟android握手
     xTaskCreate((TaskFunction_t )vTaskHandShake,
-                (const char*    )handShakeTaskName,       
-                (uint16_t       )HANDSHAKE_STK_SIZE, 
-                (void*          )NULL,              
-                (UBaseType_t    )HANDSHAKE_TASK_PRIO,    
-                (TaskHandle_t*  )&xHandleTaskHandShake);  
+    (const char*    )handShakeTaskName,       
+    (uint16_t       )HANDSHAKE_STK_SIZE, 
+    (void*          )NULL,              
+    (UBaseType_t    )HANDSHAKE_TASK_PRIO,    
+    (TaskHandle_t*  )&xHandleTaskHandShake);  
 
 }
 

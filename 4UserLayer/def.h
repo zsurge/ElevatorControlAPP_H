@@ -46,15 +46,25 @@
 
     
 //用户层头文件
+#include "pub_options.h"
 #include "test.h"
 #include "tool.h"
 #include "comm.h"
 #include "version.h"
-//#include "mqttclient.h"
 #include "mqtt_app.h"
-#include "mqtt_send.h"
-#include "rs485_process.h"
-#include "msg.h"
+#include "FloorDataProc.h"
+
+//TASK文件
+#include "BarCode_Task.h"
+#include "Comm_Task.h"
+#include "HandShake_Task.h"
+#include "Hc595_Task.h"
+#include "Key_Task.h"
+#include "Led_Task.h"
+#include "Mqtt_Task.h"
+#include "Reader_Task.h"
+#include "Watchdog_Task.h"
+
 
 /*
 *********************************************************************************************************

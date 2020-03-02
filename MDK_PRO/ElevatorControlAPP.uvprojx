@@ -338,7 +338,7 @@
               <MiscControls></MiscControls>
               <Define>STM32F40_41xxx,USE_STDPERIPH_DRIVER</Define>
               <Undefine></Undefine>
-              <IncludePath>..\1McuLayer\STM32F4x7_ETH_Driver\inc;..\1McuLayer\CMSIS;..\1McuLayer\STM32F4xx_StdPeriph_Driver\inc;..\2LowLayer\LED;..\2LowLayer\USART;..\2LowLayer\FLASH;..\2LowLayer\TIME;..\2LowLayer\KEY;..\2LowLayer\FLASH\inc;..\2LowLayer\BEEP;..\2LowLayer\DigitalTube;..\2LowLayer\BSP;..\2LowLayer\ETHERNET;..\2LowLayer\WDG;..\2LowLayer\DIPSWITCH;..\2LowLayer\DS1302;..\2LowLayer\RTC;..\2LowLayer\READER;..\2LowLayer\AT24Cxx;..\2LowLayer\SUART;..\3MiddleLayer\sys;..\3MiddleLayer\delay;..\3MiddleLayer\easyflash\inc;..\3MiddleLayer\ini;..\3MiddleLayer\stmflash;..\3MiddleLayer\ymodem;..\3MiddleLayer\cjson;..\3MiddleLayer\malloc;..\3MiddleLayer\easylogger\inc;..\3MiddleLayer\mqtt;..\4UserLayer;..\5FreeRTOS\portable\RVDS\ARM_CM4F;..\5FreeRTOS\include;..\6LWIP;..\6LWIP\arch;..\6LWIP\lwip-1.4.1\src\include;..\6LWIP\lwip-1.4.1\src\include\ipv4;..\6LWIP\lwip-1.4.1\src\include\netif;..\6LWIP\lwip-1.4.1\src\include\lwip;..\6LWIP\lwip_app\lwip_comm</IncludePath>
+              <IncludePath>..\1McuLayer\STM32F4x7_ETH_Driver\inc;..\1McuLayer\CMSIS;..\1McuLayer\STM32F4xx_StdPeriph_Driver\inc;..\2LowLayer\LED;..\2LowLayer\USART;..\2LowLayer\FLASH;..\2LowLayer\TIME;..\2LowLayer\KEY;..\2LowLayer\FLASH\inc;..\2LowLayer\BEEP;..\2LowLayer\DigitalTube;..\2LowLayer\BSP;..\2LowLayer\ETHERNET;..\2LowLayer\WDG;..\2LowLayer\DIPSWITCH;..\2LowLayer\DS1302;..\2LowLayer\RTC;..\2LowLayer\READER;..\2LowLayer\AT24Cxx;..\2LowLayer\SUART;..\3MiddleLayer\sys;..\3MiddleLayer\delay;..\3MiddleLayer\easyflash\inc;..\3MiddleLayer\ini;..\3MiddleLayer\stmflash;..\3MiddleLayer\ymodem;..\3MiddleLayer\cjson;..\3MiddleLayer\malloc;..\3MiddleLayer\easylogger\inc;..\3MiddleLayer\mqtt;..\4UserLayer;..\5FreeRTOS\portable\RVDS\ARM_CM4F;..\5FreeRTOS\include;..\6LWIP;..\6LWIP\arch;..\6LWIP\lwip-1.4.1\src\include;..\6LWIP\lwip-1.4.1\src\include\ipv4;..\6LWIP\lwip-1.4.1\src\include\netif;..\6LWIP\lwip-1.4.1\src\include\lwip;..\6LWIP\lwip_app\lwip_comm;..\4UserLayer\Apps;..\4UserLayer\Task</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -408,54 +408,24 @@
               <FilePath>..\4UserLayer\system_stm32f4xx.c</FilePath>
             </File>
             <File>
-              <FileName>test.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\4UserLayer\test.c</FilePath>
-            </File>
-            <File>
-              <FileName>comm.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\4UserLayer\comm.c</FilePath>
-            </File>
-            <File>
-              <FileName>tool.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\4UserLayer\tool.c</FilePath>
-            </File>
-            <File>
               <FileName>errorcode.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\4UserLayer\errorcode.c</FilePath>
-            </File>
-            <File>
-              <FileName>mqtt_app.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\4UserLayer\mqtt_app.c</FilePath>
-            </File>
-            <File>
-              <FileName>version.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\4UserLayer\version.c</FilePath>
-            </File>
-            <File>
-              <FileName>mqtt_send.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\4UserLayer\mqtt_send.c</FilePath>
-            </File>
-            <File>
-              <FileName>rs485_process.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\4UserLayer\rs485_process.c</FilePath>
+              <FilePath>..\4UserLayer\Apps\errorcode.c</FilePath>
             </File>
             <File>
               <FileName>eth_cfg.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\4UserLayer\eth_cfg.c</FilePath>
+              <FilePath>..\4UserLayer\Apps\eth_cfg.c</FilePath>
             </File>
             <File>
-              <FileName>mqttclient.c</FileName>
+              <FileName>mqtt_app.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\4UserLayer\mqttclient.c</FilePath>
+              <FilePath>..\4UserLayer\Apps\mqtt_app.c</FilePath>
+            </File>
+            <File>
+              <FileName>test.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\4UserLayer\Apps\test.c</FilePath>
               <FileOption>
                 <CommonProperty>
                   <UseCPPCompiler>2</UseCPPCompiler>
@@ -507,6 +477,76 @@
                   </Cads>
                 </FileArmAds>
               </FileOption>
+            </File>
+            <File>
+              <FileName>tool.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\4UserLayer\Apps\tool.c</FilePath>
+            </File>
+            <File>
+              <FileName>version.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\4UserLayer\Apps\version.c</FilePath>
+            </File>
+            <File>
+              <FileName>CmdHandle.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\4UserLayer\Apps\CmdHandle.c</FilePath>
+            </File>
+            <File>
+              <FileName>FloorDataProc.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\4UserLayer\Apps\FloorDataProc.c</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
+          <GroupName>Task</GroupName>
+          <Files>
+            <File>
+              <FileName>BarCode_Task.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\4UserLayer\Task\BarCode_Task.c</FilePath>
+            </File>
+            <File>
+              <FileName>Comm_Task.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\4UserLayer\Task\Comm_Task.c</FilePath>
+            </File>
+            <File>
+              <FileName>HandShake_Task.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\4UserLayer\Task\HandShake_Task.c</FilePath>
+            </File>
+            <File>
+              <FileName>Hc595_Task.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\4UserLayer\Task\Hc595_Task.c</FilePath>
+            </File>
+            <File>
+              <FileName>Key_Task.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\4UserLayer\Task\Key_Task.c</FilePath>
+            </File>
+            <File>
+              <FileName>Led_Task.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\4UserLayer\Task\Led_Task.c</FilePath>
+            </File>
+            <File>
+              <FileName>Mqtt_Task.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\4UserLayer\Task\Mqtt_Task.c</FilePath>
+            </File>
+            <File>
+              <FileName>Reader_Task.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\4UserLayer\Task\Reader_Task.c</FilePath>
+            </File>
+            <File>
+              <FileName>Watchdog_Task.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\4UserLayer\Task\Watchdog_Task.c</FilePath>
             </File>
           </Files>
         </Group>

@@ -25,19 +25,19 @@
 /*----------------------------------------------*
  * 宏定义                                       *
  *----------------------------------------------*/
-#define MQTT_TASK_PRIO	    (tskIDLE_PRIORITY)
-#define MQTT_STK_SIZE 		(configMINIMAL_STACK_SIZE*2)
+#define MQTT_TASK_PRIO	    (tskIDLE_PRIORITY + 3)
+#define MQTT_STK_SIZE 		(configMINIMAL_STACK_SIZE*16)
 
 /*----------------------------------------------*
  * 常量定义                                     *
  *----------------------------------------------*/
-const char *MqttTaskName = "vMQTTTask";      //看门狗任务名
+const char *MqttTaskName = "vMQTTTask";      
 
 
 /*----------------------------------------------*
  * 模块级变量                                   *
  *----------------------------------------------*/
-TaskHandle_t xHandleTaskMqtt = NULL;      //LED灯
+TaskHandle_t xHandleTaskMqtt = NULL;      //MQTT句柄
 
 
 /*----------------------------------------------*
@@ -45,15 +45,20 @@ TaskHandle_t xHandleTaskMqtt = NULL;      //LED灯
  *----------------------------------------------*/
 static void vTaskMQTT(void *pvParameters);
 
-void CreateMqttTask(void *pvParameters)
+void CreateMqttTask(void)
 {
     //创建LED任务
-    xTaskCreate((TaskFunction_t )vTaskLed,         
-                (const char*    )ledTaskName,       
-                (uint16_t       )LED_STK_SIZE, 
-                (void*          )pvParameters,              
-                (UBaseType_t    )LED_TASK_PRIO,    
-                (TaskHandle_t*  )&xHandleTaskLed);   
-
+    xTaskCreate((TaskFunction_t )vTaskMQTT,         
+                (const char*    )MqttTaskName,       
+                (uint16_t       )MQTT_STK_SIZE, 
+                (void*          )NULL,              
+                (UBaseType_t    )MQTT_TASK_PRIO,    
+                (TaskHandle_t*  )&xHandleTaskMqtt);  
 }
+
+static void vTaskMQTT(void *pvParameters)
+{
+    mqtt_thread();
+}
+
 

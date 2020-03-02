@@ -271,10 +271,8 @@ void ETH_link_callback(struct netif *netif)
 }
 
 
-void StartEthernet(void){
-
-
-    printf("start ethernet opt\r\n");
+void StartEthernet(void)
+{
 	//* ≥ı ºªØLwIP
 	lwip_comm_init();
 	
@@ -283,16 +281,6 @@ void StartEthernet(void){
 #endif
 	
 	StartvLwipComTask(&lwip_netif);
-	//Work in TCPServer mode
-//	StartTcpServerTask();
-	
-	//Work in web mode
-//	StartBasicWEBTask();
-	
-	
-//	StartUdpClientTask();
-	
-//	StartUdpServerTask();
 }
 
 
