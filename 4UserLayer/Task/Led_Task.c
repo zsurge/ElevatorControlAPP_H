@@ -29,7 +29,7 @@
  * 宏定义                                       *
  *----------------------------------------------*/
 #define LED_TASK_PRIO	    (tskIDLE_PRIORITY)
-#define LED_STK_SIZE 		(configMINIMAL_STACK_SIZE*2)
+#define LED_STK_SIZE 		(configMINIMAL_STACK_SIZE)
 
 /*----------------------------------------------*
  * 常量定义                                     *
@@ -67,7 +67,8 @@ static void vTaskLed(void *pvParameters)
     BEEP = 1;
     vTaskDelay(300);
     BEEP = 0;
-    
+
+    printf("start vTaskLed\r\n");
     while(1)
     {  
         if(i == 250)

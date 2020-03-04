@@ -55,18 +55,9 @@
 #define	UART6_RS485_EN	0
 
 
-
-
-
-
 /* RS485芯片发送使能GPIOD, PD7 */
-#define RS485_U5_RX_EN()	    GPIOE->BSRRH = GPIO_Pin_5
-#define RS485_U5_TX_EN()	    GPIOE->BSRRL = GPIO_Pin_5
-
-
-
-
-
+#define RS485_U5_RX_EN()	    GPIOD->BSRRH = GPIO_Pin_7
+#define RS485_U5_TX_EN()	    GPIOD->BSRRL = GPIO_Pin_7
 
 
 /* 定义端口号 */

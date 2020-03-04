@@ -38,7 +38,7 @@
 /*----------------------------------------------*
  * 模块级变量                                   *
  *----------------------------------------------*/
-LOCAL_USER_T gLoalUserData;
+LOCAL_USER_STRU gLoalUserData;
 
 /*----------------------------------------------*
  * 内部函数原型说明                             *
@@ -406,7 +406,7 @@ uint8_t* packetBaseJson(uint8_t *jsonBuff)
 }
 
 
-uint8_t packetPayload(LOCAL_USER_T *localUserData,uint8_t *descJson)
+uint8_t packetPayload(LOCAL_USER_STRU *localUserData,uint8_t *descJson)
 { 
     
     SYSERRORCODE_E result = NO_ERR;

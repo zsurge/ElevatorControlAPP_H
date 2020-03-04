@@ -118,18 +118,19 @@ static void AppTaskCreate (void)
 
     //数码管显示
     CreateHc595Task();
-
-    //MQTT通讯
-    CreateMqttTask();
-
-    //按键
+    
+//    //按键
     CreateKeyTask();
 
     //二合一读卡器
     CreateBarCodeTask();
 
+    //MQTT通讯
+    CreateMqttTask();
+
     //看门狗
-    CreateWatchDogTask();
+    //CreateWatchDogTask();
+
 
 
     //删除本身
@@ -172,7 +173,7 @@ static void AppObjCreate (void)
     //创消息队列，存放刷卡及二维码数据
     
     xTransQueue = xQueueCreate((UBaseType_t ) QUEUE_LEN,/* 消息队列的长度 */
-                              (UBaseType_t ) sizeof(READER_BUFF_T *));/* 消息的大小 */
+                              (UBaseType_t ) sizeof(READER_BUFF_STRU *));/* 消息的大小 */
     if(xTransQueue == NULL)
     {
         App_Printf("创建xTransQueue消息队列失败!\r\n");

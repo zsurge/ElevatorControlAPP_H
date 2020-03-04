@@ -44,12 +44,11 @@
 #include "eth_cfg.h"
 
 
-    
 //用户层头文件
 #include "pub_options.h"
 #include "test.h"
 #include "tool.h"
-#include "comm.h"
+#include "cmdhandle.h"
 #include "version.h"
 #include "mqtt_app.h"
 #include "FloorDataProc.h"
@@ -88,10 +87,6 @@
 */
 
 #include  <bsp.h>
-
-
-
-
 
 #endif
 

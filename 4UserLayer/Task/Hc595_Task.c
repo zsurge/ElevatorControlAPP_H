@@ -25,7 +25,7 @@
  * 宏定义                                       *
  *----------------------------------------------*/
 #define DISPLAY_TASK_PRIO	( tskIDLE_PRIORITY + 2)
-#define DISPLAY_STK_SIZE    (configMINIMAL_STACK_SIZE*4)  
+#define DISPLAY_STK_SIZE    (configMINIMAL_STACK_SIZE)  
 
 /*----------------------------------------------*
  * 常量定义                                     *
@@ -57,6 +57,7 @@ void CreateHc595Task(void)
 
 static void vTaskDisplay(void *pvParameters)
 {
+    printf("start vLwipComTask\r\n");
     while(1)
     {
         bsp_HC595Show(1,2,3);

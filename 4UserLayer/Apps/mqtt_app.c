@@ -124,10 +124,16 @@ MQTT_START:
 				curtick =  xTaskGetTickCount();
 				msgtypes = PINGREQ;
 				log_d ( "send heartbeat!!  set msgtypes = %d \r\n",msgtypes );
-				showTask();
+//				showTask();
 			}
 
 		}
+
+        if(gUpdateDevSn == 1)
+        {
+           msgtypes = CONNECT;
+           gUpdateDevSn = 0;
+        }
         
 //		if(connect_flag == 1)
 //		{
@@ -191,7 +197,7 @@ MQTT_START:
 				break;
 			//订阅主题 客户端订阅请求
 			case SUBSCRIBE://8
-//                            topicString.cstring = DEVICE_SUBSCRIBE;
+//              topicString.cstring = DEVICE_SUBSCRIBE;
 				topicString.cstring = gMqttDevSn.subscribe;
 
 				len = MQTTSerialize_subscribe ( ( unsigned char* ) buf, buflen, 0, msgid, 1, &topicString, &req_qos );
@@ -271,32 +277,21 @@ MQTT_START:
 				break;
 			//心跳请求
 			case PINGREQ://12
-                log_d("before :rc = %d,buf[0] = %02x,buf[1] = %02x,len = %d\r\n",rc,buf[0],buf[1],len);
-			
 				len = MQTTSerialize_pingreq ( ( unsigned char* ) buf, buflen );							//心跳
 				rc = transport_sendPacketBuffer ( gMySock, ( unsigned char* ) buf, len );
-                
-                   
-                
-                log_d("after :rc = %d,buf[0] = %02x,buf[1] = %02x,len = %d\r\n",rc,buf[0],buf[1],len);
+
 				if ( rc == len )
 				{
 					log_d ( "send PINGREQ Successfully\r\n" );
-                    log_d ( "step = %d,time to ping mqtt server to take alive!\r\n",PINGREQ ); 
                     msgtypes = 0; 
 				}
 				else
 				{
-					log_d ( "send PINGREQ failed, gMySock = %d,rc = %d,buf[0] = %02x,buf[1] = %02x,len = %d\r\n",gMySock,rc,buf[0],buf[1],len);
-
-                    BEEP = 1;
-                    vTaskDelay(1000);
-                    BEEP = 0;
+					log_d ( "send PINGREQ failed,\r\n");
 
                     msgtypes = 1; 
                     goto MQTT_reconnect;                    
-				}
-				            
+				}				            
 				break;
 			//心跳响应
 			case PINGRESP://13

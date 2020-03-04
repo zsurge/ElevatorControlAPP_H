@@ -78,7 +78,8 @@ static void vTaskWatchDog(void *pvParameters)
 	bsp_InitIwdg(4095);
 	
 	/* 打印系统开机状态，方便查看系统是否复位 */
-	DBG("系统开机执行\r\n");
+	
+    printf("start vTaskWatchDog\r\n");
 	
     while(1)
     {   

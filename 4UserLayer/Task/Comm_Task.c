@@ -35,7 +35,7 @@
 
  
 #define COMM_TASK_PRIO		(tskIDLE_PRIORITY + 4) 
-#define COMM_STK_SIZE 		(configMINIMAL_STACK_SIZE*8)
+#define COMM_STK_SIZE 		(configMINIMAL_STACK_SIZE*9)
 
 /*----------------------------------------------*
  * 常量定义                                     *
@@ -70,18 +70,29 @@ static void vTaskComm(void *pvParameters)
     uint8_t crc = 0;    
     uint8_t sendBuf[64] = {0};
     
-    READER_BUFF_T *ptMsg;
+    READER_BUFF_STRU *ptMsg;
     BaseType_t xReturn = pdTRUE;/* 定义一个创建信息返回值，默认为pdPASS */
-    const TickType_t xMaxBlockTime = pdMS_TO_TICKS(200); /* 设置最大等待时间为200ms */  
+    const TickType_t xMaxBlockTime = pdMS_TO_TICKS(100); /* 设置最大等待时间为200ms */  
     
     //获取当前设备的ID
     uint16_t readID = bsp_dipswitch_read();
+    
+
+ 	/* 初始化结构体指针 */
+	ptMsg = &gReaderMsg;
+	
+	/* 清零 */
+    ptMsg->authMode = 0; //默认为刷卡
+    ptMsg->dataLen = 0;
+    memset(ptMsg->data,0x00,sizeof(ptMsg->data)); 
 
     log_d("current dev addr =%d\r\n",readID);
+
+    log_d("start vTaskComm\r\n");   
     
     while (1)
     {
-//        recvLen = RS485_Recv(COM5,buf,MAX_CMD_LEN);
+//        recvLen = RS485_Recv(COM4,buf,MAX_CMD_LEN);
 //        
 //        //判定数据的有效性
 //        if(recvLen != MAX_CMD_LEN || buf[0] != CMD_STX || buf[1]<1 || buf[1]>4)
@@ -98,13 +109,15 @@ static void vTaskComm(void *pvParameters)
 //            continue;
 //        }
         
-//        if(buf[1] == readID)
+        if(buf[1] == readID)
         {
             xReturn = xQueueReceive( xTransQueue,    /* 消息队列的句柄 */
                                      (void *)&ptMsg,  /*这里获取的是结构体的地址 */
                                      xMaxBlockTime); /* 设置阻塞时间 */
             if(pdTRUE == xReturn)
             {
+                log_d("receve queue data\r\n");  
+                log_d("<<<<<<<<<<<pQueue->authMode>>>>>>>>>>>>:%d\r\n",ptMsg->authMode);
                 //消息接收成功，发送接收到的消息
                 packetSendBuf(ptMsg,sendBuf);     
             }

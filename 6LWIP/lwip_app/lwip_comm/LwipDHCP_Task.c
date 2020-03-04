@@ -100,7 +100,9 @@ static void vLwipDHCPTask( void *pvParameters )
     uint8_t lwipdevip[4] = {0};       //本机IP地址
 	uint8_t lwipdevnetmask[4] = {0}; 	//子网掩码
 	uint8_t lwipdevgateway[4] = {0};
-    
+
+
+    printf("start vLwipDHCPTask\r\n");
 	while(1)
 	{
 		switch (GetGB_DHCPState())

@@ -35,7 +35,7 @@
 #include "eth_cfg.h"
 #include "bsp_rtc.h"
 
-#define LOG_TAG    "comm"
+#define LOG_TAG    "CmdHandle"
 #include "elog.h"						
 
 
@@ -56,7 +56,9 @@
  *----------------------------------------------*/
 int gConnectStatus = 0;
 int	gMySock = 0;
-READER_BUFF_T gReaderMsg;
+uint8_t gUpdateDevSn = 0; 
+
+READER_BUFF_STRU gReaderMsg;
 
 static SYSERRORCODE_E SendToQueue(uint8_t *buf,int len,uint8_t authMode);
 
@@ -154,7 +156,7 @@ static SYSERRORCODE_E SendToQueue(uint8_t *buf,int len,uint8_t authMode)
 {
     SYSERRORCODE_E result = NO_ERR;
 
-    READER_BUFF_T *ptQR; 
+    READER_BUFF_STRU *ptQR; 
     /* 初始化结构体指针 */
     ptQR = &gReaderMsg;
 
@@ -577,7 +579,7 @@ static SYSERRORCODE_E DelCard( uint8_t* msgBuf )
         return STR_EMPTY_ERR;
     }
 
-    //1.保存卡号和用户ID
+    //1.获取卡号和用户ID
     strcpy((char *)userId,(const char *)GetJsonItem((const uint8_t *)msgBuf,(const uint8_t *)"userId",1));   
     strcpy((char *)cardNo,(const char *)GetJsonItem((const uint8_t *)msgBuf,(const uint8_t *)"cardNo",1));
     log_d("cardNo = %s，userId = %s\r\n",cardNo,userId);
@@ -1122,8 +1124,9 @@ static SYSERRORCODE_E SetLocalSn( uint8_t* msgBuf )
 
     PublishData(buf,len);
 
-
     ReadLocalDevSn();
+
+    gUpdateDevSn = 1;
 
     return result;
 

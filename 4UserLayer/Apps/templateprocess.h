@@ -5,14 +5,12 @@
  ******************************************************************************
   文 件 名   : templateprocess.h
   版 本 号   : 初稿
-  作    者   : 张舵
   生成日期   : 2020年1月10日
-  最近修改   :
-  功能描述   : 模版参数处理头文件件
+  最近修改   
+  功能描述   : 模版参数处理头文件
   函数列表   :
   修改历史   :
   1.日    期   : 2020年1月10日
-    作    者   : 张舵
     修改内容   : 创建文件
 
 ******************************************************************************/
@@ -40,37 +38,59 @@ typedef struct
     uint8_t updateUserId[12];
     uint8_t updateUserName[20];
     uint8_t createTime[20];
-}CREATOR_INFO_T;
+}CREATOR_INFO_STRU;
+
+
 
 //呼梯方式
-typedef enum {
-    FACE,
-    QR_CODE,
-    IC_CARD,
-    APPOINTMENT,
-    REMOTE
-} CALL_MODE;
+//typedef struct {
+//    uint8_t isFace;
+//    uint8_t isBarCode;
+//    uint8_t isCard;
+//    uint8_t isAppointment;
+//    uint8_t isRemote;
+//} CALL_MODE_T;
 
 //工作模式 一般/高峰/节假日
-typedef enum {
-    PEAKMODE,
-    HELIDAYMODE    
-} WORK_TYPE;
+//typedef struct {
+//    uint8_t isNormalMode;
+//    uint8_t isPeakMode;
+//    uint8_t isHolidayMode;
+//} WORK_TYPE;
+
 
 typedef struct
 {
-    WORK_TYPE wMode;
-    uint8_t beginTimep[20];
+    uint8_t channelType;//通道类型 1、智慧通道 2、梯控
+    uint8_t voiceSize;
+    uint8_t templateType;//模板模式类型 1、高峰模式 2、节假日模式
+    uint8_t startTime[20];
+    uint8_t endTime[20];
+}SPEC_TEMPLATLE_DATA_STRU;
+
+
+typedef struct 
+{
+    uint8_t callingWay[8];
+    uint8_t beginTime[20];
     uint8_t endTime[20];
     uint8_t outsideTime[20];
-}WORK_MODE_T;
+    uint8_t outsideTime[20];          
+}SPEC_TEMPLATELE_SET_STRU;
 
 
 typedef struct
 {
-    WORK_MODE_T workMode;
-    CREATOR_INFO_T creatorInfo;
-    CALL_MODE callMode;
+    uint8_t templateCode[20];
+    uint8_t templateName[50];
+    uint8_t templateStatus[8];
+    uint8_t callingWay[8];
+    uint8_t offlineProcessing[8];
+    SPEC_TEMPLATLE_DATA_STRU peakMode[3];
+    SPEC_TEMPLATLE_DATA_STRU hoildayMode[3];
+    SPEC_TEMPLATELE_SET_STRU peakInfo[1];
+    SPEC_TEMPLATELE_SET_STRU hoildayInfo[1];
+    CREATOR_INFO_STRU creatorInfo;
 }TMEPLATE_T;
     
 

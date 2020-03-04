@@ -53,7 +53,7 @@ typedef struct
     char sn[32];
     char publish[128];
     char subscribe[128];
-}MQTT_DEVICE_SN_T;
+}MQTT_DEVICE_SN_STRU;
 
 
 /*----------------------------------------------*
@@ -63,7 +63,7 @@ typedef struct
 /*----------------------------------------------*
  * 模块级变量                                   *
  *----------------------------------------------*/
-extern MQTT_DEVICE_SN_T gMqttDevSn;
+extern MQTT_DEVICE_SN_STRU gMqttDevSn;
 /*----------------------------------------------*
  * 内部函数原型说明                             *
  *----------------------------------------------*/

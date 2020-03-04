@@ -59,10 +59,10 @@ typedef struct
     uint8_t authMode;                  //鉴权模式,刷卡=2；QR=7
     uint8_t defaultLayer;                       //默认楼层        
     
-}LOCAL_USER_T;
+}LOCAL_USER_STRU;
 #pragma pack()
 
-extern LOCAL_USER_T gLoalUserData;
+extern LOCAL_USER_STRU gLoalUserData;
 
 
 /*----------------------------------------------*
@@ -88,7 +88,7 @@ SYSERRORCODE_E packetJson(uint8_t *buf);
 //
 SYSERRORCODE_E parseJson(uint8_t *json);
 
-uint8_t packetPayload(LOCAL_USER_T *localUserData,uint8_t *descJson);
+uint8_t packetPayload(LOCAL_USER_STRU *localUserData,uint8_t *descJson);
 
 
 

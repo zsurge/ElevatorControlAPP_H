@@ -30,8 +30,8 @@
 /*----------------------------------------------*
  * 宏定义                                       *
  *----------------------------------------------*/
-#define BARCODE_TASK_PRIO		( tskIDLE_PRIORITY + 1)
-#define BARCODE_STK_SIZE 		(configMINIMAL_STACK_SIZE*9)
+#define BARCODE_TASK_PRIO		(tskIDLE_PRIORITY + 1)
+#define BARCODE_STK_SIZE 		(configMINIMAL_STACK_SIZE*4)
 
 /*----------------------------------------------*
  * 常量定义                                     *
@@ -66,20 +66,22 @@ static void vTaskBarCode(void *pvParameters)
     uint8_t recv_buf[255] = {0};
     uint16_t len = 0; 
 
-    READER_BUFF_T *ptQR; 
+    READER_BUFF_STRU *ptQR; 
  	/* 初始化结构体指针 */
 	ptQR = &gReaderMsg;
 	
 	/* 清零 */
-    ptQR->authMode = AUTH_MODE_CARD; //默认为刷卡
+    ptQR->authMode = 0; 
     ptQR->dataLen = 0;
     memset(ptQR->data,0x00,sizeof(ptQR->data)); 
-    
+
+    log_d("start vTaskBarCode\r\n");
     while(1)
     {   
-           memset(recv_buf,0x00,sizeof(recv_buf));
+           memset(recv_buf,0x00,sizeof(recv_buf));           
            len = RS485_RecvAtTime(COM5,recv_buf,sizeof(recv_buf),800);
-           if(recv_buf[len-1] == 0x00 && len > 0)
+           
+           if(recv_buf[len-1] == 0x00 && len > 1)
            {
                 len -= 1; //这里不知道为什么会多了一个0x00
            }
@@ -89,27 +91,32 @@ static void vTaskBarCode(void *pvParameters)
                 log_d("reader = %s\r\n",recv_buf);      
 
                 //判定是刷卡还是QR
-                //if(strstr_t(recv_buf,"CARD") == NULL)
-                if(len > 50)
+                if(strstr_t(recv_buf,"CARD") == NULL)
                 {
                     //QR
                     ptQR->authMode = AUTH_MODE_QR;
-                }                               
+                }
+                else
+                {
+                    ptQR->authMode = AUTH_MODE_CARD;
+                }
 
                 ptQR->dataLen = len;                
                 memcpy(ptQR->data,recv_buf,len);
 
+                log_d("<<<<<<<<<<<pQueue->authMode>>>>>>>>>>>>:%d\r\n",ptQR->authMode);
+
     			/* 使用消息队列实现指针变量的传递 */
     			if(xQueueSend(xTransQueue,              /* 消息队列句柄 */
     						 (void *) &ptQR,   /* 发送指针变量recv_buf的地址 */
-    						 (TickType_t)50) != pdPASS )
+    						 (TickType_t)100) != pdPASS )
     			{
-                    DBG("the queue is full!\r\n");                
+                    log_d("the queue is full!\r\n");                
                     xQueueReset(xTransQueue);
                 } 
                 else
                 {
-                    dbh("QR",(char *)recv_buf,len);
+                    dbh("the queue is send success",(char *)recv_buf,len);
                 }                
            }
     

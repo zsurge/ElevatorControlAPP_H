@@ -45,7 +45,7 @@
 /*----------------------------------------------*
  * 内部函数原型说明                             *
  *----------------------------------------------*/
-static SYSERRORCODE_E packetToElevator(LOCAL_USER_T *localUserData,uint8_t *buff);
+static SYSERRORCODE_E packetToElevator(LOCAL_USER_STRU *localUserData,uint8_t *buff);
 static void calcFloor(uint8_t layer,uint8_t regMode,uint8_t *src,uint8_t *outFloor);
 
 
@@ -62,13 +62,13 @@ void packetDefaultSendBuf(uint8_t *buf)
 }
 
 
-void packetSendBuf(READER_BUFF_T *pQueue,uint8_t *buf)
+void packetSendBuf(READER_BUFF_STRU *pQueue,uint8_t *buf)
 {
     uint8_t jsonBuf[JSON_ITEM_MAX_LEN] = {0};
     uint8_t sendBuf[64] = {0};
     uint16_t len = 0;
     uint16_t ret = 0;
-    LOCAL_USER_T *localUserData= &gLoalUserData;
+    LOCAL_USER_STRU *localUserData= &gLoalUserData;
     
     sendBuf[0] = CMD_STX;
     sendBuf[1] = bsp_dipswitch_read();
@@ -83,7 +83,7 @@ void packetSendBuf(READER_BUFF_T *pQueue,uint8_t *buf)
     localUserData->authMode = 0;
     
 //    memcpy(buf,sendBuf,MAX_SEND_LEN);
-
+    
 
     switch(pQueue->authMode)
     {
@@ -105,7 +105,6 @@ void packetSendBuf(READER_BUFF_T *pQueue,uint8_t *buf)
             packetPayload(localUserData,jsonBuf); 
 
             len = strlen(jsonBuf);
-            log_d("jsonBuf = %s,len = %d\r\n",jsonBuf,len);
 
             len = PublishData(jsonBuf,len);
             log_d("send = %d\r\n",len);            
@@ -124,12 +123,13 @@ void packetSendBuf(READER_BUFF_T *pQueue,uint8_t *buf)
             break;
 
         default:
+            log_d("invalid authMode\r\n");
             break;    
    }
 
 }
 
-SYSERRORCODE_E authReader(READER_BUFF_T *pQueue,LOCAL_USER_T *localUserData)
+SYSERRORCODE_E authReader(READER_BUFF_STRU *pQueue,LOCAL_USER_STRU *localUserData)
 {
     SYSERRORCODE_E result = NO_ERR;
     char value[128] = {0};
@@ -222,7 +222,7 @@ SYSERRORCODE_E authReader(READER_BUFF_T *pQueue,LOCAL_USER_T *localUserData)
     return result;
 }
 
-SYSERRORCODE_E authRemote(READER_BUFF_T *pQueue,LOCAL_USER_T *localUserData)
+SYSERRORCODE_E authRemote(READER_BUFF_STRU *pQueue,LOCAL_USER_STRU *localUserData)
 {
     SYSERRORCODE_E result = NO_ERR;
     char value[128] = {0};
@@ -294,7 +294,7 @@ SYSERRORCODE_E authRemote(READER_BUFF_T *pQueue,LOCAL_USER_T *localUserData)
 
 }
 
-static SYSERRORCODE_E packetToElevator(LOCAL_USER_T *localUserData,uint8_t *buff)
+static SYSERRORCODE_E packetToElevator(LOCAL_USER_STRU *localUserData,uint8_t *buff)
 {
     SYSERRORCODE_E result = NO_ERR;
     uint8_t oneLayer[8] = {0};

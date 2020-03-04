@@ -33,7 +33,7 @@
  * 宏定义                                       *
  *----------------------------------------------*/
 #define HANDSHAKE_TASK_PRIO	( tskIDLE_PRIORITY)
-#define HANDSHAKE_STK_SIZE  (configMINIMAL_STACK_SIZE*8)
+#define HANDSHAKE_STK_SIZE  (configMINIMAL_STACK_SIZE)
 
 /*----------------------------------------------*
  * 常量定义                                     *
@@ -57,6 +57,9 @@ static void vTaskHandShake(void *pvParameters)
     uint32_t i_boot_times = NULL;
     char *c_old_boot_times, c_new_boot_times[12] = {0};
     uint8_t bcdbuf[6] = {0};  
+
+
+    log_d("start vTaskHandShake\r\n");
     
     /* get the boot count number from Env */
     c_old_boot_times = ef_get_env("boot_times");

@@ -58,6 +58,7 @@ void CreateMqttTask(void)
 
 static void vTaskMQTT(void *pvParameters)
 {
+    printf("start vLwipComTask\r\n");
     mqtt_thread();
 }
 

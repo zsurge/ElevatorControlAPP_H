@@ -51,13 +51,14 @@ typedef struct
     uint8_t data[QUEUE_BUF_LEN];         //需要发送给服务器的数据
     uint8_t authMode;                     //鉴权模式,刷卡=2；QR=7
     uint8_t dataLen;                     //数据长度    
-}READER_BUFF_T;
+}READER_BUFF_STRU;
 #pragma pack()
 
-extern READER_BUFF_T gReaderMsg;
+extern READER_BUFF_STRU gReaderMsg;
 
 extern int gConnectStatus;
-extern int  gMySock;
+extern int gMySock;
+extern uint8_t gUpdateDevSn; 
 
 //发送消息到服务器
 int PublishData(uint8_t *payload_out,uint16_t payload_out_len); 
