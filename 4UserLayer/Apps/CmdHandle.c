@@ -43,7 +43,7 @@
 /*----------------------------------------------*
  * 宏定义                                       *
  *----------------------------------------------*/
-#define DIM(x)  (sizeof(x)/sizeof(x[0]))
+#define DIM(x)  (sizeof(x)/sizeof(x[0])) //计算数组长度
 
 
 /*----------------------------------------------*
@@ -61,7 +61,6 @@ uint8_t gUpdateDevSn = 0;
 READER_BUFF_STRU gReaderMsg;
 
 static SYSERRORCODE_E SendToQueue(uint8_t *buf,int len,uint8_t authMode);
-
 static SYSERRORCODE_E OpenDoor ( uint8_t* msgBuf ); //开门
 static SYSERRORCODE_E AbnormalAlarm ( uint8_t* msgBuf ); //远程报警
 static SYSERRORCODE_E AddCardNo ( uint8_t* msgBuf ); //添加卡号
@@ -94,8 +93,8 @@ typedef SYSERRORCODE_E ( *cmd_fun ) ( uint8_t *msgBuf );
 
 typedef struct
 {
-	const char* cmd_id;            /* 命令id */
-	cmd_fun  fun_ptr;     /* 函数指针 */
+	const char* cmd_id;             /* 命令id */
+	cmd_fun  fun_ptr;               /* 函数指针 */
 } CMD_HANDLE_T;
 
 CMD_HANDLE_T CmdList[] =
@@ -620,6 +619,9 @@ SYSERRORCODE_E GetTemplateParam ( uint8_t* msgBuf )
     {
         return STR_EMPTY_ERR;
     }
+
+    //保存模板数据
+    saveTemplateParam(msgBuf);
     
     result = modifyJsonItem(packetBaseJson(msgBuf),"status","1",1,buf);
 

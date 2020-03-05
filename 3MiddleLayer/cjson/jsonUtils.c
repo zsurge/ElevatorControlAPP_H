@@ -24,6 +24,7 @@
 #include "version.h"
 #include "bsp_rtc.h"
 #include "eth_cfg.h"
+#include "templateprocess.h"
 
 /*----------------------------------------------*
  * 宏定义                                       *
@@ -39,6 +40,7 @@
  * 模块级变量                                   *
  *----------------------------------------------*/
 LOCAL_USER_STRU gLoalUserData;
+TEMPLATE_PARAM_STRU gTemplateParam;
 
 /*----------------------------------------------*
  * 内部函数原型说明                             *
@@ -462,5 +464,70 @@ uint8_t packetPayload(LOCAL_USER_STRU *localUserData,uint8_t *descJson)
     return result;
 
 }
+
+
+//保存模板信息
+SYSERRORCODE_E saveTemplateParam(uint8_t *jsonBuff)
+{
+    SYSERRORCODE_E result = NO_ERR;
+    cJSON* root,*data,*templateData,*templateMap,*holidayTimeMap,*peakTimeMap;   
+
+    TEMPLATE_PARAM_STRU *templateParam = &gTemplateParam; 
+    int array_cnt = 0,index = 0;
+
+    root = cJSON_Parse((char *)jsonBuff);    //解析数据包
+    if (!root)  
+    {  
+    cJSON_Delete(root);
+    log_d("Error before: [%s]\r\n",cJSON_GetErrorPtr());  
+    return CJSON_PARSE_ERR;
+    } 
+
+    data = cJSON_GetObjectItem(root, "data");
+
+    templateData = cJSON_GetObjectItem(data, "template");
+
+    templateMap = cJSON_GetObjectItem(templateData, "templateMap");
+
+    holidayTimeMap = cJSON_GetObjectItem(templateData, "holidayTimeMap");
+
+    templateData = cJSON_GetObjectItem(templateData, "peakTimeMap");
+
+    
+//--------------------------------------------------    
+    //获取templateMap数据
+    cJSON *json_id = cJSON_GetObjectItem(templateMap, "id");
+
+    templateParam->id = json_id->valueint;
+
+
+    
+//--------------------------------------------------
+    //存储hoildayTimeMap中数据
+    array_cnt = cJSON_GetArraySize(holidayTimeMap); /*获取数组长度*/
+    log_d("array len = %d\r\n",array_cnt);
+
+    for(index=0; index<array_cnt; index++)
+    {
+        cJSON *tmpHoliday = cJSON_GetArrayItem(holidayTimeMap, index);
+        
+        cJSON *templateType = cJSON_GetObjectItem(tmpHoliday, "templateType");
+
+        log_d("templateType = %s\r\n",templateType->string);
+    }
+    
+
+//--------------------------------------------------
+
+
+
+    
+
+    
+    cJSON_Delete(root);
+
+    return result;
+}
+
 
 

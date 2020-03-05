@@ -36,8 +36,7 @@ typedef struct
     uint8_t createTime[20];
     uint8_t createCompanyId[12];
     uint8_t updateUserId[12];
-    uint8_t updateUserName[20];
-    uint8_t createTime[20];
+    uint8_t updateUserName[20];    
 }CREATOR_INFO_STRU;
 
 
@@ -66,7 +65,7 @@ typedef struct
     uint8_t templateType;//模板模式类型 1、高峰模式 2、节假日模式
     uint8_t startTime[20];
     uint8_t endTime[20];
-}SPEC_TEMPLATLE_DATA_STRU;
+}TEMPLATE_BASE_DATA_STRU;
 
 
 typedef struct 
@@ -74,24 +73,25 @@ typedef struct
     uint8_t callingWay[8];
     uint8_t beginTime[20];
     uint8_t endTime[20];
-    uint8_t outsideTime[20];
-    uint8_t outsideTime[20];          
-}SPEC_TEMPLATELE_SET_STRU;
+    uint8_t outsideTimeMode[20];
+    uint8_t outsideTimeData[20];          
+}TEMPLATE_SET_DATA_STRU;
 
 
 typedef struct
 {
+    uint8_t id;
     uint8_t templateCode[20];
     uint8_t templateName[50];
     uint8_t templateStatus[8];
     uint8_t callingWay[8];
     uint8_t offlineProcessing[8];
-    SPEC_TEMPLATLE_DATA_STRU peakMode[3];
-    SPEC_TEMPLATLE_DATA_STRU hoildayMode[3];
-    SPEC_TEMPLATELE_SET_STRU peakInfo[1];
-    SPEC_TEMPLATELE_SET_STRU hoildayInfo[1];
+    TEMPLATE_BASE_DATA_STRU peakMode[3];
+    TEMPLATE_BASE_DATA_STRU hoildayMode[3];
+    TEMPLATE_SET_DATA_STRU peakInfo[1];
+    TEMPLATE_SET_DATA_STRU hoildayInfo[1];
     CREATOR_INFO_STRU creatorInfo;
-}TMEPLATE_T;
+}TEMPLATE_PARAM_STRU;
     
 
 //
@@ -99,7 +99,7 @@ typedef struct
 /*----------------------------------------------*
  * 模块级变量                                   *
  *----------------------------------------------*/
-
+extern TEMPLATE_PARAM_STRU gTemplateParam;
 /*----------------------------------------------*
  * 内部函数原型说明                             *
  *----------------------------------------------*/

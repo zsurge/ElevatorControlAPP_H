@@ -75,11 +75,13 @@ SYSERRORCODE_E modifyJsonItem(const uint8_t *srcJson,const uint8_t *item,const u
 //获取指定项目的值
 uint8_t* GetJsonItem ( const uint8_t* jsonBuff,const uint8_t* item,uint8_t isSubitem);
 
+//通用函数，组成基的返回数据包
 uint8_t* packetBaseJson(uint8_t *jsonBuff);
 
 //对设备信息进行打包
 SYSERRORCODE_E PacketDeviceInfo ( const uint8_t* jsonBuff,const uint8_t* descJson);
 
+//打包APP升级后需上送的数据
 SYSERRORCODE_E upgradeDataPacket(uint8_t *descBuf);
 
 //打包
@@ -90,6 +92,10 @@ SYSERRORCODE_E parseJson(uint8_t *json);
 
 uint8_t packetPayload(LOCAL_USER_STRU *localUserData,uint8_t *descJson);
 
+
+
+//保存模板信息
+SYSERRORCODE_E saveTemplateParam(uint8_t *jsonBuff);
 
 
 #endif
