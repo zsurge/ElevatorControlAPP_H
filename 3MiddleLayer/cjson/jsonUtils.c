@@ -471,59 +471,129 @@ SYSERRORCODE_E saveTemplateParam(uint8_t *jsonBuff)
 {
     SYSERRORCODE_E result = NO_ERR;
     cJSON* root,*data,*templateData,*templateMap,*holidayTimeMap,*peakTimeMap;   
+    cJSON* tmpArray,*arrayElement;
 
     TEMPLATE_PARAM_STRU *templateParam = &gTemplateParam; 
-    int array_cnt = 0,index = 0;
+    int holidayTimeMapCnt=0,peakTimeMapCnt=0,index = 0;
 
     root = cJSON_Parse((char *)jsonBuff);    //解析数据包
     if (!root)  
     {  
-    cJSON_Delete(root);
-    log_d("Error before: [%s]\r\n",cJSON_GetErrorPtr());  
-    return CJSON_PARSE_ERR;
+        cJSON_Delete(root);
+        log_d("Error before: [%s]\r\n",cJSON_GetErrorPtr());  
+        return CJSON_PARSE_ERR;
     } 
 
     data = cJSON_GetObjectItem(root, "data");
+    if(data == NULL)
+    {
+        log_d("data NULL\r\n");
+        result = CJSON_GETITEM_ERR;
+        goto ERROR;
+        
+    }    
 
     templateData = cJSON_GetObjectItem(data, "template");
+    if(templateMap == NULL)
+    {
+        log_d("templateData NULL\r\n");
+        result = CJSON_GETITEM_ERR;
+        goto ERROR;
+
+    }    
 
     templateMap = cJSON_GetObjectItem(templateData, "templateMap");
+    if(templateMap == NULL)
+    {
+        log_d("templateMap NULL\r\n");
+        result = CJSON_GETITEM_ERR;
+        goto ERROR;
+    }
 
-    holidayTimeMap = cJSON_GetObjectItem(templateData, "holidayTimeMap");
+    holidayTimeMap = cJSON_GetObjectItem(templateData, "hoildayTimeMap");
+    if(holidayTimeMap == NULL)
+    {
+        log_d("hoildayTimeMap NULL\r\n");
+        result = CJSON_GETITEM_ERR;
+        goto ERROR;
+    }
 
-    templateData = cJSON_GetObjectItem(templateData, "peakTimeMap");
+    peakTimeMap = cJSON_GetObjectItem(templateData, "peakTimeMap");
+    if(peakTimeMap ==NULL)
+    {
+        log_d("peakTimeMap NULL\r\n");
+        result = CJSON_GETITEM_ERR;
+        goto ERROR;
+    }
 
     
 //--------------------------------------------------    
     //获取templateMap数据
     cJSON *json_id = cJSON_GetObjectItem(templateMap, "id");
-
     templateParam->id = json_id->valueint;
+    log_d("templateParam->id = %d\r\n",templateParam->id);
 
 
     
 //--------------------------------------------------
     //存储hoildayTimeMap中数据
-    array_cnt = cJSON_GetArraySize(holidayTimeMap); /*获取数组长度*/
-    log_d("array len = %d\r\n",array_cnt);
+    holidayTimeMapCnt = cJSON_GetArraySize(holidayTimeMap); /*获取数组长度*/
+    log_d("array len = %d\r\n",holidayTimeMapCnt);
 
-    for(index=0; index<array_cnt; index++)
+    for(index=0; index<holidayTimeMapCnt; index++)
     {
-        cJSON *tmpHoliday = cJSON_GetArrayItem(holidayTimeMap, index);
+        tmpArray = cJSON_GetArrayItem(holidayTimeMap, index);
         
-        cJSON *templateType = cJSON_GetObjectItem(tmpHoliday, "templateType");
+        arrayElement = cJSON_GetObjectItem(tmpArray, "templateType");
+        templateParam->hoildayMode[index].templateType = arrayElement->valueint;
+        log_d("templateType = %d\r\n",templateParam->hoildayMode[index].templateType);
 
-        log_d("templateType = %s\r\n",templateType->string);
+        arrayElement = cJSON_GetObjectItem(tmpArray, "voiceSize");
+        templateParam->hoildayMode[index].voiceSize = arrayElement->valueint;        
+        log_d("voiceSize = %d\r\n",templateParam->hoildayMode[index].voiceSize);
+        
+        arrayElement = cJSON_GetObjectItem(tmpArray, "modeType");
+        templateParam->hoildayMode[index].channelType = arrayElement->valueint;
+        log_d("modeType = %d\r\n",templateParam->hoildayMode[index].channelType);
+        
+        arrayElement = cJSON_GetObjectItem(tmpArray, "startTime");
+        strcpy(templateParam->hoildayMode[index].startTime,arrayElement->valuestring);
+        log_d("startTime = %s\r\n",templateParam->hoildayMode[index].startTime);
+        
+        arrayElement = cJSON_GetObjectItem(tmpArray, "endTime");
+        strcpy(templateParam->hoildayMode[index].endTime,arrayElement->valuestring);        
+        log_d("endTime = %s\r\n",templateParam->hoildayMode[index].endTime);        
     }
     
-
+    log_d("=====================================================\r\n");
 //--------------------------------------------------
+    peakTimeMapCnt = cJSON_GetArraySize(peakTimeMap); /*获取数组长度*/
+    log_d("peakTimeMapCnt len = %d\r\n",peakTimeMapCnt);
 
+    for(index=0; index<peakTimeMapCnt; index++)
+    {
+        tmpArray = cJSON_GetArrayItem(peakTimeMap, index);
+        
+        arrayElement = cJSON_GetObjectItem(tmpArray, "templateType");
+        log_d("templateType = %d\r\n",arrayElement->valueint);
+
+        arrayElement = cJSON_GetObjectItem(tmpArray, "voiceSize");
+        log_d("voiceSize = %d\r\n",arrayElement->valueint);
+        
+        arrayElement = cJSON_GetObjectItem(tmpArray, "modeType");
+        log_d("modeType = %d\r\n",arrayElement->valueint);
+        
+        arrayElement = cJSON_GetObjectItem(tmpArray, "startTime");
+        log_d("startTime = %s\r\n",arrayElement->valuestring);
+        
+        arrayElement = cJSON_GetObjectItem(tmpArray, "endTime");
+        log_d("endTime = %s\r\n",arrayElement->valuestring);
+        
+    }
 
 
     
-
-    
+ERROR:  
     cJSON_Delete(root);
 
     return result;

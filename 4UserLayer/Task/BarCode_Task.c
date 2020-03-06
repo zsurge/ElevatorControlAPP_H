@@ -69,61 +69,66 @@ static void vTaskBarCode(void *pvParameters)
     READER_BUFF_STRU *ptQR; 
  	/* 初始化结构体指针 */
 	ptQR = &gReaderMsg;
-	
-	/* 清零 */
-    ptQR->authMode = 0; 
-    ptQR->dataLen = 0;
-    memset(ptQR->data,0x00,sizeof(ptQR->data)); 
 
     log_d("start vTaskBarCode\r\n");
     while(1)
     {   
-           memset(recv_buf,0x00,sizeof(recv_buf));           
-           len = RS485_RecvAtTime(COM5,recv_buf,sizeof(recv_buf),800);
-           
-           if(recv_buf[len-1] == 0x00 && len > 1)
-           {
-                len -= 1; //这里不知道为什么会多了一个0x00
-           }
-           
-           if(len > 0  && recv_buf[len-1] == 0x0A && recv_buf[len-2] == 0x0D)
-           {
-                log_d("reader = %s\r\n",recv_buf);      
+        /* 清零 */
+        ptQR->authMode = 0; 
+        ptQR->dataLen = 0;
+        memset(ptQR->data,0x00,sizeof(ptQR->data)); 
 
-                //判定是刷卡还是QR
-                if(strstr_t(recv_buf,"CARD") == NULL)
-                {
-                    //QR
-                    ptQR->authMode = AUTH_MODE_QR;
-                }
-                else
-                {
-                    ptQR->authMode = AUTH_MODE_CARD;
-                }
+        memset(recv_buf,0x00,sizeof(recv_buf));           
+        len = RS485_RecvAtTime(COM5,recv_buf,sizeof(recv_buf),800);
 
-                ptQR->dataLen = len;                
-                memcpy(ptQR->data,recv_buf,len);
+        if(recv_buf[len-1] == 0x00 && len > 1)
+        {
+            len -= 1; //这里不知道为什么会多了一个0x00
+        }
+       
+        if(len > 0  && recv_buf[len-1] == 0x0A && recv_buf[len-2] == 0x0D)
+        {
+            log_d("reader = %s\r\n",recv_buf);      
 
-                log_d("<<<<<<<<<<<pQueue->authMode>>>>>>>>>>>>:%d\r\n",ptQR->authMode);
+            //判定是刷卡还是QR
+            if(strstr_t(recv_buf,"CARD") == NULL)
+            {
+                //QR
+                ptQR->authMode = AUTH_MODE_QR;
+            }
+            else
+            {
+                ptQR->authMode = AUTH_MODE_CARD;
+            }
 
-    			/* 使用消息队列实现指针变量的传递 */
-    			if(xQueueSend(xTransQueue,              /* 消息队列句柄 */
-    						 (void *) &ptQR,   /* 发送指针变量recv_buf的地址 */
-    						 (TickType_t)100) != pdPASS )
-    			{
-                    log_d("the queue is full!\r\n");                
-                    xQueueReset(xTransQueue);
-                } 
-                else
-                {
-                    dbh("the queue is send success",(char *)recv_buf,len);
-                }                
-           }
-    
+            if(len > QUEUE_BUF_LEN)
+            {
+                len = QUEUE_BUF_LEN;
+            }              
+            ptQR->dataLen = len;
+            
+            memcpy(ptQR->data,recv_buf,len);  
 
-		/* 发送事件标志，表示任务正常运行 */        
-		xEventGroupSetBits(xCreatedEventGroup, TASK_BIT_5);  
-        vTaskDelay(300);        
+            log_d("<<<<<<<<<<<pQueue->authMode>>>>>>>>>>>>:%d\r\n",ptQR->authMode);
+
+        	/* 使用消息队列实现指针变量的传递 */
+        	if(xQueueSend(xTransQueue,              /* 消息队列句柄 */
+        				 (void *) &ptQR,   /* 发送指针变量recv_buf的地址 */
+        				 (TickType_t)100) != pdPASS )
+        	{
+                log_d("the queue is full!\r\n");                
+                xQueueReset(xTransQueue);
+            } 
+            else
+            {
+                dbh("the queue is send success",(char *)recv_buf,len);
+            }                
+        }
+
+
+	/* 发送事件标志，表示任务正常运行 */        
+	xEventGroupSetBits(xCreatedEventGroup, TASK_BIT_5);  
+    vTaskDelay(300);        
     }
 }
 

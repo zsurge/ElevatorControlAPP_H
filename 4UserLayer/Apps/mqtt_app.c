@@ -266,14 +266,17 @@ MQTT_START:
 			//发布收到 QoS2 第一步
 			case PUBREC://5
 				log_d ( "step = %d,PUBREC!\r\n",PUBREC );     				//just for qos2
+				msgtypes = 0;
 				break;
 			//发布释放 QoS2 第二步
 			case PUBREL://6
 				log_d ( "step = %d,PUBREL!\r\n",PUBREL );        			//just for qos2
+				msgtypes = 0;
 				break;
 			//发布完成 QoS2 第三步
 			case PUBCOMP://7
 				log_d ( "step = %d,PUBCOMP!\r\n",PUBCOMP );        			//just for qos2
+				msgtypes = 0;
 				break;
 			//心跳请求
 			case PINGREQ://12

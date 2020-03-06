@@ -72,13 +72,15 @@ static void vTaskReader(void *pvParameters)
 	/* 初始化结构体指针 */
 	ptReader = &gReaderMsg;
 	
-	/* 清零 */
-    ptReader->dataLen = 0;
-    ptReader->authMode = AUTH_MODE_CARD;
-    memset(ptReader->data,0x00,sizeof(ptReader->data)); 
+
 
     while(1)
     {
+    	/* 清零 */
+        ptReader->dataLen = 0;
+        ptReader->authMode = AUTH_MODE_CARD;
+        memset(ptReader->data,0x00,sizeof(ptReader->data));   
+        
         CardID = bsp_WeiGenScanf();
 
         if(CardID != 0)

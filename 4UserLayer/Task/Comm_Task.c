@@ -81,17 +81,18 @@ static void vTaskComm(void *pvParameters)
  	/* 初始化结构体指针 */
 	ptMsg = &gReaderMsg;
 	
-	/* 清零 */
+    /* 清零 */
     ptMsg->authMode = 0; //默认为刷卡
     ptMsg->dataLen = 0;
-    memset(ptMsg->data,0x00,sizeof(ptMsg->data)); 
+    memset(ptMsg->data,0x00,sizeof(ptMsg->data));  
+
 
     log_d("current dev addr =%d\r\n",readID);
 
     log_d("start vTaskComm\r\n");   
     
     while (1)
-    {
+    {       
 //        recvLen = RS485_Recv(COM4,buf,MAX_CMD_LEN);
 //        
 //        //判定数据的有效性
