@@ -475,6 +475,10 @@ SYSERRORCODE_E saveTemplateParam(uint8_t *jsonBuff)
 
     TEMPLATE_PARAM_STRU *templateParam = &gTemplateParam; 
     int holidayTimeMapCnt=0,peakTimeMapCnt=0,index = 0;
+    char tmpbuf[8] = {0};
+
+    char tmpIndex[2] = {0};
+    char tmpKey[32] = {0};
 
     root = cJSON_Parse((char *)jsonBuff);    //解析数据包
     if (!root)  
@@ -526,26 +530,122 @@ SYSERRORCODE_E saveTemplateParam(uint8_t *jsonBuff)
         goto ERROR;
     }
 
-    
+
 //--------------------------------------------------    
     //获取templateMap数据
-    cJSON *json_id = cJSON_GetObjectItem(templateMap, "id");
-    templateParam->id = json_id->valueint;
+    cJSON *json_item = cJSON_GetObjectItem(templateMap, "id");
+    templateParam->id = json_item->valueint;
+    sprintf(tmpbuf,"%8d",templateParam->id);
+    ef_set_env_blob("templateID",tmpbuf,8); 
     log_d("templateParam->id = %d\r\n",templateParam->id);
 
+    json_item = cJSON_GetObjectItem(templateMap, "templateCode");
+    strcpy(templateParam->templateCode,json_item->valuestring);
+    ef_set_env_blob("templateCode",templateParam->templateCode,strlen(templateParam->templateCode)); 
+    log_d("templateParam->templateCode = %s\r\n",templateParam->templateCode);
 
+    json_item = cJSON_GetObjectItem(templateMap, "templateName");
+    strcpy(templateParam->templateName,json_item->valuestring);
+//    ef_set_env_blob("templateName",templateParam->templateName,strlen(templateParam->templateName)); 
+    log_d("templateParam->templateName = %s\r\n",templateParam->templateName);    
+
+    json_item = cJSON_GetObjectItem(templateMap, "templateStatus");
+    templateParam->templateStatus = json_item->valueint;
+    memset(tmpbuf,0x00,sizeof(tmpbuf));
+    sprintf(tmpbuf,"%8d",templateParam->templateStatus);
+    ef_set_env_blob("templateStatus",tmpbuf,8); 
+    log_d("templateParam->templateStatus = %d\r\n",templateParam->templateStatus);      
     
+    json_item = cJSON_GetObjectItem(templateMap, "callingWay");
+    strcpy(templateParam->callingWay,json_item->valuestring);
+    ef_set_env_blob("T_callingWay",templateParam->callingWay,strlen(templateParam->callingWay));     
+    log_d("templateParam->callingWay = %s\r\n",templateParam->callingWay);    
+
+    json_item = cJSON_GetObjectItem(templateMap, "offlineProcessing");
+    templateParam->offlineProcessing = json_item->valueint;
+    memset(tmpbuf,0x00,sizeof(tmpbuf));
+    sprintf(tmpbuf,"%8d",templateParam->offlineProcessing);
+    ef_set_env_blob("templateStatus",tmpbuf,8);     
+    log_d("templateParam->offlineProcessing = %d\r\n",templateParam->offlineProcessing);     
+
+
+    json_item = cJSON_GetObjectItem(templateMap, "modeType");
+    strcpy(templateParam->modeType,json_item->valuestring);
+    ef_set_env_blob("modeType",templateParam->modeType,strlen(templateParam->modeType));     
+    log_d("templateParam->modeType = %s\r\n",templateParam->modeType);
+
+    json_item = cJSON_GetObjectItem(templateMap, "peakCallingWay");
+    strcpy(templateParam->peakInfo[0].callingWay,json_item->valuestring);
+    ef_set_env_blob("peakCallingWay",templateParam->peakInfo[0].callingWay,strlen(templateParam->peakInfo[0].callingWay));
+    log_d("templateParam->peakInfo[0].callingWay = %s\r\n",templateParam->peakInfo[0].callingWay);
+
+    json_item = cJSON_GetObjectItem(templateMap, "peakStartDate");
+    strcpy(templateParam->peakInfo[0].beginTime,json_item->valuestring);
+    ef_set_env_blob("peakStartDate",templateParam->peakInfo[0].beginTime,strlen(templateParam->peakInfo[0].beginTime));
+    log_d("templateParam->peakInfo[0].beginTime = %s\r\n",templateParam->peakInfo[0].beginTime);
+
+    json_item = cJSON_GetObjectItem(templateMap, "peakEndDate");
+    strcpy(templateParam->peakInfo[0].endTime,json_item->valuestring);
+    ef_set_env_blob("peakEndDate",templateParam->peakInfo[0].endTime,strlen(templateParam->peakInfo[0].endTime));
+    log_d("templateParam->peakInfo[0].endTime = %s\r\n",templateParam->peakInfo[0].endTime);
+
+    json_item = cJSON_GetObjectItem(templateMap, "peakHolidaysType");
+    strcpy(templateParam->peakInfo[0].outsideTimeMode,json_item->valuestring);
+    ef_set_env_blob("peakHolidaysType",templateParam->peakInfo[0].outsideTimeMode,strlen(templateParam->peakInfo[0].outsideTimeMode));
+    log_d("templateParam->peakInfo[0].outsideTimeMode = %s\r\n",templateParam->peakInfo[0].outsideTimeMode);
+
+    json_item = cJSON_GetObjectItem(templateMap, "peakHolidays");
+    strcpy(templateParam->peakInfo[0].outsideTimeData,json_item->valuestring);
+    ef_set_env_blob("peakHolidays",templateParam->peakInfo[0].outsideTimeData,strlen(templateParam->peakInfo[0].outsideTimeData));
+    log_d("templateParam->peakInfo[0].outsideTimeData = %s\r\n",templateParam->peakInfo[0].outsideTimeData);    
+//------------------------------------------------------------------------------
+    json_item = cJSON_GetObjectItem(templateMap, "holidayCallingWay");
+    strcpy(templateParam->hoildayInfo[0].callingWay,json_item->valuestring);
+    ef_set_env_blob("holidayCallingWay",templateParam->hoildayInfo[0].callingWay,strlen(templateParam->hoildayInfo[0].callingWay));
+    log_d("templateParam->hoildayInfo[0].callingWay = %s\r\n",templateParam->hoildayInfo[0].callingWay);
+
+    json_item = cJSON_GetObjectItem(templateMap, "holidayStartDate");
+    strcpy(templateParam->hoildayInfo[0].beginTime,json_item->valuestring);
+    ef_set_env_blob("holidayStartDate",templateParam->hoildayInfo[0].beginTime,strlen(templateParam->hoildayInfo[0].beginTime));
+    log_d("templateParam->hoildayInfo[0].beginTime = %s\r\n",templateParam->hoildayInfo[0].beginTime);
+
+    json_item = cJSON_GetObjectItem(templateMap, "holidayEndDate");
+    strcpy(templateParam->hoildayInfo[0].endTime,json_item->valuestring);
+    ef_set_env_blob("holidayEndDate",templateParam->hoildayInfo[0].endTime,strlen(templateParam->hoildayInfo[0].endTime));
+    log_d("templateParam->hoildayInfo[0].endTime = %s\r\n",templateParam->hoildayInfo[0].endTime);
+
+    json_item = cJSON_GetObjectItem(templateMap, "holidayHolidaysType");
+    strcpy(templateParam->hoildayInfo[0].outsideTimeMode,json_item->valuestring);
+    ef_set_env_blob("holidayHolidaysType",templateParam->hoildayInfo[0].outsideTimeMode,strlen(templateParam->hoildayInfo[0].outsideTimeMode));
+    log_d("templateParam->hoildayInfo[0].outsideTimeMode = %s\r\n",templateParam->hoildayInfo[0].outsideTimeMode);
+
+    json_item = cJSON_GetObjectItem(templateMap, "holidayHolidays");
+    strcpy(templateParam->hoildayInfo[0].outsideTimeData,json_item->valuestring);
+    ef_set_env_blob("holidayHolidays",templateParam->hoildayInfo[0].outsideTimeData,strlen(templateParam->hoildayInfo[0].outsideTimeData));
+    log_d("templateParam->hoildayInfo[0].outsideTimeData = %s\r\n",templateParam->hoildayInfo[0].outsideTimeData);       
+
 //--------------------------------------------------
     //存储hoildayTimeMap中数据
     holidayTimeMapCnt = cJSON_GetArraySize(holidayTimeMap); /*获取数组长度*/
     log_d("array len = %d\r\n",holidayTimeMapCnt);
 
+    //存储不受控时间段的个数
+    if(holidayTimeMapCnt > 0)
+    {
+        sprintf(tmpKey,"%04d",holidayTimeMapCnt);
+        ef_set_env_blob("holidayTimeMapCnt",tmpKey,4);        
+    }
+
     for(index=0; index<holidayTimeMapCnt; index++)
     {
         tmpArray = cJSON_GetArrayItem(holidayTimeMap, index);
+
+        memset(tmpKey,0x00,sizeof(tmpKey));
+        memset(tmpIndex,0x00,sizeof(tmpIndex));       
+
         
         arrayElement = cJSON_GetObjectItem(tmpArray, "templateType");
-        templateParam->hoildayMode[index].templateType = arrayElement->valueint;
+        templateParam->hoildayMode[index].templateType = arrayElement->valueint;        
         log_d("templateType = %d\r\n",templateParam->hoildayMode[index].templateType);
 
         arrayElement = cJSON_GetObjectItem(tmpArray, "voiceSize");
@@ -557,12 +657,22 @@ SYSERRORCODE_E saveTemplateParam(uint8_t *jsonBuff)
         log_d("modeType = %d\r\n",templateParam->hoildayMode[index].channelType);
         
         arrayElement = cJSON_GetObjectItem(tmpArray, "startTime");
+        //因为节假日跟高峰共用，所以只记录到FLASH一种就可以了
         strcpy(templateParam->hoildayMode[index].startTime,arrayElement->valuestring);
-        log_d("startTime = %s\r\n",templateParam->hoildayMode[index].startTime);
+        sprintf(tmpIndex,"%d",index);
+        strcpy(tmpKey,"hoildayModeStartTime");
+        strcat(tmpKey,tmpIndex); 
+        ef_set_env_blob(tmpKey,templateParam->hoildayMode[index].startTime,strlen(templateParam->hoildayMode[index].startTime));        
+        log_d("%s = %s\r\n",tmpKey,templateParam->hoildayMode[index].startTime);
+        
         
         arrayElement = cJSON_GetObjectItem(tmpArray, "endTime");
-        strcpy(templateParam->hoildayMode[index].endTime,arrayElement->valuestring);        
-        log_d("endTime = %s\r\n",templateParam->hoildayMode[index].endTime);        
+        strcpy(templateParam->hoildayMode[index].endTime,arrayElement->valuestring);  
+        memset(tmpKey,0x00,sizeof(tmpKey));
+        strcpy(tmpKey,"hoildayModeEndTime");
+        strcat(tmpKey,tmpIndex);      
+        ef_set_env_blob(tmpKey,templateParam->hoildayMode[index].endTime,strlen(templateParam->hoildayMode[index].endTime));                
+        log_d("%s= %s\r\n",tmpKey,templateParam->hoildayMode[index].endTime);        
     }
     
     log_d("=====================================================\r\n");
@@ -587,11 +697,8 @@ SYSERRORCODE_E saveTemplateParam(uint8_t *jsonBuff)
         log_d("startTime = %s\r\n",arrayElement->valuestring);
         
         arrayElement = cJSON_GetObjectItem(tmpArray, "endTime");
-        log_d("endTime = %s\r\n",arrayElement->valuestring);
-        
+        log_d("endTime = %s\r\n",arrayElement->valuestring);        
     }
-
-
     
 ERROR:  
     cJSON_Delete(root);

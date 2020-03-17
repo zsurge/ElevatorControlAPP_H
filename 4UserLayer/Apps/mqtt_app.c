@@ -69,13 +69,13 @@ void mqtt_thread ( void )
 	unsigned char retained = 0;
 
 	//获取当前滴答，作为心跳包起始时间
-	uint32_t curtick  =	 xTaskGetTickCount();
-	uint32_t sendtick =  xTaskGetTickCount();    
+//	uint32_t curtick  =	 xTaskGetTickCount();
+//	uint32_t sendtick =  xTaskGetTickCount(); 
+    gCurTick = xTaskGetTickCount();
+
 
 	uint8_t msgtypes = CONNECT;		//消息状态初始化
-	uint8_t t=0;
-
-    
+	uint8_t t=0;    
 
 	log_d ( "socket connect to server\r\n" );
 	gMySock = transport_open ( ( char* ) HOST_NAME,HOST_PORT );
@@ -117,11 +117,11 @@ MQTT_START:
 
 	while ( 1 )
 	{
-		if ( ( xTaskGetTickCount() - curtick ) > ( data.keepAliveInterval*200 ) )		//每秒200次tick
+		if ( ( xTaskGetTickCount() - gCurTick ) > ( data.keepAliveInterval*200 ) )		//每秒200次tick
 		{
 			if ( msgtypes == 0 )
 			{
-				curtick =  xTaskGetTickCount();
+				gCurTick =  xTaskGetTickCount();
 				msgtypes = PINGREQ;
 				log_d ( "send heartbeat!!  set msgtypes = %d \r\n",msgtypes );
 //				showTask();
@@ -242,20 +242,45 @@ MQTT_START:
 				rc = MQTTDeserialize_publish ( &dup, &qos, &retained, &msgid, &receivedTopic,&payload_in, &payloadlen_in, ( unsigned char* ) buf, buflen );	//读取服务器推送信息
 				log_d ( "step = %d,message arrived : %s,len= %d\r\n",PUBLISH,payload_in,strlen ( ( const char* ) payload_in ) );
 
-				//这里是马上执行？还是发送到消息队列中，在读消息队列中执行？
-				//个人感觉在消息队列中会好点
-				exec_proc ( ( char* ) GetJsonItem ( ( const uint8_t* ) payload_in, ( const uint8_t* ) CMD_ID,0 ),payload_in );
+                //消息质量不同，处理不同
+                if(qos == 0)
+                {
+                    //QOS0-不需要ACK
+                    //直接处理数据
+//                    exec_proc ( ( char* ) GetJsonItem ( ( const uint8_t* ) payload_in, ( const uint8_t* ) CMD_ID,0 ),payload_in );                    
+                    Proscess(payload_in);
+                }
+
+                //发送PUBACK消息
                 if(qos == 1)
                 {
-                    printf("publish qos is 1,send publish ack.\r\n");							//Qos为1，进行回执 响应
+                    printf("publish qos is 1,send PUBACK \r\n");							//Qos为1，进行回执 响应
                     memset(buf,0,buflen);
                     len = MQTTSerialize_ack((unsigned char*)buf,buflen,PUBACK,dup,msgid);   					//publish ack                       
                     rc = transport_sendPacketBuffer(gMySock, (unsigned char*)buf, len);			//
                     if(rc == len)
                         printf("send PUBACK Successfully\r\n");
                     else
-                        printf("send PUBACK failed\r\n");                                       
-                }
+                        printf("send PUBACK failed\r\n");   
+
+                    //这里是马上执行？还是发送到消息队列中，在读消息队列中执行？
+                    //个人感觉在消息队列中会好点
+//                    exec_proc ( ( char* ) GetJsonItem ( ( const uint8_t* ) payload_in, ( const uint8_t* ) CMD_ID,0 ),payload_in );                    
+                    Proscess(payload_in);
+                }   
+
+                //对于质量2,只需要发送PUBREC就可以了
+                if(qos == 2)
+                {
+                    printf("publish qos is 2,send PUBREC \r\n");
+                    len = MQTTSerialize_ack ((unsigned char*)buf,buflen, PUBREC, dup, msgid );
+                    rc = transport_sendPacketBuffer(gMySock, (unsigned char*)buf, len);	
+                    if(rc == len)
+                        printf("send PUBREC Successfully\r\n");
+                    else
+                        printf("send PUBREC failed\r\n");  
+                }               
+
 				msgtypes = 0;
 				break;
 			//发布确认 QoS	1消息发布收到确认
@@ -356,6 +381,7 @@ static void ackUp ( void )
 	{
 		ef_set_env_blob ( "up_status", "101722",6 );
 		exec_proc ( "1017","UpgradeAck" );
+        Proscess("1017");
 	}
 
 }

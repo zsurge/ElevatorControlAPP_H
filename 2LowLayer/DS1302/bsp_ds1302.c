@@ -178,8 +178,7 @@ void bsp_ds1302_mdifytime ( uint8_t* descTime ) //初始化1302
 uint8_t* bsp_ds1302_readtime ( void )
 {
 	static uint8_t pBuf[8] = {0};
-    uint8_t tmp[32] = {0};
-
+    
 	pBuf[0]=read_1302 ( read[0] ); //秒
 	pBuf[1]=read_1302 ( read[1] ); //分
 	pBuf[2]=read_1302 ( read[2] ); //时
@@ -188,13 +187,9 @@ uint8_t* bsp_ds1302_readtime ( void )
 	pBuf[3]=read_1302 ( read[5] ); //周
 	pBuf[6]=read_1302 ( read[6] ); //年
 
-    printf("Time1: 20%02x- %02x- %02x  %02x:%02x:%02x\r\n",pBuf[6],pBuf[5],pBuf[4],pBuf[2],pBuf[1],pBuf[0]);
+    DBG("Time1: 20%02x- %02x- %02x  %02x:%02x:%02x ,星期%d\r\n",pBuf[6],pBuf[5],pBuf[4],pBuf[2],pBuf[1],pBuf[0],pBuf[3]);    
 
-    bcd2asc(tmp, pBuf, 14, 1);
 
-    printf("time = %s\r\n",tmp);
-
-	dbh ( "bsp_ds1302_readtime", pBuf, 8 );
 	return pBuf;
 }
 

@@ -106,10 +106,8 @@ static void vTaskKey(void *pvParameters)
 				case KEY_RR_PRES:                 
                     check_msg_queue();
                     
-//                    ef_print_env();
-
-//                    bsp_ds1302_mdifytime("2020-01-17 09:24:15");
-                    
+                    ef_print_env();
+                
                     log_d("read gpio = %02x\r\n",bsp_dipswitch_read());
 //                    testSplit();
 
@@ -119,10 +117,14 @@ static void vTaskKey(void *pvParameters)
 				case KEY_LL_PRES:   
                     log_i("KEY_DOWN_K3\r\n");
 //                    ef_env_set_default();
-//                    calcRunTime();           
-                    log_d("current time =%s\r\n",bsp_ds1302_readtime());
+//                    calcRunTime();       
+//                    bsp_ds1302_mdifytime("2020-03-16 10:12:30");
 
-                    ef_set_env_blob("sn_flag","0000",4);
+                    bsp_ds1302_readtime();
+                
+                    ef_set_env_blob("sn_flag","1111",4);    
+                    ef_set_env_blob("remote_sn","7A13DCC67054F72CC07F",strlen("7A13DCC67054F72CC07F"));    
+
 
 					break;
 				case KEY_OK_PRES:    

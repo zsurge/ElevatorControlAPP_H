@@ -33,7 +33,7 @@
 #include "jsonUtils.h"
 #include "version.h"
 #include "eth_cfg.h"
-#include "bsp_rtc.h"
+#include "bsp_ds1302.h"
 
 #define LOG_TAG    "CmdHandle"
 #include "elog.h"						
@@ -57,6 +57,10 @@
 int gConnectStatus = 0;
 int	gMySock = 0;
 uint8_t gUpdateDevSn = 0; 
+
+uint32_t gCurTick = 0;
+
+
 
 READER_BUFF_STRU gReaderMsg;
 
@@ -151,6 +155,16 @@ SYSERRORCODE_E exec_proc ( char* cmd_id, uint8_t *msg_buf )
 }
 
 
+void Proscess(void* data)
+{
+    char cmd[8+1] = {0};
+    log_d("Start parsing JSON data\r\n");
+    
+    strcpy(cmd,(const char *)GetJsonItem ( data, ( const uint8_t* ) "commandCode",0 ));   
+    
+    exec_proc (cmd ,data);
+}
+
 static SYSERRORCODE_E SendToQueue(uint8_t *buf,int len,uint8_t authMode)
 {
     SYSERRORCODE_E result = NO_ERR;
@@ -188,7 +202,6 @@ static SYSERRORCODE_E SendToQueue(uint8_t *buf,int len,uint8_t authMode)
 
 int PublishData(uint8_t *payload_out,uint16_t payload_out_len)
 {
-
    
 	MQTTString topicString = MQTTString_initializer;
     
@@ -215,10 +228,15 @@ int PublishData(uint8_t *payload_out,uint16_t payload_out_len)
 
        len = MQTTSerialize_publish((unsigned char*)buf, buflen, 0, req_qos, retained, msgid, topicString, payload_out, payload_out_len);//发布消息
        rc = transport_sendPacketBuffer(gMySock, (unsigned char*)buf, len);
-       if(rc == len)                                                           //
+       if(rc == len) 
+        {//
+           gCurTick =  xTaskGetTickCount();
            log_d("send PUBLISH Successfully,rc = %d,len = %d\r\n",rc,len);
+       }
        else
+       {
            log_d("send PUBLISH failed,rc = %d,len = %d\r\n",rc,len);     
+       }
       
    }
    else
@@ -620,8 +638,9 @@ SYSERRORCODE_E GetTemplateParam ( uint8_t* msgBuf )
         return STR_EMPTY_ERR;
     }
 
-    //保存模板数据
-    saveTemplateParam(msgBuf);
+
+    //保存模板数据 这里应该有一个线程专门用于读写FLASH，调试期间，暂时放在响应后边
+    //saveTemplateParam(msgBuf);    
     
     result = modifyJsonItem(packetBaseJson(msgBuf),"status","1",1,buf);
 
@@ -635,6 +654,9 @@ SYSERRORCODE_E GetTemplateParam ( uint8_t* msgBuf )
     log_d("GetParam len = %d,buf = %s\r\n",len,buf);
 
     PublishData(buf,len);
+
+    //保存模板数据
+    saveTemplateParam(msgBuf);
     
 	return result;
 }
@@ -1059,7 +1081,6 @@ static SYSERRORCODE_E UnbindDev( uint8_t* msgBuf )
 
 
 
-
 //设置本地时间
 static SYSERRORCODE_E SetLocalTime( uint8_t* msgBuf )
 {
@@ -1078,7 +1099,7 @@ static SYSERRORCODE_E SetLocalTime( uint8_t* msgBuf )
     //保存本地时间
     log_d("server time is %s\r\n",localTime);
 
-    RTC_TimeAndDate_Set(localTime);
+    bsp_ds1302_mdifytime(localTime);
 
 
     return result;

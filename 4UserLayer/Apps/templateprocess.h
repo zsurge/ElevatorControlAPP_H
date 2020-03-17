@@ -67,6 +67,13 @@ typedef struct
     uint8_t endTime[20];
 }TEMPLATE_BASE_DATA_STRU;
 
+typedef struct 
+{
+    uint8_t isFace;
+    uint8_t isQrCode;
+    uint8_t isIcCard;          
+}CALLINGWAY_STRU;
+
 
 typedef struct 
 {
@@ -81,18 +88,22 @@ typedef struct
 typedef struct
 {
     uint8_t id;
+    uint8_t modeType[8];
     uint8_t templateCode[20];
     uint8_t templateName[50];
-    uint8_t templateStatus[8];
+    uint8_t templateStatus;
     uint8_t callingWay[8];
-    uint8_t offlineProcessing[8];
+    uint8_t offlineProcessing;
+    uint8_t peakModeCnt;
+    CALLINGWAY_STRU templateCallingWay;
+    CALLINGWAY_STRU peakCallingWay;
     TEMPLATE_BASE_DATA_STRU peakMode[3];
     TEMPLATE_BASE_DATA_STRU hoildayMode[3];
     TEMPLATE_SET_DATA_STRU peakInfo[1];
     TEMPLATE_SET_DATA_STRU hoildayInfo[1];
-    CREATOR_INFO_STRU creatorInfo;
+    CREATOR_INFO_STRU creatorInfo;     
 }TEMPLATE_PARAM_STRU;
-    
+
 
 //
 

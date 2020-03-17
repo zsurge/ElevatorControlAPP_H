@@ -129,9 +129,7 @@ static void AppTaskCreate (void)
     CreateMqttTask();
 
     //看门狗
-    //CreateWatchDogTask();
-
-
+//    CreateWatchDogTask();
 
     //删除本身
     vTaskDelete(xHandleTaskAppCreate); //删除AppTaskCreate任务
