@@ -54,7 +54,8 @@ static void vTaskBarCode(void *pvParameters);
 
 
 static int compareDate(uint8_t *date1,uint8_t *date2);
-static int compareTime(const char *currentTime);
+static int compareTime(uint8_t *currentTime);
+static void getDevData(char *src,int icFlag,int qrFlag,READER_BUFF_STRU *desc);
 
 
 
@@ -77,6 +78,8 @@ static void vTaskBarCode(void *pvParameters)
     uint8_t recv_buf[255] = {0};
     uint16_t len = 0; 
     uint8_t localTime[9] = {0};
+
+    uint8_t relieveControl[38] = {0};
 
     int cmpTimeFlag = -1;
     int cmpDateFlag = -1;
@@ -105,83 +108,155 @@ static void vTaskBarCode(void *pvParameters)
         {
             log_d("reader = %s\r\n",recv_buf);      
 
-            //判定是刷卡还是QR
-            if(strstr_t((const char*)recv_buf,(const char*)"CARD") == NULL)
-            {
-                //QR
-                ptQR->authMode = AUTH_MODE_QR;
-            }
-            else
-            {
-                ptQR->authMode = AUTH_MODE_CARD;
-            }
+//            //判定是刷卡还是QR
+//            if(strstr_t((const char*)recv_buf,(const char*)"CARD") == NULL)
+//            {
+//                //QR
+//                ptQR->authMode = AUTH_MODE_QR;
+//            }
+//            else
+//            {
+//                ptQR->authMode = AUTH_MODE_CARD;
+//            }
 
-            if(len > QUEUE_BUF_LEN)
-            {
-                len = QUEUE_BUF_LEN;
-            }              
-            ptQR->dataLen = len;
-            
-            memcpy(ptQR->data,recv_buf,len);  
+//            if(len > QUEUE_BUF_LEN)
+//            {
+//                len = QUEUE_BUF_LEN;
+//            }              
+//            ptQR->dataLen = len;
+//            
+//            memcpy(ptQR->data,recv_buf,len);  
 
-            log_d("<<<<<<<<<<<pQueue->authMode>>>>>>>>>>>>:%d\r\n",ptQR->authMode);
+//            log_d("<<<<<<<<<<<pQueue->authMode>>>>>>>>>>>>:%d\r\n",ptQR->authMode);
 
             //添加模版是否启用的判定
             if(gTemplateParam.templateStatus == 0)
             {
-                continue;//模板没有启用，不对电梯进行控制
-            }
+                //2020-03-18 这里应该发送电梯不接受控制的指令，而不是不用continue,
+                //在授权方式那里，添加控制类型，并定义控制指令，发给电梯
 
-
-            //读取当前时间
-            memcpy(localTime,bsp_ds1302_readtime(),8);
-            
-            //判定有效期
-            //if(compareDate(localTime,gTemplateParam.peakInfo[0].endTime) < 0)
-            
-            //判定有效期内不受控时间段
-            cmpTimeFlag = compareTime(localTime);
-
-            if(cmpTimeFlag == -1
-)
-            {
-                //不在受控时间段
-            }
-            else if(cmpTimeFlag == 0)
-            {
-                //没有指定受控时间段
+                    //add code 发指不受控制指令                    
+                    ptQR->authMode = AUTH_MODE_RELIEVECONTROL;
+                    ptQR->dataLen = sizeof(relieveControl);
+                    memcpy(ptQR->data,relieveControl,ptQR->dataLen);   
+                    log_d("the template is disable\r\n");
             }
             else
             {
-                //在受控时间段内
-            }
-                
-            
-            //添加呼梯方式的判定
-            
-            
-                
-            //添加有效日期的判定
-            //添加不受控时段的判定
+                log_d("the template is enable\r\n");
+                //判定高峰节假日模式是否开启
+                if(gTemplateParam.workMode.isPeakMode || gTemplateParam.workMode.isHolidayMode)
+                {
+                    //读取当前时间
+                    memcpy(localTime,bsp_ds1302_readtime(),8);
+                    
+                    //判定节假日模板有效期
+                    if(compareDate(localTime,gTemplateParam.peakInfo[0].endTime) < 0) //在有效期内
+                    {   
+                        log_d("in the peak mode valid date \r\n");
+                        
+                        //判定有效期内不受控时间段
+                        cmpTimeFlag = compareTime(localTime);
 
-        	/* 使用消息队列实现指针变量的传递 */
-        	if(xQueueSend(xTransQueue,              /* 消息队列句柄 */
-        				 (void *) &ptQR,   /* 发送指针变量recv_buf的地址 */
-        				 (TickType_t)100) != pdPASS )
-        	{
-                log_d("the queue is full!\r\n");                
-                xQueueReset(xTransQueue);
-            } 
-            else
-            {
-                dbh("the queue is send success",(char *)recv_buf,len);
-            }                
+                        log_d("cmpTimeFlag =%d\r\n",cmpTimeFlag);
+
+                        if(cmpTimeFlag == 1)
+                        {
+                            log_d("peak mode - >in the out of control \r\n");
+                            //在不受控时间段，发送脱离控制指令
+                            ptQR->authMode = AUTH_MODE_RELIEVECONTROL;
+                            ptQR->dataLen = sizeof(relieveControl);
+                            memcpy(ptQR->data,relieveControl,sizeof(relieveControl)); 
+                        } 
+                        else
+                        {
+                            log_d("peak mode  >in the control time \r\n");
+                            getDevData((char *)recv_buf,gTemplateParam.peakCallingWay.isIcCard,gTemplateParam.peakCallingWay.isQrCode,ptQR);
+                            //没有指定不受控日期 或 当前日期在有效期内
+                            //添加节假日的呼梯方式的判定
+//                            if(gTemplateParam.peakCallingWay.isIcCard == 0)
+//                            {
+//                                //赋值   
+//                                if(ptQR->authMode == AUTH_MODE_CARD)
+//                                {
+//                                    ptQR->dataLen = 0;
+//                                    memset(ptQR->data,0x00,sizeof(ptQR->data)); 
+//                                }
+//                            }
+
+//                            if(gTemplateParam.peakCallingWay.isQrCode == 0)
+//                            {
+//                                //赋值   
+//                                if(ptQR->authMode == AUTH_MODE_QR)
+//                                {
+//                                    ptQR->dataLen = 0;
+//                                    memset(ptQR->data,0x00,sizeof(ptQR->data)); 
+//                                }                                
+//                            } 
+                                
+                        }
+                    }
+                    else
+                    {
+                        //不在有效期内
+                        //判定模板的呼梯方式
+//                        if(gTemplateParam.templateCallingWay.isIcCard)
+//                        {
+//                            //赋值                                
+//                        }
+
+//                        if(gTemplateParam.templateCallingWay.isQrCode)
+//                        {
+//                            //赋值                                
+//                        } 
+                        log_d("outside peak mode the valid date \r\n");
+
+                        getDevData((char *)recv_buf,gTemplateParam.templateCallingWay.isIcCard,gTemplateParam.templateCallingWay.isQrCode,ptQR);
+
+                    }
+
+                 } 
+                 else
+                 {
+                    //判定模板的呼梯方式
+//                    if(gTemplateParam.templateCallingWay.isIcCard)
+//                    {
+//                        //赋值                                
+//                    }
+
+//                    if(gTemplateParam.templateCallingWay.isQrCode)
+//                    {
+//                        //赋值                                
+//                    }  
+                    log_d("Now it's normal operation mode \r\n");
+                    getDevData((char *)recv_buf,gTemplateParam.templateCallingWay.isIcCard,gTemplateParam.templateCallingWay.isQrCode,ptQR);
+
+                 }  
+
+                log_d("ptQR = %s,len = %d\r\n",ptQR->data,ptQR->dataLen);
+                
+                if(ptQR->dataLen > 10)
+                {
+                	/* 使用消息队列实现指针变量的传递 */
+                	if(xQueueSend(xTransQueue,              /* 消息队列句柄 */
+                				 (void *) &ptQR,   /* 发送指针变量recv_buf的地址 */
+                				 (TickType_t)100) != pdPASS )
+                	{
+                        log_d("the queue is full!\r\n");                
+                        xQueueReset(xTransQueue);
+                    } 
+                    else
+                    {
+                        dbh("the queue is send success",(char *)recv_buf,len);
+                    }   
+                }
+            }
         }
 
 
-	/* 发送事件标志，表示任务正常运行 */        
-	xEventGroupSetBits(xCreatedEventGroup, TASK_BIT_5);  
-    vTaskDelay(300);        
+    	/* 发送事件标志，表示任务正常运行 */        
+    	xEventGroupSetBits(xCreatedEventGroup, TASK_BIT_5);  
+        vTaskDelay(300);        
     }
 }
 
@@ -222,9 +297,15 @@ static int compareDate(uint8_t *date1,uint8_t *date2)
         return -1;//错误的日期
     }
 
-    year_start = 2000 + atoi((const char *)date1[6]);
-    month_start = atoi((const char *)date1[5]);
-    day_start = atoi((const char *)date1[4]);
+    dbh("date", date1, 9);
+
+//    year_start = 2000 + atoi((const char *)date1[6]);
+//    month_start = atoi((const char *)date1[5]);
+//    day_start = atoi((const char *)date1[4]);
+
+    year_start = 2000 + date1[6];
+    month_start = date1[5];
+    day_start = date1[4];    
 
     //2020-03-01      
     memcpy(buff,date2,4);
@@ -250,8 +331,8 @@ static int compareDate(uint8_t *date1,uint8_t *date2)
 
 }
 
-//判定当前时间段，是否在time123时间段内，若是返回1，不是返回-1，若没有指定时间段则返回0
-static int compareTime(const char *currentTime)
+//判定当前时间段，是否在time123时间段内，在内返回：1，不是返回-1，若没有指定时间段则返回0
+static int compareTime(uint8_t *currentTime)
 {
     int ret = -1;
     int localTime = 0;
@@ -259,80 +340,143 @@ static int compareTime(const char *currentTime)
 
     int begin1,begin2,begin3,end1,end2,end3;
 
-    if(strlen(gTemplateParam.hoildayMode[0].startTime)==0 && strlen(gTemplateParam.hoildayMode[1].startTime)==0 && strlen(gTemplateParam.hoildayMode[2].startTime)==0)
+    if(strlen(gTemplateParam.holidayMode[0].startTime)==0 && strlen(gTemplateParam.holidayMode[1].startTime)==0 && strlen(gTemplateParam.holidayMode[2].startTime)==0)
     {
         //没有指定时间段
         ret = 0;
         return ret;
     }
 
+    dbh("localtime", currentTime, 9);
+    
     //把时间转换为分钟
-    localTime = atoi(currentTime[2])*60 + atoi(currentTime[1]);
+    localTime = BCDToInt(currentTime[2]) * 60 + BCDToInt(currentTime[1]);
+
+    log_d("localTime = %d\r\n",localTime);
 
     //17:30
     memset(buff,0x00,sizeof(buff));
-    memcpy(buff,gTemplateParam.hoildayMode[0].startTime,2);
+    memcpy(buff,gTemplateParam.holidayMode[0].startTime,2);
     begin1 = atoi(buff)*60;
     memset(buff,0x00,sizeof(buff));
-    memcpy(buff,gTemplateParam.hoildayMode[0].startTime+3,2);
+    memcpy(buff,gTemplateParam.holidayMode[0].startTime+3,2);
     begin1 += atoi(buff);   
+    log_d("begin1 = %d\r\n",begin1);
 
 
     memset(buff,0x00,sizeof(buff));
-    memcpy(buff,gTemplateParam.hoildayMode[1].startTime,2);
+    memcpy(buff,gTemplateParam.holidayMode[1].startTime,2);
     begin2 = atoi(buff)*60;
     memset(buff,0x00,sizeof(buff));
-    memcpy(buff,gTemplateParam.hoildayMode[1].startTime+3,2);
+    memcpy(buff,gTemplateParam.holidayMode[1].startTime+3,2);
     begin2 += atoi(buff);   
 
     memset(buff,0x00,sizeof(buff));
-    memcpy(buff,gTemplateParam.hoildayMode[2].startTime,2);
+    memcpy(buff,gTemplateParam.holidayMode[2].startTime,2);
     begin3 = atoi(buff)*60;
     memset(buff,0x00,sizeof(buff));
-    memcpy(buff,gTemplateParam.hoildayMode[2].startTime+3,2);
+    memcpy(buff,gTemplateParam.holidayMode[2].startTime+3,2);
     begin3 += atoi(buff);   
 
     memset(buff,0x00,sizeof(buff));
-    memcpy(buff,gTemplateParam.hoildayMode[0].endTime,2);
+    memcpy(buff,gTemplateParam.holidayMode[0].endTime,2);
     end1 = atoi(buff)*60;
     memset(buff,0x00,sizeof(buff));
-    memcpy(buff,gTemplateParam.hoildayMode[0].endTime+3,2);
+    memcpy(buff,gTemplateParam.holidayMode[0].endTime+3,2);
     end1 += atoi(buff);   
     
     memset(buff,0x00,sizeof(buff));
-    memcpy(buff,gTemplateParam.hoildayMode[1].endTime,2);
+    memcpy(buff,gTemplateParam.holidayMode[1].endTime,2);
     end2 = atoi(buff)*60;
     memset(buff,0x00,sizeof(buff));
-    memcpy(buff,gTemplateParam.hoildayMode[1].endTime+3,2);
+    memcpy(buff,gTemplateParam.holidayMode[1].endTime+3,2);
     end2 += atoi(buff);   
     
     memset(buff,0x00,sizeof(buff));
-    memcpy(buff,gTemplateParam.hoildayMode[2].endTime,2);
+    memcpy(buff,gTemplateParam.holidayMode[2].endTime,2);
     end3 = atoi(buff)*60;
     memset(buff,0x00,sizeof(buff));
-    memcpy(buff,gTemplateParam.hoildayMode[2].endTime+3,2);
+    memcpy(buff,gTemplateParam.holidayMode[2].endTime+3,2);
     end3 += atoi(buff);       
 
 
     if(localTime>begin1 && localTime<end1)
     {
-        ret = 1
+        ret = 1;
     }
 
     
     if(localTime>begin2 && localTime<end2)
     {
-        ret = 1
+        ret = 1;
     }
 
     
     if(localTime>begin3 && localTime<end3)
     {
-        ret = 1
+        ret = 1;
     }
 
 
     return ret;
+}
+
+
+static void getDevData(char *src,int icFlag,int qrFlag,READER_BUFF_STRU *desc)
+{
+
+    READER_BUFF_STRU readerBuff; 
+
+    memset(&readerBuff,0x00,sizeof(readerBuff));   
+    
+
+    if(strlen(src) >QUEUE_BUF_LEN)
+    {
+        readerBuff.dataLen = QUEUE_BUF_LEN;
+    }
+    else
+    {
+        readerBuff.dataLen = strlen(src);
+    }
+
+    memcpy(readerBuff.data,src,readerBuff.dataLen);
+
+    log_d("readerBuff.data = %s\r\n",readerBuff.data);
+    
+    //判定是刷卡还是QR
+    if(strstr_t((const char*)src,(const char*)"CARD") == NULL)
+    {
+        //QR
+        readerBuff.authMode = AUTH_MODE_QR;
+    }
+    else
+    {
+        readerBuff.authMode = AUTH_MODE_CARD;
+    }
+    
+    if(icFlag == 0)
+    {
+        //赋值   
+        if(readerBuff.authMode == AUTH_MODE_CARD)
+        {
+            readerBuff.dataLen = 0;
+            memset(readerBuff.data,0x00,sizeof(readerBuff.data)); 
+            log_d("no support IC card\r\n");
+        }
+    }
+    
+    if(qrFlag == 0)
+    {
+        //赋值   
+        if(readerBuff.authMode == AUTH_MODE_QR)
+        {
+            readerBuff.dataLen = 0;
+            memset(readerBuff.data,0x00,sizeof(readerBuff.data)); 
+            log_d("no support QR code\r\n");
+        }                              
+    } 
+    
+    *desc = readerBuff;    
 }
 
             

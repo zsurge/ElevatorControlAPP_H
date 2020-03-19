@@ -33,15 +33,17 @@
  *----------------------------------------------*/
 #define MQTT_MAX_LEN 1024*2
 
-
+#define AUTH_MODE_RELIEVECONTROL        1
+//IC卡
 #define AUTH_MODE_CARD      2
+//远程
 #define AUTH_MODE_REMOTE    3
+//解绑
 #define AUTH_MODE_UNBIND    4
+//绑定
 #define AUTH_MODE_BIND      5
-
+//二维码
 #define AUTH_MODE_QR        7
-
-
 
 #define QUEUE_BUF_LEN   64
 

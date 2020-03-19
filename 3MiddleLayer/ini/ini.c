@@ -21,69 +21,17 @@
  * 包含头文件                                   *
  *----------------------------------------------*/
 #include "ini.h"
+#include "easyflash.h"
 #include "version.h"
 #include "string.h"
-#include "bsp_uart_fifo.h"
+#include "templateprocess.h"
+#include "tool.h"
 
 
-ICREADER_T   gICReaderParam; 
-QRCODE_T     gQRCodeParam;
+#define LOG_TAG    "ini"
+#include "elog.h"
 
 
-static SYSERRORCODE_E SaveICParam(void);
-static SYSERRORCODE_E SaveQRParam(void);
-
-
-
-#define SFUD_DEMO_TEST_BUFFER_SIZE 1024
-
-static uint8_t sfud_demo_test_buf[SFUD_DEMO_TEST_BUFFER_SIZE];
-
-
-void ReadIAP(void) 
-{
-    sfud_err result = SFUD_SUCCESS;
-    const sfud_flash *flash = sfud_get_device_table() + 0;
-    size_t i;
-    uint32_t addr = 0x10000;
-    size_t size = SFUD_DEMO_TEST_BUFFER_SIZE;
-    size_t j = 0;
-
-    for(j=0;j<42;j++,addr+=SFUD_DEMO_TEST_BUFFER_SIZE)
-    {
-        
-        result = sfud_read(flash, addr, size, sfud_demo_test_buf);
-        if (result == SFUD_SUCCESS) 
-        {
-            printf("Read the %s flash data success. Start from 0x%08X, size is %ld. The data is:\r\n", flash->name, addr,
-                    size);
-            printf("Offset (h) 00 01 02 03 04 05 06 07 08 09 0A 0B 0C 0D 0E 0F\r\n");
-            for (i = 0; i < size; i++) 
-            {
-                if (i % 16 == 0) 
-                {
-                    printf("[%08X] ", addr + i);
-                }
-                printf("%02X ", sfud_demo_test_buf[i]);
-                if (((i + 1) % 16 == 0) || i == size - 1) 
-                {
-                    printf("\r\n");
-                }
-            }
-            printf("\r\n");
-        } 
-        else 
-        {
-            printf("Read the %s flash data failed.\r\n", flash->name);
-        }
-    }
-    if (i == size) {
-        printf("The %s flash test is success.\r\n", flash->name);
-    }
-}
-
-
-//#define param_start_addr 0x00
 
 /*****************************************************************************
  函 数 名  : RestoreDefaultSetting
@@ -122,212 +70,172 @@ void SystemUpdate(void)
     }
 }
 
-SYSERRORCODE_E RecordBootTimes(void)
+void readTemplateData(void)
 {
-    SYSERRORCODE_E result = NO_ERR;
+    char tempBuff[8] = {0};
+    int valueLen = 0;
+    int index = 0;
+    char tmpIndex[2] = {0};
+    char tmpKey[32] = {0};
+    char *callingWay[4] = {0}; //存放分割后的子字符串 
+    int callingWayNum = 0;
+
+    memset(&gTemplateParam,0x00,sizeof(gTemplateParam));
+    TEMPLATE_PARAM_STRU *templateParam = &gTemplateParam; 
+
+
+    //读取模板状态
+    memset(tempBuff,0x00,sizeof(tempBuff));
+    valueLen = ef_get_env_blob("templateStatus", tempBuff, sizeof(tempBuff) , NULL);
+    templateParam->templateStatus = atoi(tempBuff);
     
-    uint32_t i_boot_times = NULL;
-    char *c_old_boot_times, c_new_boot_times[11] = {0};
-
-
-    /* get the boot count number from Env */
-    c_old_boot_times = ef_get_env("boot_times");
-    assert_param(c_old_boot_times);
-    i_boot_times = atol(c_old_boot_times);
-
-    DBG("boot_times = %ld\r\n",i_boot_times);
-    
-    /* boot count +1 */
-    i_boot_times ++;
-
-    /* interger to string */
-    sprintf(c_new_boot_times,"%ld", i_boot_times);
-    
-    /* set and store the boot count number to Env */
-    if(ef_set_env("boot_times", c_new_boot_times) != EF_NO_ERR)
+    //读取工作模式，是否开节假日模式
+    valueLen = ef_get_env_blob("modeType", templateParam->modeType, sizeof(templateParam->modeType) , NULL);
+    if(valueLen == 0)
     {
-        result = FLASH_W_ERR;  
-    }
-    
-    return result;
-}
-
-static SYSERRORCODE_E SaveICParam(void)
-{
-    SYSERRORCODE_E result = NO_ERR;
-    char CurrentICstate[4] = {0};      
-
-    sprintf(CurrentICstate,"%04d", gICReaderParam.FunState);
-
-    DBG("CurrentICstate = %s\r\n",CurrentICstate);
-
-    if(ef_set_env("ICSTATE", CurrentICstate) != EF_NO_ERR)
-    {
-        result = FLASH_W_ERR;  
-    }
-    
-    return result;
-
-}
-
-static SYSERRORCODE_E SaveQRParam(void)
-{
-    SYSERRORCODE_E result = NO_ERR;
-    
-    char CurrentQRstate[4] = {0};  
-    char CurrentQRLightMode[4] = {0}; 
-    char CurrentQRScanMode[4] = {0}; 
-    char CurrentQRTimeInterval[4] = {0}; 
-
-    uint8_t Configuration[8] = {0x02,0x39,0x39,0x39,0x39,0x39,0x39,0x03};
-
-    uint8_t LightOn[8] = {0x02, 0x31,0x32,0x36,0x30,0x31,0x35 ,0x03};//打开补光灯
-    uint8_t LightOff[8] = { 0x02,0x31,0x32,0x36,0x30,0x30,0x35,0x03 };//关闭补光灯
-    
-    uint8_t AlwaysScan[8] = { 0x02,0x38,0x31,0x38,0x39,0x30,0x30,0x03 }; //相同条码没有时间间隔
-    uint8_t SingleScan[8] = { 0x02,0x31,0x31,0x38,0x39,0x31,0x37,0x03 }; //不识别相同条码，即仅识别一次
-    
-//    uint8_t Timeout1Sec[9] = { 0x02,0x38,0x31,0x38,0x39,0x32,0x30,0x30,0x03 };//相同条码1秒延时
-//    uint8_t Timeout2Sec[9] = { 0x02,0x38,0x31,0x38,0x39,0x34,0x30,0x30,0x03 };//相同条码2秒延时
-    uint8_t Timeout600mSec[9] = { 0x02,0x38,0x31,0x38,0x39,0x31,0x32,0x30,0x03 };//相同条码600ms秒延时
-
-    //QR功能使能-禁止
-    sprintf(CurrentQRstate,"%04d", gQRCodeParam.FunState);      
-    if(ef_set_env("QRSTATE", CurrentQRstate) != EF_NO_ERR)
-    {
-        result = FLASH_W_ERR;  
-    }
-
-    DBG("CurrentQRstate = %s\r\n",CurrentQRstate);
-
-
-    //开启设置模式
-    comSendBuf(COM3,Configuration,8);
-     
-    //设置灯光模式    
-    if(gQRCodeParam.LightMode == 0)
-    {
-        comSendBuf(COM3,LightOff,8); 
-    }
-    else
-    {
-        comSendBuf(COM3,LightOn,8); 
-    }
-        
-    sprintf(CurrentQRLightMode,"%04d", gQRCodeParam.LightMode);
-     DBG("CurrentQRLightMode = %s\r\n",CurrentQRLightMode);
-
-    if(ef_set_env("LIGHTMODE", CurrentQRLightMode) != EF_NO_ERR)
-    {
-        result = FLASH_W_ERR;  
-    }
-
-    //设置 扫描模式 
-    if(gQRCodeParam.ScanMode == 0)
-    {
-        comSendBuf(COM3,AlwaysScan,8); 
-    }
-    else
-    {
-        comSendBuf(COM3,SingleScan,8); 
-    }
-
-    sprintf(CurrentQRScanMode,"%04d", gQRCodeParam.ScanMode);
-         DBG("CurrentQRScanMode = %s\r\n",CurrentQRScanMode);
-    
-
-    if(ef_set_env("SCANMODE", CurrentQRScanMode) != EF_NO_ERR)
-    {
-        result = FLASH_W_ERR;  
-    }
-
-    //设置扫描时间间隔 设备有问题，暂时不启用
-//    if(gQRCodeParam.TimeInterval == 1)
-//    {
-//        comSendBuf(COM3,Timeout1Sec,9); 
-//    }
-//    else if(gQRCodeParam.TimeInterval == 2)
-//    {
-//        comSendBuf(COM3,Timeout2Sec,9); 
-//    }
-//    else
-//    {
-        comSendBuf(COM3,Timeout600mSec,9); 
-//    }    
-
-    //关闭设置模式
-    comSendBuf(COM3,Configuration,8);
-
-    sprintf(CurrentQRTimeInterval,"%04d", gQRCodeParam.TimeInterval);
-    DBG("CurrentQRTimeInterval = %s\r\n",CurrentQRTimeInterval);
-
-    
-
-    if(ef_set_env("TIMEINTERVAL", CurrentQRTimeInterval) != EF_NO_ERR)
-    {
-        result = FLASH_W_ERR;  
-    } 
-    
-    return result;
-}
-
-
-
-SYSERRORCODE_E ParseDevParam(uint8_t *ParamBuff)
-{
-    SYSERRORCODE_E result = NO_ERR;
-    uint8_t buff[6] = {0};
-
-    if(!ParamBuff)
-    {
-        DBG("param error!\r\n");
-        return CJSON_PARSE_ERR;  
-    }
-
-    memcpy(buff,ParamBuff,5);    
-
-     if(buff[4] == 0x00)
-    {
-        //禁止IC卡
-        gICReaderParam.FunState = 0;
-    }
-    else
-    {
-        //使能IC卡并设置默认值
-        gICReaderParam.FunState = 1;
+        log_d("get templateParam error!\r\n");
     }   
 
-    DBG("gICReaderParam.FunState = %d\r\n",gICReaderParam.FunState);
+    //读取模板的识别模式
+    valueLen = 0;
+    valueLen = ef_get_env_blob("T_callingWay", templateParam->callingWay, sizeof(templateParam->callingWay) , NULL);
 
-    gICReaderParam.SaveICParam = SaveICParam;
-    gICReaderParam.SaveICParam();
-
-    if(buff[3] == 0)
+    //解析模板识别方式    
+    split(templateParam->callingWay,",",callingWay,&callingWayNum); //调用函数进行分割 
+    while(callingWayNum)
     {
-        //禁止QR CODE
-        gQRCodeParam.FunState = 0;
-    }
-    else
-    {
-        //使能QR CDOE 并设置默认值
-        gQRCodeParam.FunState = 1;        
-    } 
-
-    DBG("gQRCodeParam.FunState = %d\r\n",gQRCodeParam.FunState);
-
-    gQRCodeParam.LightMode = buff[2];
-    gQRCodeParam.ScanMode = buff[1];
-    gQRCodeParam.TimeInterval = buff[0];
-
-    DBG("gQRCodeParam.LightMode = %d\r\n",gQRCodeParam.LightMode);
-    DBG("gQRCodeParam.ScanMode = %d\r\n",gQRCodeParam.ScanMode);
-    DBG("gQRCodeParam.TimeInterval = %d\r\n",gQRCodeParam.TimeInterval);
-
-    gQRCodeParam.SaveQRParam = SaveQRParam;
-    gQRCodeParam.SaveQRParam();
+        switch(atoi(callingWay[callingWayNum-1]))
+        {
+            case 1:
+                templateParam->templateCallingWay.isFace = 1;
+                break;
+            case 2:
+                templateParam->templateCallingWay.isQrCode = 1;
+                break;
+            case 3:
+                templateParam->templateCallingWay.isIcCard = 1;
+                break; 
+        }
+        callingWayNum-- ;  
+    }    
     
-    return result;
+
+    //读取节假日的识别模式
+    valueLen = 0;
+    valueLen = ef_get_env_blob("peakCallingWay", templateParam->peakInfo[0].callingWay, sizeof(templateParam->peakInfo[0].callingWay) , NULL);
+
+    //解析识别方式    
+    memset(callingWay,0x00,sizeof(callingWay));
+    callingWayNum = 0;
+    split(templateParam->peakInfo[0].callingWay,",",callingWay,&callingWayNum); //调用函数进行分割 
+    while(callingWayNum)
+    {
+        switch(atoi(callingWay[callingWayNum-1]))
+        {
+            case 1:
+                templateParam->peakCallingWay.isFace = 1;
+                break;
+            case 2:
+                templateParam->peakCallingWay.isQrCode = 1;
+                break;
+            case 3:
+                templateParam->peakCallingWay.isIcCard = 1;
+                break; 
+        }
+        callingWayNum-- ;  
+    }  
+
+
+    //解析是否开启节假日模式
+    memset(callingWay,0x00,sizeof(callingWay));
+    callingWayNum = 0;
+    split(templateParam->modeType,",",callingWay,&callingWayNum); //调用函数进行分割 
+    while(callingWayNum)
+    {
+        switch(atoi(callingWay[callingWayNum-1]))
+        {
+            case 1:
+                templateParam->workMode.isPeakMode = 1;
+                break;
+            case 2:
+                templateParam->workMode.isHolidayMode = 1;
+                break;
+            case 5:
+                templateParam->workMode.isNormalMode = 1;
+                break; 
+        }
+        callingWayNum-- ;  
+    }  
+    
+
+    //读取节假日排除日期的类型,1周六，2周日，3节假日（目前节假日无法屏蔽）
+    valueLen = 0;
+    valueLen = ef_get_env_blob("peakHolidaysType", templateParam->peakInfo[0].outsideTimeMode, sizeof(templateParam->peakInfo[0].outsideTimeMode) , NULL);
+
+    //读取模板有效开始日期
+    valueLen = 0;
+    valueLen = ef_get_env_blob("peakStartDate", templateParam->peakInfo[0].beginTime, sizeof(templateParam->peakInfo[0].beginTime) , NULL);
+
+    //读取模板有效结束日期
+    valueLen = 0;
+    valueLen = ef_get_env_blob("peakEndDate", templateParam->peakInfo[0].endTime, sizeof(templateParam->peakInfo[0].endTime) , NULL);
+
+    //先判定有几个时间段
+    memset(tempBuff,0x00,sizeof(tempBuff));
+    valueLen = ef_get_env_blob("holidayTimeMapCnt", tempBuff, sizeof(tempBuff) , NULL);
+    templateParam->peakModeCnt = atoi(tempBuff);
+    
+    
+    memset(tmpKey,0x00,sizeof(tmpKey));
+    memset(tmpIndex,0x00,sizeof(tmpIndex));  
+    for(index= 0;index<templateParam->peakModeCnt;index++)
+    {
+        //读取节假日模板的不受控时间段--开始时间
+        sprintf(tmpIndex,"%d",index);
+        strcpy(tmpKey,"hoildayModeStartTime");
+        strcat(tmpKey,tmpIndex); 
+ 
+
+        valueLen = ef_get_env_blob(tmpKey, templateParam->holidayMode[index].startTime, sizeof(templateParam->holidayMode[index].startTime) , NULL);
+        log_d("gTemplateParam->%s = %s\r\n",tmpKey,gTemplateParam.holidayMode[index].startTime);
+        
+
+         //读取节假日模板的不受控时间段--结束时间
+        memset(tmpKey,0x00,sizeof(tmpKey));
+        strcpy(tmpKey,"hoildayModeEndTime");
+        strcat(tmpKey,tmpIndex);  
+        valueLen = 0;
+        valueLen = ef_get_env_blob(tmpKey, templateParam->holidayMode[index].endTime, sizeof(templateParam->holidayMode[index].endTime) , NULL);
+        log_d("gTemplateParam->%s= %s\r\n",tmpKey,gTemplateParam.holidayMode[index].endTime);        
+        
+     }
+
+
+    log_d("gTemplateParam->peakInfo[0].beginTime = %s\r\n",gTemplateParam.peakInfo[0].beginTime);      
+    log_d("gTemplateParam->peakInfo[0].endTime = %s\r\n",gTemplateParam.peakInfo[0].endTime);      
+    
+
+    log_d("gTemplateParam->templateCallingWay = %d\r\n",gTemplateParam.templateCallingWay.isFace);      
+    log_d("gTemplateParam->templateCallingWay = %d\r\n",gTemplateParam.templateCallingWay.isQrCode);      
+    log_d("gTemplateParam->templateCallingWay = %d\r\n",gTemplateParam.templateCallingWay.isIcCard);
+    
+    log_d("gTemplateParam->peakCallingWay = %d\r\n",gTemplateParam.peakCallingWay.isFace);   
+    log_d("gTemplateParam->peakCallingWay = %d\r\n",gTemplateParam.peakCallingWay.isQrCode);
+    log_d("gTemplateParam->peakCallingWay = %d\r\n",gTemplateParam.peakCallingWay.isIcCard);      
+    
+
+    log_d("gTemplateParam->templateStatus = %d\r\n",gTemplateParam.templateStatus);      
+    log_d("gTemplateParam->modeType = %s\r\n",gTemplateParam.modeType);
+    log_d("gTemplateParam->callingWay = %s\r\n",gTemplateParam.callingWay);    
+    log_d("gTemplateParam->peakInfo[0].callingWay = %s\r\n",gTemplateParam.peakInfo[0].callingWay);
+    log_d("gTemplateParam->peakInfo[0].beginTime = %s\r\n",gTemplateParam.peakInfo[0].beginTime);
+    log_d("gTemplateParam->peakInfo[0].endTime = %s\r\n",gTemplateParam.peakInfo[0].endTime);
+    log_d("gTemplateParam->peakInfo[0].outsideTimeMode = %s\r\n",gTemplateParam.peakInfo[0].outsideTimeMode);
+    
 }
+
+
+
 
 
 

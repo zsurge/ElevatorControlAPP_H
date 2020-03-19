@@ -657,6 +657,9 @@ SYSERRORCODE_E GetTemplateParam ( uint8_t* msgBuf )
 
     //保存模板数据
     saveTemplateParam(msgBuf);
+
+    //读取模板数据
+    readTemplateData();
     
 	return result;
 }

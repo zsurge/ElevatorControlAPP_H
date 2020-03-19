@@ -2,8 +2,6 @@
 #include "tool.h"
 
 
-static uint8_t BCDToInt ( unsigned char bcd ); //BCD转十进制
-static uint8_t IntToBCD ( unsigned char intdat ); //十进制转BCD
 static uint8_t WeekDay ( unsigned char y, unsigned char m, unsigned char d );
 
 
@@ -89,19 +87,6 @@ void write_1302 ( uint8_t add,uint8_t dat ) //向指定寄存器写入一个字节的数据
 	delay_us ( 5 );
 
 }
-
-//码制转换
-
-static uint8_t BCDToInt ( unsigned char bcd ) //BCD转十进制
-{
-	return ( 0xff & ( bcd>>4 ) ) *10 + ( 0xf & bcd );
-}
-
-static uint8_t IntToBCD ( unsigned char intdat ) //十进制转BCD
-{
-	return ( ( ( intdat/10 ) <<4 ) + ( ( intdat%10 ) &0x0f ) );
-}
-
 
 ///*************************************************************************************************************************
 //*函数         :

@@ -74,6 +74,15 @@ typedef struct
     uint8_t isIcCard;          
 }CALLINGWAY_STRU;
 
+typedef struct
+{
+    uint8_t isPeakMode;
+    uint8_t isHolidayMode;
+    uint8_t isNormalMode;          
+}WORKMODE_STRU;
+
+
+
 
 typedef struct 
 {
@@ -95,10 +104,11 @@ typedef struct
     uint8_t callingWay[8];
     uint8_t offlineProcessing;
     uint8_t peakModeCnt;
+    WORKMODE_STRU workMode;
     CALLINGWAY_STRU templateCallingWay;
     CALLINGWAY_STRU peakCallingWay;
     TEMPLATE_BASE_DATA_STRU peakMode[3];
-    TEMPLATE_BASE_DATA_STRU hoildayMode[3];
+    TEMPLATE_BASE_DATA_STRU holidayMode[3];
     TEMPLATE_SET_DATA_STRU peakInfo[1];
     TEMPLATE_SET_DATA_STRU hoildayInfo[1];
     CREATOR_INFO_STRU creatorInfo;     

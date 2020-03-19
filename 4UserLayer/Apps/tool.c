@@ -341,7 +341,7 @@ void int2Str(uint8_t* str, int32_t intnum)
 *****************************************************************************/
 int32_t str2int(const char* str)
 {
-	int32_t temp = 0;
+	static int32_t temp = 0;
 	const char* ptr = str;			//ptr保存str字符串开头  
 	if (*str == '-' || *str == '+')	//如果第一个字符是正负号，
 	{								//则移到下一个字符
@@ -512,6 +512,19 @@ void Insertchar(char *src,char*desc,char c)
         (*desc++) = c;
     }
     *desc = '\0';
+}
+
+
+//码制转换
+
+uint8_t BCDToInt ( unsigned char bcd ) //BCD转十进制
+{
+	return ( 0xff & ( bcd>>4 ) ) *10 + ( 0xf & bcd );
+}
+
+uint8_t IntToBCD ( unsigned char intdat ) //十进制转BCD
+{
+	return ( ( ( intdat/10 ) <<4 ) + ( ( intdat%10 ) &0x0f ) );
 }
 
 

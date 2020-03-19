@@ -26,6 +26,8 @@
 #include "eth_cfg.h"
 #include "templateprocess.h"
 
+
+
 /*----------------------------------------------*
  * 宏定义                                       *
  *----------------------------------------------*/
@@ -480,6 +482,10 @@ SYSERRORCODE_E saveTemplateParam(uint8_t *jsonBuff)
     char tmpIndex[2] = {0};
     char tmpKey[32] = {0};
 
+    
+
+    uint32_t curtick  =  xTaskGetTickCount();
+    
     root = cJSON_Parse((char *)jsonBuff);    //解析数据包
     if (!root)  
     {  
@@ -645,34 +651,34 @@ SYSERRORCODE_E saveTemplateParam(uint8_t *jsonBuff)
 
         
         arrayElement = cJSON_GetObjectItem(tmpArray, "templateType");
-        templateParam->hoildayMode[index].templateType = arrayElement->valueint;        
-        log_d("templateType = %d\r\n",templateParam->hoildayMode[index].templateType);
+        templateParam->holidayMode[index].templateType = arrayElement->valueint;        
+        log_d("templateType = %d\r\n",templateParam->holidayMode[index].templateType);
 
         arrayElement = cJSON_GetObjectItem(tmpArray, "voiceSize");
-        templateParam->hoildayMode[index].voiceSize = arrayElement->valueint;        
-        log_d("voiceSize = %d\r\n",templateParam->hoildayMode[index].voiceSize);
+        templateParam->holidayMode[index].voiceSize = arrayElement->valueint;        
+        log_d("voiceSize = %d\r\n",templateParam->holidayMode[index].voiceSize);
         
         arrayElement = cJSON_GetObjectItem(tmpArray, "modeType");
-        templateParam->hoildayMode[index].channelType = arrayElement->valueint;
-        log_d("modeType = %d\r\n",templateParam->hoildayMode[index].channelType);
+        templateParam->holidayMode[index].channelType = arrayElement->valueint;
+        log_d("modeType = %d\r\n",templateParam->holidayMode[index].channelType);
         
         arrayElement = cJSON_GetObjectItem(tmpArray, "startTime");
         //因为节假日跟高峰共用，所以只记录到FLASH一种就可以了
-        strcpy(templateParam->hoildayMode[index].startTime,arrayElement->valuestring);
+        strcpy(templateParam->holidayMode[index].startTime,arrayElement->valuestring);
         sprintf(tmpIndex,"%d",index);
         strcpy(tmpKey,"hoildayModeStartTime");
         strcat(tmpKey,tmpIndex); 
-        ef_set_env_blob(tmpKey,templateParam->hoildayMode[index].startTime,strlen(templateParam->hoildayMode[index].startTime));        
-        log_d("%s = %s\r\n",tmpKey,templateParam->hoildayMode[index].startTime);
+        ef_set_env_blob(tmpKey,templateParam->holidayMode[index].startTime,strlen(templateParam->holidayMode[index].startTime));        
+        log_d("%s = %s\r\n",tmpKey,templateParam->holidayMode[index].startTime);
         
         
         arrayElement = cJSON_GetObjectItem(tmpArray, "endTime");
-        strcpy(templateParam->hoildayMode[index].endTime,arrayElement->valuestring);  
+        strcpy(templateParam->holidayMode[index].endTime,arrayElement->valuestring);  
         memset(tmpKey,0x00,sizeof(tmpKey));
         strcpy(tmpKey,"hoildayModeEndTime");
         strcat(tmpKey,tmpIndex);      
-        ef_set_env_blob(tmpKey,templateParam->hoildayMode[index].endTime,strlen(templateParam->hoildayMode[index].endTime));                
-        log_d("%s= %s\r\n",tmpKey,templateParam->hoildayMode[index].endTime);        
+        ef_set_env_blob(tmpKey,templateParam->holidayMode[index].endTime,strlen(templateParam->holidayMode[index].endTime));                
+        log_d("%s= %s\r\n",tmpKey,templateParam->holidayMode[index].endTime);        
     }
     
     log_d("=====================================================\r\n");
@@ -702,6 +708,9 @@ SYSERRORCODE_E saveTemplateParam(uint8_t *jsonBuff)
     
 ERROR:  
     cJSON_Delete(root);
+
+
+    log_d("saveTemplateParam took %d ms to save\r\n",xTaskGetTickCount()-curtick);
 
     return result;
 }

@@ -76,13 +76,11 @@ void int2Str(uint8_t* str, int32_t intnum);
 int32_t str2int(const char* str);
 uint8_t bcd2byte(uint8_t ucBcd);
 void HexToStr(uint8_t *pbDest, uint8_t *pbSrc, int nLen);
-
+uint8_t BCDToInt ( unsigned char bcd );//BCD转十进制
+uint8_t IntToBCD ( unsigned char intdat );//十进制转BCD
 
 void split(char *src,const char *separator,char **dest,int *num);
-
 char *strstr_t(const char *str, const char *sub_str);
-
-
 int setbit(int num, int bit);
 int clearbit(int num, int bit);
 
@@ -91,6 +89,8 @@ void calcMac(unsigned char *mac);
 
 
 void Insertchar(char *src,char*desc,char c);
+
+
 
 
 
