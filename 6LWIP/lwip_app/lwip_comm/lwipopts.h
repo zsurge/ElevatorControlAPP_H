@@ -92,7 +92,7 @@
 
 //有关系统的选项
 #define TCPIP_THREAD_STACKSIZE          1024	//内核任务堆栈大小
-#define DEFAULT_UDP_RECVMBOX_SIZE       2000
+#define DEFAULT_UDP_RECVMBOX_SIZE       1024
 #define DEFAULT_THREAD_STACKSIZE        512
 
 //LWIP调试选项

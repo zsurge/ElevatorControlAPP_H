@@ -94,10 +94,11 @@ static void vTaskBarCode(void *pvParameters)
         /* 清零 */
         ptQR->authMode = 0; 
         ptQR->dataLen = 0;
+        ptQR->state = ENABLE;
         memset(ptQR->data,0x00,sizeof(ptQR->data)); 
 
         memset(recv_buf,0x00,sizeof(recv_buf));           
-        len = RS485_RecvAtTime(COM5,recv_buf,sizeof(recv_buf),800);
+        len = RS485_RecvAtTime(COM5,recv_buf,sizeof(recv_buf),500);
 
         if(recv_buf[len-1] == 0x00 && len > 1)
         {
@@ -106,29 +107,8 @@ static void vTaskBarCode(void *pvParameters)
        
         if(len > 0  && recv_buf[len-1] == 0x0A && recv_buf[len-2] == 0x0D)
         {
-            log_d("reader = %s\r\n",recv_buf);      
-
-//            //判定是刷卡还是QR
-//            if(strstr_t((const char*)recv_buf,(const char*)"CARD") == NULL)
-//            {
-//                //QR
-//                ptQR->authMode = AUTH_MODE_QR;
-//            }
-//            else
-//            {
-//                ptQR->authMode = AUTH_MODE_CARD;
-//            }
-
-//            if(len > QUEUE_BUF_LEN)
-//            {
-//                len = QUEUE_BUF_LEN;
-//            }              
-//            ptQR->dataLen = len;
-//            
-//            memcpy(ptQR->data,recv_buf,len);  
-
-//            log_d("<<<<<<<<<<<pQueue->authMode>>>>>>>>>>>>:%d\r\n",ptQR->authMode);
-
+            log_d("reader = %s\r\n",recv_buf); 
+            
             //添加模版是否启用的判定
             if(gTemplateParam.templateStatus == 0)
             {
@@ -235,7 +215,7 @@ static void vTaskBarCode(void *pvParameters)
 
                 log_d("ptQR = %s,len = %d\r\n",ptQR->data,ptQR->dataLen);
                 
-                if(ptQR->dataLen > 10)
+                if(ptQR->state)
                 {
                 	/* 使用消息队列实现指针变量的传递 */
                 	if(xQueueSend(xTransQueue,              /* 消息队列句柄 */
@@ -345,24 +325,17 @@ static int compareTime(uint8_t *currentTime)
         //没有指定时间段
         ret = 0;
         return ret;
-    }
-
-    dbh("localtime", currentTime, 9);
-    
+    }    
     //把时间转换为分钟
     localTime = BCDToInt(currentTime[2]) * 60 + BCDToInt(currentTime[1]);
-
-    log_d("localTime = %d\r\n",localTime);
-
+    
     //17:30
     memset(buff,0x00,sizeof(buff));
     memcpy(buff,gTemplateParam.holidayMode[0].startTime,2);
     begin1 = atoi(buff)*60;
     memset(buff,0x00,sizeof(buff));
     memcpy(buff,gTemplateParam.holidayMode[0].startTime+3,2);
-    begin1 += atoi(buff);   
-    log_d("begin1 = %d\r\n",begin1);
-
+    begin1 += atoi(buff); 
 
     memset(buff,0x00,sizeof(buff));
     memcpy(buff,gTemplateParam.holidayMode[1].startTime,2);
@@ -459,6 +432,7 @@ static void getDevData(char *src,int icFlag,int qrFlag,READER_BUFF_STRU *desc)
         //赋值   
         if(readerBuff.authMode == AUTH_MODE_CARD)
         {
+            readerBuff.state = DISABLE;
             readerBuff.dataLen = 0;
             memset(readerBuff.data,0x00,sizeof(readerBuff.data)); 
             log_d("no support IC card\r\n");
@@ -470,6 +444,7 @@ static void getDevData(char *src,int icFlag,int qrFlag,READER_BUFF_STRU *desc)
         //赋值   
         if(readerBuff.authMode == AUTH_MODE_QR)
         {
+            readerBuff.state = DISABLE;
             readerBuff.dataLen = 0;
             memset(readerBuff.data,0x00,sizeof(readerBuff.data)); 
             log_d("no support QR code\r\n");

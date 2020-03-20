@@ -380,7 +380,6 @@ static void ackUp ( void )
 	if ( memcmp ( up_status,"101711",6 ) == 0 )
 	{
 		ef_set_env_blob ( "up_status", "101722",6 );
-		exec_proc ( "1017","UpgradeAck" );
         Proscess("1017");
 	}
 

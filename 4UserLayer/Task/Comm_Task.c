@@ -35,7 +35,7 @@
 
  
 #define COMM_TASK_PRIO		(tskIDLE_PRIORITY + 4) 
-#define COMM_STK_SIZE 		(configMINIMAL_STACK_SIZE*9)
+#define COMM_STK_SIZE 		(configMINIMAL_STACK_SIZE*8)
 
 /*----------------------------------------------*
  * 常量定义                                     *
@@ -72,7 +72,7 @@ static void vTaskComm(void *pvParameters)
     
     READER_BUFF_STRU *ptMsg;
     BaseType_t xReturn = pdTRUE;/* 定义一个创建信息返回值，默认为pdPASS */
-    const TickType_t xMaxBlockTime = pdMS_TO_TICKS(100); /* 设置最大等待时间为200ms */  
+    const TickType_t xMaxBlockTime = pdMS_TO_TICKS(1000); /* 设置最大等待时间为200ms */  
     
     //获取当前设备的ID
     uint16_t readID = bsp_dipswitch_read();

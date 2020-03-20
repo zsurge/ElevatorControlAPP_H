@@ -33,7 +33,7 @@
 /*----------------------------------------------*
  * ∫Í∂®“Â                                       *
  *----------------------------------------------*/
-#define KEY_STK_SIZE        (configMINIMAL_STACK_SIZE*6)
+#define KEY_STK_SIZE        (configMINIMAL_STACK_SIZE*4)
 #define KEY_TASK_PRIO	    ( tskIDLE_PRIORITY + 2)
 
 /*----------------------------------------------*
@@ -106,8 +106,10 @@ static void vTaskKey(void *pvParameters)
 				case KEY_RR_PRES:                 
                     check_msg_queue();
                     
-                    ef_print_env();
-                
+//                    ef_print_env();
+
+//                    bsp_ds1302_mdifytime("2020-01-17 09:24:15");
+                    
                     log_d("read gpio = %02x\r\n",bsp_dipswitch_read());
 //                    testSplit();
 
