@@ -327,7 +327,7 @@ void int2Str(uint8_t* str, int32_t intnum)
 
 /*****************************************************************************
  函 数 名  : str2int
- 功能描述  : ascii码格式的hexstring转为整型 "1234" ===> 1234
+ 功能描述  : ascii码格式的hexstring转为整型 "1234" ===> 1234,不可含"a~f"
  输入参数  : const char* str  
  输出参数  : 无
  返 回 值  : 返回字符串的整型值
@@ -341,7 +341,7 @@ void int2Str(uint8_t* str, int32_t intnum)
 *****************************************************************************/
 int32_t str2int(const char* str)
 {
-	static int32_t temp = 0;
+	int32_t temp = 0;
 	const char* ptr = str;			//ptr保存str字符串开头  
 	if (*str == '-' || *str == '+')	//如果第一个字符是正负号，
 	{								//则移到下一个字符

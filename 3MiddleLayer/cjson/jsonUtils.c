@@ -419,7 +419,7 @@ uint8_t packetPayload(LOCAL_USER_STRU *localUserData,uint8_t *descJson)
 //    log_d("localUserData->cardNo = %s\r\n",localUserData->cardNo);
 //    log_d("localUserData->userId = %s\r\n",localUserData->userId);
 //    log_d("localUserData->accessLayer = %s\r\n",localUserData->accessLayer);
-//    log_d("localUserData->defaultLayer = %d\r\n",localUserData->defaultLayer);    
+//    log_d("localUserData->defaultLayer = %d\r\n",localUserData->defaultFloor);    
 //    log_d("localUserData->startTime = %s\r\n",localUserData->startTime);        
 //    log_d("localUserData->endTime = %s\r\n",localUserData->endTime);        
 //    log_d("localUserData->authMode = %d\r\n",localUserData->authMode);

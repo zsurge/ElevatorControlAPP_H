@@ -815,7 +815,7 @@ static SYSERRORCODE_E RemoteOptDev ( uint8_t* msgBuf )
 {
     SYSERRORCODE_E result = NO_ERR;
     uint8_t buf[MQTT_MAX_LEN] = {0};
-    uint8_t accessLayer[4] = {0};
+    uint8_t accessFloor[4] = {0};
     uint16_t len = 0;
     
     if(!msgBuf)
@@ -824,7 +824,7 @@ static SYSERRORCODE_E RemoteOptDev ( uint8_t* msgBuf )
     }
 
     
-    strcpy((char *)accessLayer,(const char*)GetJsonItem((const uint8_t *)msgBuf,(const uint8_t *)"accessLayer",1));
+    strcpy((char *)accessFloor,(const char*)GetJsonItem((const uint8_t *)msgBuf,(const uint8_t *)"accessLayer",1));
 
     result = modifyJsonItem(msgBuf,"status","1",1,buf);
 
@@ -835,7 +835,7 @@ static SYSERRORCODE_E RemoteOptDev ( uint8_t* msgBuf )
     
 
     //这里需要发消息到消息队列，进行呼梯
-    SendToQueue(accessLayer,strlen((const char*)accessLayer),AUTH_MODE_REMOTE);
+    SendToQueue(accessFloor,strlen((const char*)accessFloor),AUTH_MODE_REMOTE);
 
     len = strlen((const char*)buf);
 

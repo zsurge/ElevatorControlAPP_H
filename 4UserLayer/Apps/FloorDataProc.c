@@ -76,10 +76,10 @@ void packetSendBuf(READER_BUFF_STRU *pQueue,uint8_t *buf)
 
     memset(localUserData->cardNo,0x00,sizeof(localUserData->cardNo));
     memset(localUserData->userId,0x00,sizeof(localUserData->userId));
-    memset(localUserData->accessLayer,0x00,sizeof(localUserData->accessLayer));
+    memset(localUserData->accessFloor,0x00,sizeof(localUserData->accessFloor));
     memset(localUserData->startTime,0x00,sizeof(localUserData->startTime));
     memset(localUserData->endTime,0x00,sizeof(localUserData->endTime));
-    localUserData->defaultLayer = 0;
+    localUserData->defaultFloor = 0;
     localUserData->authMode = 0;
     
 //    memcpy(buf,sendBuf,MAX_SEND_LEN);
@@ -200,8 +200,8 @@ SYSERRORCODE_E authReader(READER_BUFF_STRU *pQueue,LOCAL_USER_STRU *localUserDat
     //3867;0;0;2019-12-29;2029-12-31
     
     
-    strcpy(localUserData->accessLayer,buf[1]);
-    localUserData->defaultLayer = atoi(buf[2]);
+    strcpy(localUserData->accessFloor,buf[1]);
+    localUserData->defaultFloor = atoi(buf[2]);
     strcpy(localUserData->startTime,buf[3]);
     strcpy(localUserData->endTime,buf[4]);    
 
@@ -212,8 +212,8 @@ SYSERRORCODE_E authReader(READER_BUFF_STRU *pQueue,LOCAL_USER_STRU *localUserDat
 
     log_d("localUserData->cardNo = %s\r\n",localUserData->cardNo);
     log_d("localUserData->userId = %s\r\n",localUserData->userId);
-    log_d("localUserData->accessLayer = %s\r\n",localUserData->accessLayer);
-    log_d("localUserData->defaultLayer = %d\r\n",localUserData->defaultLayer);    
+    log_d("localUserData->accessLayer = %s\r\n",localUserData->accessFloor);
+    log_d("localUserData->defaultLayer = %d\r\n",localUserData->defaultFloor);    
     log_d("localUserData->startTime = %s\r\n",localUserData->startTime);        
     log_d("localUserData->endTime = %s\r\n",localUserData->endTime);        
     log_d("localUserData->authMode = %d\r\n",localUserData->authMode);
@@ -275,8 +275,8 @@ SYSERRORCODE_E authRemote(READER_BUFF_STRU *pQueue,LOCAL_USER_STRU *localUserDat
     //3867;0;0;2019-12-29;2029-12-31
     
     
-    strcpy(localUserData->accessLayer,buf[1]);
-    localUserData->defaultLayer = atoi(buf[2]);
+    strcpy(localUserData->accessFloor,buf[1]);
+    localUserData->defaultFloor = atoi(buf[2]);
     strcpy(localUserData->startTime,buf[3]);
     strcpy(localUserData->endTime,buf[4]);    
 
@@ -284,8 +284,8 @@ SYSERRORCODE_E authRemote(READER_BUFF_STRU *pQueue,LOCAL_USER_STRU *localUserDat
 
     log_d("localUserData->cardNo = %s\r\n",localUserData->cardNo);
     log_d("localUserData->userId = %s\r\n",localUserData->userId);
-    log_d("localUserData->accessLayer = %s\r\n",localUserData->accessLayer);
-    log_d("localUserData->defaultLayer = %d\r\n",localUserData->defaultLayer);    
+    log_d("localUserData->accessLayer = %s\r\n",localUserData->accessFloor);
+    log_d("localUserData->defaultLayer = %d\r\n",localUserData->defaultFloor);    
     log_d("localUserData->startTime = %s\r\n",localUserData->startTime);        
     log_d("localUserData->endTime = %s\r\n",localUserData->endTime);        
     log_d("localUserData->authMode = %d\r\n",localUserData->authMode);
@@ -312,15 +312,15 @@ static SYSERRORCODE_E packetToElevator(LOCAL_USER_STRU *localUserData,uint8_t *b
     
     log_d("localUserData->cardNo = %s\r\n",localUserData->cardNo);
     log_d("localUserData->userId = %s\r\n",localUserData->userId);
-    log_d("localUserData->accessLayer = %s\r\n",localUserData->accessLayer);
-    log_d("localUserData->defaultLayer = %d\r\n",localUserData->defaultLayer);    
+    log_d("localUserData->accessLayer = %s\r\n",localUserData->accessFloor);
+    log_d("localUserData->defaultLayer = %d\r\n",localUserData->defaultFloor);    
     log_d("localUserData->startTime = %s\r\n",localUserData->startTime);        
     log_d("localUserData->endTime = %s\r\n",localUserData->endTime);        
     log_d("localUserData->authMode = %d\r\n",localUserData->authMode);
 
     
 
-    split(localUserData->accessLayer,",",authLayer,&num); //调用函数进行分割 
+    split(localUserData->accessFloor,",",authLayer,&num); //调用函数进行分割 
 
     log_d("num = %d\r\n",num);
 
