@@ -24,7 +24,7 @@
 
 //以下宏定义固定，不需要修改
 #define CONTENT				"clientId"DEVICE_NAME"deviceName"DEVICE_NAME"productKey"PRODUCT_KEY"timestamp789"	//计算登录密码用
-#define CLIENT_ID			DEVICE_NAME"|securemode=3,signmethod=hmacsha1,timestamp=789|"											//客户端ID
+#define CLIENT_ID			DEVICE_NAME"|1233444444434234234234234234"											//客户端ID
 #define USER_NAME			DEVICE_NAME"&"PRODUCT_KEY																													//客户端用户名
 #define PASSWORD			"AA6A749E740A3019D58090FF3ADC57B9DB4B380E"																			//客户端登录password通过hmac_sha1算法得到，大小写不敏感
 

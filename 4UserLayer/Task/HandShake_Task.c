@@ -86,6 +86,8 @@ static void vTaskHandShake(void *pvParameters)
     //读取模板数据
     readTemplateData();
 
+    readCardAndUserIdIndex();
+
     vTaskDelay(500);
     vTaskDelete( NULL ); //删除自己
 }

@@ -50,15 +50,14 @@
 #pragma pack(1)
 typedef struct
 {
+    uint8_t authMode;                               //鉴权模式,刷卡=2；QR=7
+    uint8_t defaultFloor;                           //默认楼层
     uint8_t userId[USER_ID_LEN+1];                  //用户ID
     uint8_t cardNo[CARD_NO_LEN+1];                  //卡号
     uint8_t accessFloor[FLOOR_ARRAY_LEN];           //楼层权限
     uint8_t startTime[TIME_LEN];                    //开始有效时间
     uint8_t endTime[TIME_LEN];                      //结束时间    
-    uint8_t timeStamp[16];                          //二维码时间戳
-    uint8_t authMode;                               //鉴权模式,刷卡=2；QR=7
-    uint8_t defaultFloor;                           //默认楼层        
-    
+    uint8_t timeStamp[TIME_LEN];                          //二维码时间戳
 }LOCAL_USER_STRU;
 #pragma pack()
 
@@ -84,11 +83,7 @@ SYSERRORCODE_E PacketDeviceInfo ( const uint8_t* jsonBuff,const uint8_t* descJso
 //打包APP升级后需上送的数据
 SYSERRORCODE_E upgradeDataPacket(uint8_t *descBuf);
 
-//打包
-SYSERRORCODE_E packetJson(uint8_t *buf);
 
-//
-SYSERRORCODE_E parseJson(uint8_t *json);
 
 uint8_t packetPayload(LOCAL_USER_STRU *localUserData,uint8_t *descJson);
 

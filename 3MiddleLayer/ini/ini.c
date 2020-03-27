@@ -26,6 +26,7 @@
 #include "string.h"
 #include "templateprocess.h"
 #include "tool.h"
+#include "LocalData.h"
 
 
 #define LOG_TAG    "ini"
@@ -236,6 +237,19 @@ void readTemplateData(void)
 
 
 
+void readCardAndUserIdIndex(void)
+{
+    uint8_t tempBuff[6] = {0};
+    
+    ef_get_env_blob("CardHeaderIndex", tempBuff, sizeof(tempBuff) , NULL);
+    gCurCardHeaderIndex = atoi(tempBuff);
+    log_d("readCardAndUserIdIndex = %d\r\n",gCurCardHeaderIndex);
+
+    memset(tempBuff,0x00,sizeof(tempBuff));
+    ef_get_env_blob("UserHeaderIndex", tempBuff, sizeof(tempBuff) , NULL);
+    gCurUserHeaderIndex = atoi(tempBuff);  
+    log_d("gCurUserHeaderIndex = %d\r\n",gCurUserHeaderIndex);
+}
 
 
 

@@ -40,7 +40,7 @@
 /* 定义使能的串口, 0 表示不使能（不增加代码大小）， 1表示使能 */
 #define	UART1_FIFO_EN	0
 #define	UART2_FIFO_EN	1
-#define	UART3_FIFO_EN	1
+#define	UART3_FIFO_EN	0
 #define	UART4_FIFO_EN	1
 #define	UART5_FIFO_EN	1
 #define	UART6_FIFO_EN	0
@@ -80,8 +80,8 @@ typedef enum
 
 #if UART2_FIFO_EN == 1
 	#define UART2_BAUD			38400
-	#define UART2_TX_BUF_SIZE	1*1024
-	#define UART2_RX_BUF_SIZE	1*1024
+	#define UART2_TX_BUF_SIZE	1*512
+	#define UART2_RX_BUF_SIZE	1*512
 #endif
 
 #if UART3_FIFO_EN == 1
@@ -92,14 +92,14 @@ typedef enum
 
 #if UART4_FIFO_EN == 1
 	#define UART4_BAUD			9600
-	#define UART4_TX_BUF_SIZE	1*1024
-	#define UART4_RX_BUF_SIZE	1*1024
+	#define UART4_TX_BUF_SIZE	1*512
+	#define UART4_RX_BUF_SIZE	1*512
 #endif
 
 #if UART5_FIFO_EN == 1
 	#define UART5_BAUD			9600
-	#define UART5_TX_BUF_SIZE	1*1024
-	#define UART5_RX_BUF_SIZE	1*1024
+	#define UART5_TX_BUF_SIZE	1*512
+	#define UART5_RX_BUF_SIZE	1*512
 #endif
 
 #if UART6_FIFO_EN == 1

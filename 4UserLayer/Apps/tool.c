@@ -528,4 +528,16 @@ uint8_t IntToBCD ( unsigned char intdat ) //十进制转BCD
 }
 
 
+uint32_t hex2int( char *str)
+{
+    uint32_t res = 0;
+    char c;
+
+    while ((c = *str++)) {
+        char v = (c & 0xF) + (c >> 6) | ((c >> 3) & 0x8);
+        res = (res << 4) | (unsigned int) v;
+    }
+
+    return res;
+} 
 

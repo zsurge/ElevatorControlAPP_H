@@ -22,6 +22,8 @@
  *----------------------------------------------*/
 #include "FloorDataProc.h"
 #include "jsonUtils.h"
+#include "LocalData.h"
+
 
 #define LOG_TAG    "FloorData"
 #include "elog.h"
@@ -128,7 +130,7 @@ void packetSendBuf(READER_BUFF_STRU *pQueue,uint8_t *buf)
    }
 
 }
-
+#if 0
 SYSERRORCODE_E authReader(READER_BUFF_STRU *pQueue,LOCAL_USER_STRU *localUserData)
 {
     SYSERRORCODE_E result = NO_ERR;
@@ -206,8 +208,78 @@ SYSERRORCODE_E authReader(READER_BUFF_STRU *pQueue,LOCAL_USER_STRU *localUserDat
     strcpy(localUserData->endTime,buf[4]);    
 
 
+    log_d("localUserData->cardNo = %s\r\n",localUserData->cardNo);
+    log_d("localUserData->userId = %s\r\n",localUserData->userId);
+    log_d("localUserData->accessLayer = %s\r\n",localUserData->accessFloor);
+    log_d("localUserData->defaultLayer = %d\r\n",localUserData->defaultFloor);    
+    log_d("localUserData->startTime = %s\r\n",localUserData->startTime);        
+    log_d("localUserData->endTime = %s\r\n",localUserData->endTime);        
+    log_d("localUserData->authMode = %d\r\n",localUserData->authMode);
+    log_d("localUserData->timeStamp = %s\r\n",localUserData->timeStamp);
+
+    return result;
+}
+#endif
+
+SYSERRORCODE_E authReader(READER_BUFF_STRU *pQueue,LOCAL_USER_STRU *localUserData)
+{
+    SYSERRORCODE_E result = NO_ERR;
+    char value[128] = {0};
+    int val_len = 0;
+    char *buf[6] = {0}; //存放分割后的子字符串 
+    int num = 0;
+    uint8_t key[8] = {0};    
+    uint8_t timeStamp[16] = {0};
+    uint8_t isFind = 0;
+
+    USERDATA_STRU rUserData = {0};
+    memset(&rUserData,0x00,sizeof(rUserData));
+
+
+    memset(key,0x00,sizeof(key));
+
+    if(pQueue->authMode == AUTH_MODE_QR) 
+    {
+        //二维码
+        log_d("pQueue->data = %s\r\n",pQueue->data);
+        strcpy((char *)key,(const char *)GetJsonItem((const uint8_t *)pQueue->data,(const uint8_t *)"ownerId",0));
+        strcpy((char *)timeStamp,(const char *)GetJsonItem((const uint8_t *)pQueue->data,(const uint8_t *)"datetime",0));
+        log_d("key = %s\r\n",key);
+        isFind = readUserData(key,USER_MODE,&rUserData);
+    }
+    else
+    {
+        //读卡，-2 是减掉0D 0A
+        memcpy(key,pQueue->data+pQueue->dataLen-2-CARD_NO_LEN,CARD_NO_LEN);
+        log_d("key = %s\r\n",key);
+        isFind = readUserData(key,CARD_MODE,&rUserData);        
+    }
+
+
+
+    if(isFind != 0)
+    {
+        //未找到记录，无权限
+        log_d("not find record\r\n");
+        return NO_AUTHARITY_ERR;
+    }
+
+
+    log_d("userData.cardNo = %s\r\n",rUserData.cardNo);
+    log_d("userData.userId = %s\r\n",rUserData.userId);
+    log_d("userData.accessFloor = %s\r\n",rUserData.accessFloor);
+    log_d("userData.defaultFloor = %s\r\n",rUserData.defaultFloor);
+    log_d("userData.startTime = %s\r\n",rUserData.startTime);
     
 
+    localUserData->authMode = pQueue->authMode; 
+    localUserData->defaultFloor = rUserData.defaultFloor;
+    memcpy(localUserData->userId,rUserData.userId,CARD_USER_LEN);        
+    memcpy(localUserData->cardNo,rUserData.cardNo,CARD_USER_LEN);      
+    memcpy(localUserData->timeStamp,rUserData.timeStamp,TIME_LENGTH);    
+    memcpy(localUserData->accessFloor,rUserData.accessFloor,FLOOR_ARRAY_LENGTH);    
+    memcpy(localUserData->startTime,rUserData.startTime,TIME_LENGTH);
+    memcpy(localUserData->endTime,rUserData.endTime,TIME_LENGTH);    
 
 
     log_d("localUserData->cardNo = %s\r\n",localUserData->cardNo);
@@ -221,6 +293,7 @@ SYSERRORCODE_E authReader(READER_BUFF_STRU *pQueue,LOCAL_USER_STRU *localUserDat
 
     return result;
 }
+
 
 SYSERRORCODE_E authRemote(READER_BUFF_STRU *pQueue,LOCAL_USER_STRU *localUserData)
 {

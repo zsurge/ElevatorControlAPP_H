@@ -213,7 +213,7 @@ static void vTaskBarCode(void *pvParameters)
 
                  }  
 
-                log_d("ptQR = %s,len = %d\r\n",ptQR->data,ptQR->dataLen);
+                log_d("ptQR = %s,len = %d,state = %d\r\n",ptQR->data,ptQR->dataLen,ptQR->state);
                 
                 if(ptQR->state)
                 {
@@ -401,7 +401,9 @@ static void getDevData(char *src,int icFlag,int qrFlag,READER_BUFF_STRU *desc)
     READER_BUFF_STRU readerBuff; 
 
     memset(&readerBuff,0x00,sizeof(readerBuff));   
-    
+
+    //默认是支持上送的
+    readerBuff.state = ENABLE;
 
     if(strlen(src) >QUEUE_BUF_LEN)
     {

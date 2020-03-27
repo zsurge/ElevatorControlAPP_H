@@ -105,14 +105,15 @@ MQTT_START:
         goto MQTT_reconnect;
     }
 
-	data.clientID.cstring = CLIENT_ID;              //随机
+	ReadLocalDevSn();
+
+	data.clientID.cstring = gMqttDevSn.sn;              //随机
 	data.keepAliveInterval = KEEPLIVE_TIME;         //保持活跃
 	data.username.cstring = USER_NAME;              //用户名
 	data.password.cstring = PASSWORD;               //秘钥
 	data.MQTTVersion = MQTT_VERSION;                //3表示3.1版本，4表示3.11版本
 	data.cleansession = 1;
 
-	ReadLocalDevSn();
 
 
 	while ( 1 )
@@ -123,7 +124,7 @@ MQTT_START:
 			{
 				gCurTick =  xTaskGetTickCount();
 				msgtypes = PINGREQ;
-				log_d ( "send heartbeat!!  set msgtypes = %d \r\n",msgtypes );
+//				log_d ( "send heartbeat!!  set msgtypes = %d \r\n",msgtypes );
 //				showTask();
 			}
 
@@ -176,6 +177,7 @@ MQTT_START:
 				else
 				{
 					log_d ( "send CONNECT failed\r\n" );
+					msgtypes = 1; 
                     goto MQTT_reconnect;
 				}
 				log_d ( "step = %d,MQTT concet to server!\r\n",CONNECT );
@@ -186,7 +188,8 @@ MQTT_START:
 				if ( MQTTDeserialize_connack ( &sessionPresent, &connack_rc, ( unsigned char* ) buf, buflen ) != 1 || connack_rc != 0 )	//收到回执
 				{
 					log_d ( "Unable to connect, return code %d\r\n", connack_rc );		//回执不一致，连接失败
-		
+					msgtypes = 1; 
+		            goto MQTT_reconnect;
 				}
 				else
 				{
@@ -323,7 +326,7 @@ MQTT_START:
 				break;
 			//心跳响应
 			case PINGRESP://13
-				log_d ( "step = %d,mqtt server Pong\r\n",PINGRESP );  			//心跳回执，服务有响应
+//				log_d ( "step = %d,mqtt server Pong\r\n",PINGRESP );  			//心跳回执，服务有响应
 				msgtypes = 0;
 				break;
             case UNSUBSCRIBE:
@@ -349,12 +352,12 @@ MQTT_START:
 		if ( rc >0 ) //如果有数据，进入相应状态。
 		{
 			msgtypes = rc;
-			log_d ( "MQTT is get recv: msgtypes = %d\r\n",msgtypes );
+//			log_d ( "MQTT is get recv: msgtypes = %d\r\n",msgtypes );
 		}	
 
-		/* 发送事件标志，表示任务正常运行 */
+//		/* 发送事件标志，表示任务正常运行 */
 		xEventGroupSetBits ( xCreatedEventGroup, TASK_BIT_6 );
-        vTaskDelay ( 300 );
+        vTaskDelay ( 200 );
 	}
 
 MQTT_reconnect:    

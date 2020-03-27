@@ -23,6 +23,8 @@
 
 void readTemplateData(void);
 
+void readCardAndUserIdIndex(void);
+
 void RestoreDefaultSetting(void);
 
 void SystemUpdate(void);

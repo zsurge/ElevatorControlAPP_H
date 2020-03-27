@@ -97,9 +97,9 @@ static void vLwipDHCPTask( void *pvParameters )
 
     uint32_t ip=0,nk=0,gww=0;
   
-    uint8_t lwipdevip[4] = {0};       //本机IP地址
-	uint8_t lwipdevnetmask[4] = {0}; 	//子网掩码
-	uint8_t lwipdevgateway[4] = {0};
+//    uint8_t lwipdevip[4] = {0};       //本机IP地址
+//	uint8_t lwipdevnetmask[4] = {0}; 	//子网掩码
+//	uint8_t lwipdevgateway[4] = {0};
 
 
     printf("start vLwipDHCPTask\r\n");
@@ -135,23 +135,23 @@ static void vLwipDHCPTask( void *pvParameters )
                 		gww=tempnetif->gw.addr;			//读取默认网关
                 		
                         //解析出通过DHCP获取到的IP地址
-                        lwipdevip[3]= ( uint8_t ) ( ip>>24 );
-                        lwipdevip[2]= ( uint8_t ) ( ip>>16 );
-                        lwipdevip[1]= ( uint8_t ) ( ip>>8 );
-                        lwipdevip[0]= ( uint8_t ) ( ip );
-                        printf ( "通过DHCP获取到IP地址..............%d.%d.%d.%d\r\n",lwipdevip[0],lwipdevip[1],lwipdevip[2],lwipdevip[3] );
+                        lwipdev.ip[3]= ( uint8_t ) ( ip>>24 );
+                        lwipdev.ip[2]= ( uint8_t ) ( ip>>16 );
+                        lwipdev.ip[1]= ( uint8_t ) ( ip>>8 );
+                        lwipdev.ip[0]= ( uint8_t ) ( ip );
+                        printf ( "通过DHCP获取到IP地址..............%d.%d.%d.%d\r\n",lwipdev.ip[0],lwipdev.ip[1],lwipdev.ip[2],lwipdev.ip[3] );
                         //解析通过DHCP获取到的子网掩码地址
-                        lwipdevnetmask[3]= ( uint8_t ) ( nk>>24 );
-                        lwipdevnetmask[2]= ( uint8_t ) ( nk>>16 );
-                        lwipdevnetmask[1]= ( uint8_t ) ( nk>>8 );
-                        lwipdevnetmask[0]= ( uint8_t ) ( nk );
-                        printf ( "通过DHCP获取到子网掩码............%d.%d.%d.%d\r\n",lwipdevnetmask[0],lwipdevnetmask[1],lwipdevnetmask[2],lwipdevnetmask[3] );
+                        lwipdev.netmask[3]= ( uint8_t ) ( nk>>24 );
+                        lwipdev.netmask[2]= ( uint8_t ) ( nk>>16 );
+                        lwipdev.netmask[1]= ( uint8_t ) ( nk>>8 );
+                        lwipdev.netmask[0]= ( uint8_t ) ( nk );
+                        printf ( "通过DHCP获取到子网掩码............%d.%d.%d.%d\r\n",lwipdev.netmask[0],lwipdev.netmask[1],lwipdev.netmask[2],lwipdev.netmask[3] );
                         //解析出通过DHCP获取到的默认网关
-                        lwipdevgateway[3]= ( uint8_t ) ( gww>>24 );
-                        lwipdevgateway[2]= ( uint8_t ) ( gww>>16 );
-                        lwipdevgateway[1]= ( uint8_t ) ( gww>>8 );
-                        lwipdevgateway[0]= ( uint8_t ) ( gww );
-                        printf ( "通过DHCP获取到的默认网关..........%d.%d.%d.%d\r\n",lwipdevgateway[0],lwipdevgateway[1],lwipdevgateway[2],lwipdevgateway[3] );
+                        lwipdev.gateway[3]= ( uint8_t ) ( gww>>24 );
+                        lwipdev.gateway[2]= ( uint8_t ) ( gww>>16 );
+                        lwipdev.gateway[1]= ( uint8_t ) ( gww>>8 );
+                        lwipdev.gateway[0]= ( uint8_t ) ( gww );
+                        printf ( "通过DHCP获取到的默认网关..........%d.%d.%d.%d\r\n",lwipdev.gateway[0],lwipdev.gateway[1],lwipdev.gateway[2],lwipdev.gateway[3] );
                         
                         printf ( "网卡的MAC地址为:................%02x.%02x.%02x.%02x.%02x.%02x\r\n",lwipdev.mac[0],lwipdev.mac[1],lwipdev.mac[2],lwipdev.mac[3],lwipdev.mac[4],lwipdev.mac[5] );
 						/* Stop DHCP */

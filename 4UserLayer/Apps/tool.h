@@ -86,10 +86,9 @@ int clearbit(int num, int bit);
 
 void calcMac(unsigned char *mac);
 
-
-
 void Insertchar(char *src,char*desc,char c);
 
+uint32_t hex2int( char *str);
 
 
 

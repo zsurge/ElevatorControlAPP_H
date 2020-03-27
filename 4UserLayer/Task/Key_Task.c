@@ -26,6 +26,7 @@
 #include "bsp_ds1302.h"
 #include "easyflash.h"
 #include "tool.h"
+#include "bsp_beep.h"
 
 #define LOG_TAG    "keyTask"
 #include "elog.h"
@@ -70,9 +71,7 @@ static void vTaskKey(void *pvParameters)
 	uint8_t ucKeyCode;
 	uint8_t pcWriteBuffer[1024];
     
-    uint16_t crc_value = 0;
 
-    uint8_t cm4[] = { 0x02,0x7B,0x22,0x63,0x6D,0x64,0x22,0x3A,0x22,0x75,0x70,0x64,0x61,0x74,0x65,0x22,0x2C,0x22,0x76,0x61,0x6C,0x75,0x65,0x22,0x3A,0x7B,0x22,0x75,0x70,0x64,0x61,0x74,0x65,0x22,0x3A,0x22,0x41,0x37,0x22,0x7D,0x2C,0x22,0x64,0x61,0x74,0x61,0x22,0x3A,0x22,0x30,0x30,0x22,0x7D,0x03 };
 
     uint32_t g_memsize;
 
@@ -100,7 +99,7 @@ static void vTaskKey(void *pvParameters)
 
                     g_memsize = xPortGetFreeHeapSize();
                     printf("系统当前内存大小为 %d 字节，开始申请内存\n",g_memsize);
-                    
+                     BEEP = 1;
 					break;				
 				/* K2键按下，打印串口操作命令 */
 				case KEY_RR_PRES:                 
@@ -112,6 +111,7 @@ static void vTaskKey(void *pvParameters)
                     
                     log_d("read gpio = %02x\r\n",bsp_dipswitch_read());
 //                    testSplit();
+                    eraseUserDataAll();
 
 //                      ee_test();
 //			        
@@ -120,24 +120,20 @@ static void vTaskKey(void *pvParameters)
                     log_i("KEY_DOWN_K3\r\n");
 //                    ef_env_set_default();
 //                    calcRunTime();       
-//                    bsp_ds1302_mdifytime("2020-03-16 10:12:30");
+                    bsp_ds1302_mdifytime("2020-03-25 13:56:00");
 
                     bsp_ds1302_readtime();
+
+                     BEEP = 0;
                 
-                    ef_set_env_blob("sn_flag","1111",4);    
-                    ef_set_env_blob("remote_sn","7A13DCC67054F72CC07F",strlen("7A13DCC67054F72CC07F"));    
 
 
 					break;
 				case KEY_OK_PRES:    
 //                    test_env();
                     log_w("KEY_DOWN_K4\r\n");
-                    crc_value = CRC16_Modbus(cm4, 54);
-                    log_v("hi = %02x, lo = %02x\r\n", crc_value>>8, crc_value & 0xff);
+                     ef_set_env_blob("sn_flag","0000",4);    
 
-                    ef_set_env_blob("3867", "89E1E35D;10;10;2019-12-29;2029-12-31",strlen("89E1E35D;10;10;2019-12-29;2029-12-31")); 
-                    ef_set_env_blob("3896", "89E1E35D;8;8;2020-01-03;2029-12-31",strlen("89E1E35D;8;8;2020-01-03;2029-12-31")); 
-                    ef_set_env_blob("89E1E35D", "3867;8,9,10,11,12;9;2019-12-29;2029-12-31",strlen("3867;8,9,10,11,12;9;2019-12-29;2029-12-31"));                    
 					break;                
 				
 				/* 其他的键值不处理 */

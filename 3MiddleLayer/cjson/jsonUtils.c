@@ -24,6 +24,7 @@
 #include "version.h"
 #include "bsp_rtc.h"
 #include "eth_cfg.h"
+#include "LocalData.h"
 #include "templateprocess.h"
 
 
@@ -197,6 +198,7 @@ SYSERRORCODE_E PacketDeviceInfo ( const uint8_t* jsonBuff,const uint8_t* descJso
 	SYSERRORCODE_E result = NO_ERR;
 	cJSON* root,*newroot,*json_item,*dataObj,*json_cmdid,*json_devcode,*identification;
     char *tmpBuf;
+    char buf[8] = {0};
     
 	root = cJSON_Parse ( ( char* ) jsonBuff );    //解析数据包
 	if ( !root )
@@ -232,8 +234,11 @@ SYSERRORCODE_E PacketDeviceInfo ( const uint8_t* jsonBuff,const uint8_t* descJso
 
         cJSON_AddStringToObject(dataObj, "version", gDevinfo.SoftwareVersion);
         cJSON_AddStringToObject(dataObj, "appName", gDevinfo.Model);
-        cJSON_AddStringToObject(dataObj, "regRersion", "8");
-        cJSON_AddStringToObject(dataObj, "regface", "7");
+
+        memset(buf,0x00,sizeof(buf));
+        sprintf(buf,"%d",gCurUserHeaderIndex);
+        cJSON_AddStringToObject(dataObj, "regRersion", buf);
+        cJSON_AddStringToObject(dataObj, "regface", " ");
         cJSON_AddStringToObject(dataObj, "ip", gDevinfo.GetIP());
                 
         tmpBuf = cJSON_PrintUnformatted(newroot); 
@@ -330,7 +335,7 @@ SYSERRORCODE_E upgradeDataPacket(uint8_t *descBuf)
 
 uint8_t* packetBaseJson(uint8_t *jsonBuff)
 {
-    static uint8_t value[JSON_ITEM_MAX_LEN] = {0};
+    static uint8_t value[256] = {0};
     
 	cJSON* root,*newroot,*tmpdataObj,*json_item,*dataObj,*json_cmdCode,*json_devCode,*identification,*id;
     char *tmpBuf;
