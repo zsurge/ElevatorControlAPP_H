@@ -1,6 +1,6 @@
 #include "bsp_ds1302.h"
 #include "tool.h"
-
+#include "time.h"
 
 static uint8_t WeekDay ( unsigned char y, unsigned char m, unsigned char d );
 
@@ -204,5 +204,45 @@ void bsp_ds1302_init ( void )
 
 }
 
+
+
+char* time_to_timestamp(void)
+{
+	unsigned int timestamp;
+	struct tm stm;
+	static char timestamp_buf[14] = {0};
+
+
+	
+	stm.tm_year = read_1302 ( read[6] ) + 100;   //RTC_Year rang 0-99,but tm_year since 1900
+	stm.tm_mon	= read_1302 ( read[4] ) - 1;        //RTC_Month rang 1-12,but tm_mon rang 0-11
+	stm.tm_mday	= read_1302 ( read[3] );  //RTC_Date rang 1-31 and tm_mday rang 1-31
+	stm.tm_hour	= read_1302 ( read[2] ) - 8;   //RTC_Hours rang 0-23 and tm_hour rang 0-23
+	stm.tm_min	= read_1302 ( read[1] );   //RTC_Minutes rang 0-59 and tm_min rang 0-59
+	stm.tm_sec	= read_1302 ( read[0] );   
+	
+	sprintf(timestamp_buf,"%u",mktime(&stm));
+
+	printf("time_to_timestamp = %s\r\n",timestamp_buf);
+	return timestamp_buf;
+}
+
+
+void timestamp_to_time(unsigned int timestamp)
+{
+	struct tm *stm= NULL;
+	char buf[100] = {0};
+	time_t seconds;
+	
+	seconds = timestamp;
+	
+	stm = localtime(&seconds);
+	
+	sprintf(buf,"\r\nstm %d-%d-%d  %d.%d.%d\r\n",\
+	stm->tm_year-100,stm->tm_mon+1,stm->tm_mday,\
+	stm->tm_hour+8,stm->tm_min,stm->tm_sec);
+
+    printf("timestamp_to_time = %s\r\n",buf);
+}
 
 

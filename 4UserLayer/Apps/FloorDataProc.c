@@ -23,6 +23,8 @@
 #include "FloorDataProc.h"
 #include "jsonUtils.h"
 #include "LocalData.h"
+#include "bsp_ds1302.h"
+
 
 
 #define LOG_TAG    "FloorData"
@@ -224,52 +226,61 @@ SYSERRORCODE_E authReader(READER_BUFF_STRU *pQueue,LOCAL_USER_STRU *localUserDat
 SYSERRORCODE_E authReader(READER_BUFF_STRU *pQueue,LOCAL_USER_STRU *localUserData)
 {
     SYSERRORCODE_E result = NO_ERR;
-    char value[128] = {0};
+    char value[JSON_ITEM_MAX_LEN] = {0};
     int val_len = 0;
     char *buf[6] = {0}; //存放分割后的子字符串 
     int num = 0;
     uint8_t key[8] = {0};    
     uint8_t timeStamp[16] = {0};
     uint8_t isFind = 0;
+    uint8_t tagFloor = 200;
 
     USERDATA_STRU rUserData = {0};
     memset(&rUserData,0x00,sizeof(rUserData));
-
-
     memset(key,0x00,sizeof(key));
 
     if(pQueue->authMode == AUTH_MODE_QR) 
     {
         //二维码
         log_d("pQueue->data = %s\r\n",pQueue->data);
-        strcpy((char *)key,(const char *)GetJsonItem((const uint8_t *)pQueue->data,(const uint8_t *)"ownerId",0));
-        strcpy((char *)timeStamp,(const char *)GetJsonItem((const uint8_t *)pQueue->data,(const uint8_t *)"datetime",0));
-        log_d("key = %s\r\n",key);
-        isFind = readUserData(key,USER_MODE,&rUserData);
+        
+        isFind = parseQrCode(pQueue->data,&tagFloor);
+
+        log_d("isfind = %d,tagFloor = %d\r\n",isFind,tagFloor);
+
+        if(tagFloor == 200 || isFind == 0)
+        {
+            //未找到记录，无权限
+            log_d("not find record\r\n");
+            return NO_AUTHARITY_ERR;
+        }
+
+        time_to_timestamp();
+
+        timestamp_to_time(1585559783);        
+
+        rUserData.defaultFloor = tagFloor;
     }
     else
     {
         //读卡，-2 是减掉0D 0A
         memcpy(key,pQueue->data+pQueue->dataLen-2-CARD_NO_LEN,CARD_NO_LEN);
         log_d("key = %s\r\n",key);
-        isFind = readUserData(key,CARD_MODE,&rUserData);        
+        isFind = readUserData(key,CARD_MODE,&rUserData);      
+
+        if(rUserData.cardState !=1 || isFind != 0)
+        {
+            //未找到记录，无权限
+            log_d("not find record\r\n");
+            return NO_AUTHARITY_ERR;
+        }        
     }
 
-
-
-    if(isFind != 0)
-    {
-        //未找到记录，无权限
-        log_d("not find record\r\n");
-        return NO_AUTHARITY_ERR;
-    }
-
-
-    log_d("userData.cardNo = %s\r\n",rUserData.cardNo);
-    log_d("userData.userId = %s\r\n",rUserData.userId);
-    log_d("userData.accessFloor = %s\r\n",rUserData.accessFloor);
-    log_d("userData.defaultFloor = %s\r\n",rUserData.defaultFloor);
-    log_d("userData.startTime = %s\r\n",rUserData.startTime);
+//    log_d("userData.cardNo = %s\r\n",rUserData.cardNo);
+//    log_d("userData.userId = %s\r\n",rUserData.userId);
+//    log_d("userData.accessFloor = %s\r\n",rUserData.accessFloor);
+//    log_d("userData.defaultFloor = %d\r\n",rUserData.defaultFloor);
+//    log_d("userData.startTime = %s\r\n",rUserData.startTime);
     
 
     localUserData->authMode = pQueue->authMode; 

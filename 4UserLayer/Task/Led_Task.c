@@ -22,7 +22,6 @@
  *----------------------------------------------*/
 #include "led_task.h"
 #include "bsp_tim_pwm.h"
-#include "bsp_beep.h" 
 
 
 /*----------------------------------------------*
@@ -64,10 +63,7 @@ void CreateLedTask(void)
 static void vTaskLed(void *pvParameters)
 {  
     uint8_t i = 0;
-    BEEP = 0;
-    vTaskDelay(300);
-    BEEP = 1;
-
+    
     printf("<<<<<start vTaskLed>>>>>\r\n");
     while(1)
     {  

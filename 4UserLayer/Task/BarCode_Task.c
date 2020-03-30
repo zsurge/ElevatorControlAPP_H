@@ -26,7 +26,8 @@
 #include "templateprocess.h"
 #include "stdlib.h"
 #include "bsp_ds1302.h"
-
+#include "des.h"
+#include "malloc.h"
 
 #define LOG_TAG    "BarCode"
 #include "elog.h"
@@ -35,7 +36,7 @@
  * 宏定义                                       *
  *----------------------------------------------*/
 #define BARCODE_TASK_PRIO		(tskIDLE_PRIORITY + 1)
-#define BARCODE_STK_SIZE 		(configMINIMAL_STACK_SIZE*4)
+#define BARCODE_STK_SIZE 		(configMINIMAL_STACK_SIZE*10)
 
 /*----------------------------------------------*
  * 常量定义                                     *
@@ -72,11 +73,13 @@ void CreateBarCodeTask(void)
 }
 
 
-
+#if 0
 static void vTaskBarCode(void *pvParameters)
 { 
     uint8_t recv_buf[255] = {0};
+    uint8_t readyBuff[1024] = {0};
     uint16_t len = 0; 
+    uint16_t offset = 0; 
     uint8_t localTime[9] = {0};
 
     uint8_t relieveControl[38] = {0};
@@ -98,8 +101,15 @@ static void vTaskBarCode(void *pvParameters)
         memset(ptQR->data,0x00,sizeof(ptQR->data)); 
 
         memset(recv_buf,0x00,sizeof(recv_buf));           
-        len = RS485_RecvAtTime(COM5,recv_buf,sizeof(recv_buf),500);
+        len = RS485_RecvAtTime(COM5,recv_buf,sizeof(recv_buf),800);
+        
+        memcpy(readyBuff+offset,recv_buf,len);
+        offset += len;
+        
 
+//        log_d("reader = %s\r\n",recv_buf);
+
+        
         if(recv_buf[len-1] == 0x00 && len > 1)
         {
             len -= 1; //这里不知道为什么会多了一个0x00
@@ -107,8 +117,9 @@ static void vTaskBarCode(void *pvParameters)
        
         if(len > 0  && recv_buf[len-1] == 0x0A && recv_buf[len-2] == 0x0D)
         {
-            log_d("reader = %s\r\n",recv_buf); 
-            
+//            log_d("reader = %s\r\n",recv_buf);
+              
+//            dbh("reader", recv_buf, len);
             //添加模版是否启用的判定
             if(gTemplateParam.templateStatus == 0)
             {
@@ -236,9 +247,146 @@ static void vTaskBarCode(void *pvParameters)
 
     	/* 发送事件标志，表示任务正常运行 */        
     	xEventGroupSetBits(xCreatedEventGroup, TASK_BIT_5);  
-        vTaskDelay(300);        
+        vTaskDelay(500);        
     }
 }
+#endif 
+
+static void vTaskBarCode(void *pvParameters)
+{ 
+    uint8_t recv_buf[255] = {0};
+    uint8_t sendBuff[1024] = {0};
+    uint16_t len = 0; 
+    uint16_t offset = 0; 
+    uint8_t localTime[9] = {0};
+
+    uint8_t relieveControl[38] = {0};
+
+    int cmpTimeFlag = -1;
+    int cmpDateFlag = -1;
+    
+    READER_BUFF_STRU *ptQR; 
+ 	/* 初始化结构体指针 */
+	ptQR = &gReaderMsg;
+
+    log_d("start vTaskBarCode\r\n");
+    while(1)
+    {   
+        /* 清零 */
+        ptQR->authMode = 0; 
+        ptQR->dataLen = 0;
+        ptQR->state = ENABLE;
+        memset(ptQR->data,0x00,sizeof(ptQR->data)); 
+
+        memset(recv_buf,0x00,sizeof(recv_buf));           
+        len = RS485_RecvAtTime(COM5,recv_buf,sizeof(recv_buf),800);
+
+//        log_d("recv_buf = %s,len = %d\r\n",recv_buf,len);
+
+        
+        memcpy(sendBuff+offset,recv_buf,len);
+        offset += len;   
+       
+        if(offset > 0  && sendBuff[offset-1] == 0x0A && sendBuff[offset-2] == 0x0D)
+        {
+            log_d("sendbuff = %s\r\n",sendBuff);
+            //添加模版是否启用的判定
+            if(gTemplateParam.templateStatus == 0)
+            {
+                //2020-03-18 这里应该发送电梯不接受控制的指令，而不是不用continue,
+                //在授权方式那里，添加控制类型，并定义控制指令，发给电梯
+
+                    //add code 发指不受控制指令                    
+                    ptQR->authMode = AUTH_MODE_RELIEVECONTROL;
+                    ptQR->dataLen = sizeof(relieveControl);
+                    memcpy(ptQR->data,relieveControl,ptQR->dataLen);   
+                    log_d("the template is disable\r\n");
+            }
+            else
+            {
+                log_d("the template is enable\r\n");
+                //判定高峰节假日模式是否开启
+                if(gTemplateParam.workMode.isPeakMode || gTemplateParam.workMode.isHolidayMode)
+                {
+                    //读取当前时间
+                    memcpy(localTime,bsp_ds1302_readtime(),8);
+                    
+                    //判定节假日模板有效期
+                    if(compareDate(localTime,gTemplateParam.peakInfo[0].endTime) < 0) //在有效期内
+                    {   
+                        log_d("in the peak mode valid date \r\n");
+                        
+                        //判定有效期内不受控时间段
+                        cmpTimeFlag = compareTime(localTime);
+
+                        log_d("cmpTimeFlag =%d\r\n",cmpTimeFlag);
+
+                        if(cmpTimeFlag == 1)
+                        {
+                            log_d("peak mode - >in the out of control \r\n");
+                            //在不受控时间段，发送脱离控制指令
+                            ptQR->authMode = AUTH_MODE_RELIEVECONTROL;
+                            ptQR->dataLen = sizeof(relieveControl);
+                            memcpy(ptQR->data,relieveControl,sizeof(relieveControl)); 
+                        } 
+                        else
+                        {
+                            log_d("peak mode  >in the control time \r\n");
+                            getDevData((char *)sendBuff,gTemplateParam.peakCallingWay.isIcCard,gTemplateParam.peakCallingWay.isQrCode,ptQR);
+                            //没有指定不受控日期 或 当前日期在有效期内
+                            //添加节假日的呼梯方式的判定
+                                
+                        }
+                    }
+                    else
+                    {
+                        //不在有效期内
+                        //判定模板的呼梯方式
+                        log_d("outside peak mode the valid date \r\n");
+
+                        getDevData((char *)sendBuff,gTemplateParam.templateCallingWay.isIcCard,gTemplateParam.templateCallingWay.isQrCode,ptQR);
+
+                    }
+
+                 } 
+                 else
+                 {
+                    //判定模板的呼梯方式
+                    log_d("Now it's normal operation mode \r\n");
+                    getDevData((char *)sendBuff,gTemplateParam.templateCallingWay.isIcCard,gTemplateParam.templateCallingWay.isQrCode,ptQR);
+
+                 }  
+
+                log_d("ptQR = %s,len = %d,state = %d\r\n",ptQR->data,ptQR->dataLen,ptQR->state);
+                
+                if(ptQR->state)
+                {
+                	/* 使用消息队列实现指针变量的传递 */
+                	if(xQueueSend(xTransQueue,              /* 消息队列句柄 */
+                				 (void *) &ptQR,   /* 发送指针变量recv_buf的地址 */
+                				 (TickType_t)1000) != pdPASS )
+                	{
+                        log_d("the queue is full!\r\n");                
+                        xQueueReset(xTransQueue);
+                    } 
+                    else
+                    {
+                        dbh("the queue is send success",(char *)ptQR->data,ptQR->dataLen);
+                    }   
+                }
+            }
+
+            memset(sendBuff,0x00,sizeof(sendBuff));
+            offset = 0;
+        }
+
+
+    	/* 发送事件标志，表示任务正常运行 */        
+    	xEventGroupSetBits(xCreatedEventGroup, TASK_BIT_5);  
+        vTaskDelay(500);        
+    }
+}
+
 
 /*
 该算法总体思想是计算给定日期到 0年3月1日的天数，然后相减，获取天数的间隔。
@@ -397,37 +545,41 @@ static int compareTime(uint8_t *currentTime)
 
 static void getDevData(char *src,int icFlag,int qrFlag,READER_BUFF_STRU *desc)
 {
-
-    READER_BUFF_STRU readerBuff; 
-
+    READER_BUFF_STRU readerBuff = {0}; 
+    uint8_t key[16] ={ 0x82,0x5d,0x82,0xd8,0xd5,0x2f,0xdf,0x85,0x28,0xa2,0xb5,0xd8,0x88,0x88,0x88,0x88 }; 
+    uint8_t bcdBuff[512] = {0};
+    uint8_t tmpBuff[512] = {0};
     memset(&readerBuff,0x00,sizeof(readerBuff));   
 
     //默认是支持上送的
     readerBuff.state = ENABLE;
 
-    if(strlen(src) >QUEUE_BUF_LEN)
+    //去掉0D0A
+    if(strlen(src)-2 >QUEUE_BUF_LEN)
     {
         readerBuff.dataLen = QUEUE_BUF_LEN;
     }
     else
     {
-        readerBuff.dataLen = strlen(src);
+        readerBuff.dataLen = strlen(src)-2;
     }
-
-    memcpy(readerBuff.data,src,readerBuff.dataLen);
-
-    log_d("readerBuff.data = %s\r\n",readerBuff.data);
     
     //判定是刷卡还是QR
     if(strstr_t((const char*)src,(const char*)"CARD") == NULL)
     {
         //QR
-        readerBuff.authMode = AUTH_MODE_QR;
+        readerBuff.authMode = AUTH_MODE_QR;   
+        asc2bcd(bcdBuff, src, readerBuff.dataLen, 0);
+        Des3_2(key, bcdBuff, readerBuff.dataLen/2, tmpBuff, 1);
+        memcpy(readerBuff.data,tmpBuff,readerBuff.dataLen/2);
     }
     else
     {
-        readerBuff.authMode = AUTH_MODE_CARD;
+        readerBuff.authMode = AUTH_MODE_CARD;        
+        memcpy(readerBuff.data,src,readerBuff.dataLen);
     }
+
+    log_d("readerBuff.data = %s\r\n",readerBuff.data);
     
     if(icFlag == 0)
     {

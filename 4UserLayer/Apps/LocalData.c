@@ -83,14 +83,11 @@ uint8_t writeHeader(uint8_t  * header,uint8_t mode)
     {
         addr = CARD_NO_HEAD_ADDR + gCurCardHeaderIndex * HEAD_lEN;
     }
-    else if(mode == USER_MODE)
+    else 
     {
         addr = USER_ID_HEAD_ADDR + gCurUserHeaderIndex * HEAD_lEN;
     }
-    else
-    {
-        addr = CARD_NO_HEAD_ADDR + gCurCardHeaderIndex * HEAD_lEN;
-    }
+
 
     
 
@@ -205,6 +202,8 @@ uint8_t searchHeaderIndex(uint8_t* header,uint8_t mode,uint16_t *index)
 //        dbh("all header", buff, gCurCardHeaderIndex*4);
         
     } 
+
+//    dbh("table", buff, CARD_NO_HEAD_SIZE);
 
 	for(i=0; i<num; i++)
 	{
@@ -459,5 +458,108 @@ static uint8_t checkFlashSpace(uint8_t mode)
     return 0;
 }
 
+
+
+uint8_t modifyUserData(USERDATA_STRU userData,uint8_t mode)
+{
+    uint8_t wBuff[255] = {0};
+    uint8_t rBuff[255] = {0}; 
+    uint8_t isFull = 0;
+    uint8_t header[CARD_USER_LEN] = {0};
+    uint8_t crc=0;
+    uint8_t ret = 0;
+    uint8_t times = 3;
+    uint32_t addr = 0;
+    uint16_t index = 0;
+    
+    int32_t iTime1, iTime2;
+	log_d("sizeof(USERDATA_STRU) = %d\r\n",sizeof(USERDATA_STRU));
+    
+    iTime1 = xTaskGetTickCount();	/* 记下开始时间 */
+ 
+	
+    //检查存储空间是否已满；
+    isFull = checkFlashSpace(mode);
+
+    if(isFull == 1)
+    {
+        return 1; //提示已经满了
+    } 
+
+    if(mode == CARD_MODE)
+    {
+        memcpy(header,userData.cardNo,CARD_USER_LEN);
+    }
+    else
+    {
+        memcpy(header,userData.userId,CARD_USER_LEN);
+    }   
+
+	ret = searchHeaderIndex(header,mode,&index);
+
+	log_d("searchHeaderIndex ret = %d",ret);
+	
+	if(ret != 1)
+	{
+		return 3;//提示未找到索引
+	}
+
+	if(mode == CARD_MODE)
+	{
+        addr = CARD_NO_DATA_ADDR + index * (sizeof(USERDATA_STRU)+2);
+   }
+    else
+    {
+        addr = USER_ID_DATA_ADDR + index * (sizeof(USERDATA_STRU)+2);
+    }
+
+    //packet write buff
+    memset(wBuff,0x00,sizeof(wBuff));
+
+    //set head
+	wBuff[0] = TABLE_HEAD;    
+	
+    //copy to buff
+    memcpy(wBuff+1, &userData, sizeof(USERDATA_STRU));
+	
+    //calc crc
+	crc = xorCRC(wBuff, sizeof(USERDATA_STRU)+1);
+
+	//copy crc
+	wBuff[sizeof(USERDATA_STRU) + 1] = crc;	
+
+
+    //write flash
+	while(times)
+	{
+	
+		bsp_sf_WriteBuffer (wBuff, addr, sizeof(USERDATA_STRU)+2);
+
+		//再读出来，对比是否一致
+		memset(rBuff,0x00,sizeof(rBuff));
+		bsp_sf_ReadBuffer (rBuff, addr, sizeof(USERDATA_STRU)+2);
+
+		ret = memcmp(wBuff,rBuff,sizeof(USERDATA_STRU)+2);
+		
+		if(ret == 0)
+		{
+			break;
+		}
+				
+
+		if(ret != 0 && times == 1)
+		{
+			log_d("修改记录失败!\r\n");
+			return 3;
+		}
+
+		times--;
+	}
+
+    iTime2 = xTaskGetTickCount();	/* 记下结束时间 */
+	log_d("修改记录成功，耗时: %dms\r\n",iTime2 - iTime1);	
+
+    return 0;
+}
 
 

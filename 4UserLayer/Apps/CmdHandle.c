@@ -90,8 +90,6 @@ static SYSERRORCODE_E SetLocalSn( uint8_t* msgBuf ); //设置本地SN，MQTT用
 static SYSERRORCODE_E DelCard( uint8_t* msgBuf ); //删除卡号
 static SYSERRORCODE_E DelUserId( uint8_t* msgBuf ); //删除用户
 
-
-
 static SYSERRORCODE_E ReturnDefault ( uint8_t* msgBuf ); //返回默认消息
 
 
@@ -325,9 +323,12 @@ SYSERRORCODE_E AbnormalAlarm ( uint8_t* msgBuf )
 static SYSERRORCODE_E DelUserId( uint8_t* msgBuf )
 {
 	SYSERRORCODE_E result = NO_ERR;
-    uint8_t buf[MQTT_MAX_LEN] = {0};
-    uint8_t userId[16] = {0};
+    uint8_t buf[MQTT_TEMP_LEN] = {0};
+    uint8_t userId[CARD_USER_LEN] = {0};
     uint16_t len = 0;
+    
+    USERDATA_STRU userData = {0};
+    memset(&userData,0x00,sizeof(userData));    
 
     if(!msgBuf)
     {
@@ -335,45 +336,114 @@ static SYSERRORCODE_E DelUserId( uint8_t* msgBuf )
     }
 
     //1.保存卡号和用户ID
-    strcpy((char *)userId,(const char *)GetJsonItem((const uint8_t *)msgBuf,(const uint8_t *)"userId",1));   
+    strcpy((char *)userId,(const char *)GetJsonItem((const uint8_t *)msgBuf,(const uint8_t *)"userId",1));
     log_d("userId = %s\r\n",userId);
 
-    //2.查询以卡号为ID的记录，并删除
+    log_d("=================================\r\n");
+    len = readUserData(userId,USER_MODE,&userData);
 
-    if(ef_del_env(userId) == EF_NO_ERR)
-    {
-        //响应服务器
-        result = modifyJsonItem((const uint8_t *)msgBuf,(const uint8_t *)"status",(const uint8_t *)"1",1,buf);
-    }
-    else
-    {
-        //包括没有该条记录和其它错误
-        result = modifyJsonItem((const uint8_t *)msgBuf,(const uint8_t *)"status",(const uint8_t *)"0",1,buf);
-    }
-    
-    if(result != NO_ERR)
-    {
-        return result;
-    }
+    log_d("ret = %d\r\n",len);    
+    log_d("userData.userState = %d\r\n",userData.cardState);
+    log_d("userData.cardNo = %s\r\n",userData.cardNo);
+    log_d("userData.userId = %s\r\n",userData.userId);
+    log_d("userData.accessFloor = %s\r\n",userData.accessFloor);
+    log_d("userData.defaultFloor = %d\r\n",userData.defaultFloor);
+    log_d("userData.startTime = %s\r\n",userData.startTime);
 
-    len = strlen((const char*)buf);
 
-    PublishData(buf,len);
-    
-	return result;
+    userData.userState = 0; //设置卡状态为0，删除卡
+    len = modifyUserData(userData,USER_MODE);
+
+    log_d("=================================\r\n");
+
+    memset(&userData,0x00,sizeof(userData));
+    len = readUserData(userId,USER_MODE,&userData);
+    log_d("ret = %d\r\n",len);    
+    log_d("userData.userState = %d\r\n",userData.cardState);
+    log_d("userData.cardNo = %s\r\n",userData.cardNo);
+    log_d("userData.userId = %s\r\n",userData.userId);
+    log_d("userData.accessFloor = %s\r\n",userData.accessFloor);
+    log_d("userData.defaultFloor = %d\r\n",userData.defaultFloor);
+    log_d("userData.startTime = %s\r\n",userData.startTime);
+    return result;
+
 
 }
 
 SYSERRORCODE_E AddCardNo ( uint8_t* msgBuf )
 {
 	SYSERRORCODE_E result = NO_ERR;
-    uint8_t buf[MQTT_MAX_LEN] = {0};
-    uint8_t tmp[256] = {0};
-    uint8_t cardNo[16] = {0};
-    uint8_t userId[16] = {0};
-    char *p;
+
+    uint8_t buf[MQTT_TEMP_LEN] = {0};
+    uint8_t cardNo[CARD_USER_LEN] = {0};
+    uint8_t userId[CARD_USER_LEN] = {0};
+    uint16_t len = 0;  
+    USERDATA_STRU userData = {0};  
+    uint8_t ret = 0;
+ 
+
+    if(!msgBuf)
+    {
+        return STR_EMPTY_ERR;
+    }
+
+    memset(&userData,0x00,sizeof(userData));   
+
+    //1.保存用户ID
+    memset(userId,0x00,sizeof(userId));
+    strcpy((char *)userId,(const char*)GetJsonItem((const uint8_t *)msgBuf,(const uint8_t *)"userId",1));
+    sprintf(userData.userId,"%08s",userId);
+    log_d("userData.userId = %s,len = %d\r\n",userData.userId,strlen(userData.userId));
+
+    //2.保存卡号
+    memset(cardNo,0x00,sizeof(cardNo));
+    strcpy((char *)cardNo,(const char *)GetJsonItem((const uint8_t *)msgBuf,(const uint8_t *)"cardNo",1));
+    sprintf(userData.cardNo,"%08s",cardNo);    
+    log_d("userData.cardNo = %s,len = %d\r\n",userData.cardNo,strlen(userData.cardNo));
+
+    log_d("=================================\r\n");
+    ret  = readUserData(userId,USER_MODE,&userData);
+
+    if(ret == 0)
+    {
+        //影响服务器
+        result = modifyJsonItem((const uint8_t *)msgBuf,(const uint8_t *)"status","1",1,buf);
+        result = modifyJsonItem((const uint8_t *)buf,(const uint8_t *)"reason","success",1,buf);
+        
+        if(result != NO_ERR)
+        {
+            return result;
+        }
+        
+        len = strlen((const char*)buf);
+        
+        PublishData(buf,len);   
+
+    }
+    
+    log_d("ret = %d\r\n",len);    
+    log_d("userData.userState = %d\r\n",userData.cardState);
+    log_d("userData.cardNo = %s\r\n",userData.cardNo);
+    log_d("userData.userId = %s\r\n",userData.userId);
+    log_d("userData.accessFloor = %s\r\n",userData.accessFloor);
+    log_d("userData.defaultFloor = %d\r\n",userData.defaultFloor);
+    log_d("userData.startTime = %s\r\n",userData.startTime);
+
+    strcpy(userData.cardNo,cardNo);
+
+    writeUserData(userData,CARD_MODE);    
+	return result;
+}
+
+SYSERRORCODE_E DelCardNo ( uint8_t* msgBuf )
+{
+	SYSERRORCODE_E result = NO_ERR;
+    uint8_t buf[MQTT_TEMP_LEN] = {0};
+    uint8_t cardNo[CARD_USER_LEN] = {0};
     uint16_t len = 0;
-    uint16_t rcdLen = 0;
+    
+    USERDATA_STRU userData = {0};
+    memset(&userData,0x00,sizeof(userData));    
 
     if(!msgBuf)
     {
@@ -381,52 +451,36 @@ SYSERRORCODE_E AddCardNo ( uint8_t* msgBuf )
     }
 
     //1.保存卡号和用户ID
-    strcpy((char *)userId,(const char *)GetJsonItem((const uint8_t *)msgBuf,(const uint8_t *)"userId",1));   
     strcpy((char *)cardNo,(const char *)GetJsonItem((const uint8_t *)msgBuf,(const uint8_t *)"cardNo",1));
-    log_d("cardNo = %s，userId = %s\r\n",cardNo,userId);
+    log_d("cardNo = %s\r\n",cardNo);
 
-    //2.查询以userId为ID的记录，并追加卡号 
-    rcdLen = ef_get_env_blob(userId, tmp, sizeof(tmp) , NULL);
+    log_d("=================================\r\n");
+    len = readUserData(cardNo,CARD_MODE,&userData);
 
-    if(rcdLen < 20) //每条记录最少30个字节
-    {
-        //失败的，后面再添加处理
-    }
+    log_d("ret = %d\r\n",len);    
+    log_d("userData.userState = %d\r\n",userData.cardState);
+    log_d("userData.cardNo = %s\r\n",userData.cardNo);
+    log_d("userData.userId = %s\r\n",userData.userId);
+    log_d("userData.accessFloor = %s\r\n",userData.accessFloor);
+    log_d("userData.defaultFloor = %d\r\n",userData.defaultFloor);
+    log_d("userData.startTime = %s\r\n",userData.startTime);
 
-    //3.以userid为索引，追加卡号
-    strcpy(buf,cardNo);
-    strcat(buf,",");
-    strcat(buf,tmp);
-    ef_set_env_blob(userId, buf,strlen(buf));
 
-    //4.追加以卡号为索引的记录
-    //以userID替换掉卡号，用新增卡号做为索引
-    p=strchr(buf,';');
-    
-    log_d("p = %s\r\n",p);
+    userData.cardState = 0; //设置卡状态为0，删除卡
+    len = modifyUserData(userData,CARD_MODE);
 
-    if(p==NULL)
-    {
-        //失败的，后面再添加处理
-    }
+    log_d("=================================\r\n");
 
-    memset(tmp,0x00,sizeof(tmp));
-    memset(buf,0x00,sizeof(buf));
-    
-    strcpy(tmp,p+1);
-    strcpy(buf,userId);
-    strcat(buf,";");
-    strcat(buf,tmp);      
-    ef_set_env_blob(cardNo, buf,strlen(buf));
-    
-	return result;
-
-}
-
-SYSERRORCODE_E DelCardNo ( uint8_t* msgBuf )
-{
-	SYSERRORCODE_E result = NO_ERR;
-	return result;
+    memset(&userData,0x00,sizeof(userData));
+    len = readUserData(cardNo,CARD_MODE,&userData);
+    log_d("ret = %d\r\n",len);    
+    log_d("userData.userState = %d\r\n",userData.cardState);
+    log_d("userData.cardNo = %s\r\n",userData.cardNo);
+    log_d("userData.userId = %s\r\n",userData.userId);
+    log_d("userData.accessFloor = %s\r\n",userData.accessFloor);
+    log_d("userData.defaultFloor = %d\r\n",userData.defaultFloor);
+    log_d("userData.startTime = %s\r\n",userData.startTime);
+    return result;
 }
 
 SYSERRORCODE_E UpgradeDev ( uint8_t* msgBuf )
@@ -769,6 +823,7 @@ static SYSERRORCODE_E GetUserInfo ( uint8_t* msgBuf )
     //全0的USER ID不记录
     if(memcmp(tempUserData.userId,"00000000",CARD_USER_LEN) != 0)
     {
+        tempUserData.userState = 1;
         ret = writeUserData(tempUserData,USER_MODE);
         log_d("write user id = %d\r\n",ret);       
     }
@@ -777,6 +832,7 @@ static SYSERRORCODE_E GetUserInfo ( uint8_t* msgBuf )
     {
         for(len=0;len<multipleCardNum;len++)
         {
+            tempUserData.cardState = 1;
             memcpy(tempUserData.cardNo,multipleCard[len],CARD_NO_LEN);
             writeUserData(tempUserData,CARD_MODE);
         }
@@ -785,6 +841,7 @@ static SYSERRORCODE_E GetUserInfo ( uint8_t* msgBuf )
     {
         if(memcmp(tempUserData.cardNo,"00000000",CARD_USER_LEN) != 0)
         {
+            tempUserData.cardState = 1;
             writeUserData(tempUserData,CARD_MODE);
             log_d("write card id = %d\r\n",ret);           
         }
@@ -879,11 +936,11 @@ static SYSERRORCODE_E PCOptDev ( uint8_t* msgBuf )
     log_d("RemoteOptDev len = %d,buf = %s\r\n",len,buf);
 
     PublishData(buf,len); 
+    log_d("=================================\r\n");
+    len = readUserData("00010359",USER_MODE,&userData);
 
-    len = readUserData("00012926",USER_MODE,&userData);
-
-    log_d("ret = %d\r\n",len);
-
+    log_d("ret = %d\r\n",len);    
+    log_d("userData.userState = %d\r\n",userData.userState);
     log_d("userData.cardNo = %s\r\n",userData.cardNo);
     log_d("userData.userId = %s\r\n",userData.userId);
     log_d("userData.accessFloor = %s\r\n",userData.accessFloor);
@@ -891,8 +948,20 @@ static SYSERRORCODE_E PCOptDev ( uint8_t* msgBuf )
     log_d("userData.startTime = %s\r\n",userData.startTime);
 
 
+    userData.userState = 1;
+    len = modifyUserData(userData,USER_MODE);
 
-    
+    log_d("=================================\r\n");
+    userData.userState = 0;
+    memset(&userData,0x00,sizeof(userData));
+    len = readUserData("00010359",USER_MODE,&userData);
+    log_d("ret = %d\r\n",len);    
+    log_d("userData.userState = %d\r\n",userData.userState);
+    log_d("userData.cardNo = %s\r\n",userData.cardNo);
+    log_d("userData.userId = %s\r\n",userData.userId);
+    log_d("userData.accessFloor = %s\r\n",userData.accessFloor);
+    log_d("userData.defaultFloor = %d\r\n",userData.defaultFloor);
+    log_d("userData.startTime = %s\r\n",userData.startTime);    
     return result;
 
 }
@@ -926,8 +995,7 @@ static SYSERRORCODE_E ClearUserInof ( uint8_t* msgBuf )
 
 
     //清空用户信息
-    //ef_env_set_default();
-
+    eraseUserDataAll();
     
     return result;
 

@@ -92,6 +92,10 @@ uint8_t packetPayload(LOCAL_USER_STRU *localUserData,uint8_t *descJson);
 //保存模板信息
 SYSERRORCODE_E saveTemplateParam(uint8_t *jsonBuff);
 
+//解析QRCODE数据
+uint8_t parseQrCode(uint8_t *jsonBuff,uint8_t *tagFloor);
+
+
 
 #endif
 

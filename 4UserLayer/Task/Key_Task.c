@@ -27,6 +27,7 @@
 #include "easyflash.h"
 #include "tool.h"
 #include "bsp_beep.h"
+#include "localdata.h"
 
 #define LOG_TAG    "keyTask"
 #include "elog.h"
@@ -70,7 +71,7 @@ static void vTaskKey(void *pvParameters)
     
 	uint8_t ucKeyCode;
 	uint8_t pcWriteBuffer[1024];
-    
+    uint16_t index = 0;
 
 
     uint32_t g_memsize;
@@ -99,7 +100,7 @@ static void vTaskKey(void *pvParameters)
 
                     g_memsize = xPortGetFreeHeapSize();
                     printf("系统当前内存大小为 %d 字节，开始申请内存\n",g_memsize);
-                     BEEP = 1;
+                    
 					break;				
 				/* K2键按下，打印串口操作命令 */
 				case KEY_RR_PRES:                 
@@ -120,12 +121,11 @@ static void vTaskKey(void *pvParameters)
                     log_i("KEY_DOWN_K3\r\n");
 //                    ef_env_set_default();
 //                    calcRunTime();       
-                    bsp_ds1302_mdifytime("2020-03-25 13:56:00");
+//                    bsp_ds1302_mdifytime("2020-03-25 13:56:00");
 
                     bsp_ds1302_readtime();
 
-                     BEEP = 0;
-                
+                    searchHeaderIndex("00012926",USER_MODE,&index);
 
 
 					break;

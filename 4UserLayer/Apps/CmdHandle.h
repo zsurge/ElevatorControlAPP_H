@@ -32,6 +32,8 @@
  * 宏定义                                       *
  *----------------------------------------------*/
 #define MQTT_MAX_LEN 1024*2
+#define MQTT_TEMP_LEN 255
+
 
 #define AUTH_MODE_RELIEVECONTROL        1
 //IC卡
@@ -45,14 +47,14 @@
 //二维码
 #define AUTH_MODE_QR        7
 
-#define QUEUE_BUF_LEN   64
+#define QUEUE_BUF_LEN   1024
 
 #pragma pack(1)
 typedef struct
 {
     uint8_t state;                       //=0 DISABLE 禁止发送; = 1 ENABLE 允许发送
     uint8_t authMode;                    //鉴权模式,刷卡=2；QR=7
-    uint8_t dataLen;                     //数据长度   
+    uint16_t dataLen;                     //数据长度   
     uint8_t data[QUEUE_BUF_LEN];         //需要发送给服务器的数据 
 }READER_BUFF_STRU;
 #pragma pack()

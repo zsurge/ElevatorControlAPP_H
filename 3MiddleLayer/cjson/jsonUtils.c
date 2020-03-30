@@ -653,7 +653,6 @@ SYSERRORCODE_E saveTemplateParam(uint8_t *jsonBuff)
 
         memset(tmpKey,0x00,sizeof(tmpKey));
         memset(tmpIndex,0x00,sizeof(tmpIndex));       
-
         
         arrayElement = cJSON_GetObjectItem(tmpArray, "templateType");
         templateParam->holidayMode[index].templateType = arrayElement->valueint;        
@@ -718,6 +717,85 @@ ERROR:
     log_d("saveTemplateParam took %d ms to save\r\n",xTaskGetTickCount()-curtick);
 
     return result;
+}
+
+
+uint8_t parseQrCode(uint8_t *jsonBuff,uint8_t *tagFloor)
+{
+    cJSON *root ,*devArray,*tagFloorArray,*tmpArray;
+    int devNum = 0;
+    int tagFloorNum = 0;
+    int index = 0;
+    uint8_t isFind = 0;
+    int localSn = 567;
+
+    if(!jsonBuff)
+    {
+        cJSON_Delete(root);
+        log_d("error json data\r\n");
+        return STR_EMPTY_ERR;
+    }    
+    
+    root = cJSON_Parse((char *)jsonBuff);    //解析数据包
+    if (!root)  
+    {  
+        cJSON_Delete(root);
+        log_d("Error before: [%s]\r\n",cJSON_GetErrorPtr());  
+        return CJSON_PARSE_ERR;
+    }     
+
+    devArray = cJSON_GetObjectItem(root, "devs");
+    if(devArray == NULL)
+    {
+        log_d("devArray NULL\r\n");
+        return STR_EMPTY_ERR;
+    }   
+
+    devNum = cJSON_GetArraySize(devArray);
+
+    log_d("devNum = %d\r\n",devNum);
+
+    //查找是否在范围之内
+    for(index=0;index<devNum;index++)
+    {
+        tmpArray = cJSON_GetArrayItem(devArray, index);
+        log_d("tmpArray->valueint = %d\r\n",tmpArray->valueint);
+        if(localSn == tmpArray->valueint)
+        {
+            isFind = 1;
+        }
+    }
+    
+    tagFloorArray = cJSON_GetObjectItem(root, "lifts");
+    if(tagFloorArray == NULL)
+    {
+        log_d("tagFloorArray NULL\r\n");
+        *tagFloor = 200;
+        return STR_EMPTY_ERR;
+    }
+
+    tagFloorNum = cJSON_GetArraySize(tagFloorArray);
+    log_d("tagFloorNum = %d\r\n",tagFloorNum);    
+    if(tagFloorArray == 0)
+    {
+        log_d("tagFloorArray NULL\r\n");
+        *tagFloor = 200;
+        return STR_EMPTY_ERR;
+    }
+    else
+    {
+        tmpArray = cJSON_GetArrayItem(tagFloorArray, 0);
+        log_d("tmpArray->valueint = %d\r\n",tmpArray->valueint);        
+        *tagFloor = tmpArray->valueint;
+    }
+
+
+    cJSON_Delete(root);
+
+    my_free(localSn);
+    
+    return isFind;
+
 }
 
 

@@ -87,7 +87,8 @@ typedef struct USERDATA
     uint8_t head;                                   //数据头
     uint8_t authMode;                               //鉴权模式,刷卡=2；QR=7
     uint8_t defaultFloor;                           //默认楼层  
-    uint8_t state;                                  //用户状态 有效/无效/黑名单/临时卡    
+    uint8_t cardState;                              //卡状态 有效/已删除/黑名单/临时卡    
+    uint8_t userState;                              //用户状态 有效/已删除
     uint8_t userId[CARD_USER_LEN];                  //用户ID
     uint8_t cardNo[CARD_USER_LEN];                  //卡号
     uint8_t accessFloor[FLOOR_ARRAY_LENGTH];        //楼层权限
@@ -118,6 +119,8 @@ uint8_t writeHeader(uint8_t* header,uint8_t mode);
 uint8_t searchHeaderIndex(uint8_t* header,uint8_t mode,uint16_t *index);
 uint8_t writeUserData(USERDATA_STRU userData,uint8_t mode);
 uint8_t readUserData(uint8_t* header,uint8_t mode,USERDATA_STRU *userData);
+uint8_t modifyUserData(USERDATA_STRU userData,uint8_t mode);
+
 
 
 

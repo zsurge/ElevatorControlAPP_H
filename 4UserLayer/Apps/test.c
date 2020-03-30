@@ -33,7 +33,7 @@
 #include "elog.h"
 
 
-uint8_t buf[EE_SIZE];	/* 数据测试用缓冲区 16KB */
+//uint8_t buf[EE_SIZE];	/* 数据测试用缓冲区 16KB */
 
 static void ee_ReadTest(void);
 static void ee_WriteTest(void);
