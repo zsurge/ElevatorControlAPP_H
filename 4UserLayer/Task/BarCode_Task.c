@@ -258,7 +258,7 @@ static void vTaskBarCode(void *pvParameters)
     uint8_t sendBuff[1024] = {0};
     uint16_t len = 0; 
     uint16_t offset = 0; 
-    uint8_t localTime[9] = {0};
+    uint8_t localTime[20] = {0};
 
     uint8_t relieveControl[38] = {0};
 
@@ -280,9 +280,6 @@ static void vTaskBarCode(void *pvParameters)
 
         memset(recv_buf,0x00,sizeof(recv_buf));           
         len = RS485_RecvAtTime(COM5,recv_buf,sizeof(recv_buf),800);
-
-//        log_d("recv_buf = %s,len = %d\r\n",recv_buf,len);
-
         
         memcpy(sendBuff+offset,recv_buf,len);
         offset += len;   
@@ -309,7 +306,7 @@ static void vTaskBarCode(void *pvParameters)
                 if(gTemplateParam.workMode.isPeakMode || gTemplateParam.workMode.isHolidayMode)
                 {
                     //读取当前时间
-                    memcpy(localTime,bsp_ds1302_readtime(),8);
+                    strcpy(localTime,bsp_ds1302_readtime());
                     
                     //判定节假日模板有效期
                     if(compareDate(localTime,gTemplateParam.peakInfo[0].endTime) < 0) //在有效期内
@@ -371,7 +368,7 @@ static void vTaskBarCode(void *pvParameters)
                     } 
                     else
                     {
-                        dbh("the queue is send success",(char *)ptQR->data,ptQR->dataLen);
+                        dbh("barcode task the queue is send success",(char *)ptQR->data,ptQR->dataLen/2);
                     }   
                 }
             }
@@ -425,17 +422,19 @@ static int compareDate(uint8_t *date1,uint8_t *date2)
         return -1;//错误的日期
     }
 
-    dbh("date", date1, 9);
+    memcpy(buff,date1,4);
+    year_start = atoi(buff);
 
-//    year_start = 2000 + atoi((const char *)date1[6]);
-//    month_start = atoi((const char *)date1[5]);
-//    day_start = atoi((const char *)date1[4]);
+    memset(buff,0x00,sizeof(buff));
+    memcpy(buff,date1+5,2);    
+    month_start = atoi(buff);
 
-    year_start = 2000 + date1[6];
-    month_start = date1[5];
-    day_start = date1[4];    
+    memset(buff,0x00,sizeof(buff));
+    memcpy(buff,date1+8,2);      
+    day_start = atoi(buff);   
 
-    //2020-03-01      
+    //2020-03-01 18:42:25  
+    memset(buff,0x00,sizeof(buff));
     memcpy(buff,date2,4);
     year_end = atoi(buff);
 
@@ -475,7 +474,14 @@ static int compareTime(uint8_t *currentTime)
         return ret;
     }    
     //把时间转换为分钟
-    localTime = BCDToInt(currentTime[2]) * 60 + BCDToInt(currentTime[1]);
+    //2020-03-01 18:42:25  
+    memset(buff,0x00,sizeof(buff));
+    memcpy(buff,currentTime+11,2);    
+    localTime = atoi(buff)*60;
+
+    memset(buff,0x00,sizeof(buff));
+    memcpy(buff,currentTime+14,2);    
+    localTime += atoi(buff);    
     
     //17:30
     memset(buff,0x00,sizeof(buff));
@@ -548,7 +554,6 @@ static void getDevData(char *src,int icFlag,int qrFlag,READER_BUFF_STRU *desc)
     READER_BUFF_STRU readerBuff = {0}; 
     uint8_t key[16] ={ 0x82,0x5d,0x82,0xd8,0xd5,0x2f,0xdf,0x85,0x28,0xa2,0xb5,0xd8,0x88,0x88,0x88,0x88 }; 
     uint8_t bcdBuff[512] = {0};
-    uint8_t tmpBuff[512] = {0};
     memset(&readerBuff,0x00,sizeof(readerBuff));   
 
     //默认是支持上送的
@@ -570,8 +575,7 @@ static void getDevData(char *src,int icFlag,int qrFlag,READER_BUFF_STRU *desc)
         //QR
         readerBuff.authMode = AUTH_MODE_QR;   
         asc2bcd(bcdBuff, src, readerBuff.dataLen, 0);
-        Des3_2(key, bcdBuff, readerBuff.dataLen/2, tmpBuff, 1);
-        memcpy(readerBuff.data,tmpBuff,readerBuff.dataLen/2);
+        Des3_2(key, bcdBuff, readerBuff.dataLen/2, readerBuff.data, 1);
     }
     else
     {

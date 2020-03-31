@@ -162,7 +162,7 @@ void bsp_ds1302_mdifytime ( uint8_t* descTime ) //初始化1302
 
 uint8_t* bsp_ds1302_readtime ( void )
 {
-	static uint8_t pBuf[8] = {0};
+	static uint8_t pBuf[20] = {0};
     
 	pBuf[0]=read_1302 ( read[0] ); //秒
 	pBuf[1]=read_1302 ( read[1] ); //分
@@ -172,7 +172,7 @@ uint8_t* bsp_ds1302_readtime ( void )
 	pBuf[3]=read_1302 ( read[5] ); //周
 	pBuf[6]=read_1302 ( read[6] ); //年
 
-    DBG("Time1: 20%02x- %02x- %02x  %02x:%02x:%02x ,星期%d\r\n",pBuf[6],pBuf[5],pBuf[4],pBuf[2],pBuf[1],pBuf[0],pBuf[3]);    
+    sprintf(pBuf,"20%02x-%02x-%02x %02x:%02x:%02x",pBuf[6],pBuf[5],pBuf[4],pBuf[2],pBuf[1],pBuf[0]);    
 
 
 	return pBuf;
@@ -200,49 +200,41 @@ void bsp_ds1302_init ( void )
 	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
 	GPIO_Init ( DS1302_PORT, &GPIO_InitStructure );
 	GPIO_ResetBits ( DS1302_PORT, DS1302DAT );
-
-
 }
 
 
 
 char* time_to_timestamp(void)
 {
-	unsigned int timestamp;
-	struct tm stm;
-	static char timestamp_buf[14] = {0};
-
-
-	
-	stm.tm_year = read_1302 ( read[6] ) + 100;   //RTC_Year rang 0-99,but tm_year since 1900
-	stm.tm_mon	= read_1302 ( read[4] ) - 1;        //RTC_Month rang 1-12,but tm_mon rang 0-11
-	stm.tm_mday	= read_1302 ( read[3] );  //RTC_Date rang 1-31 and tm_mday rang 1-31
-	stm.tm_hour	= read_1302 ( read[2] ) - 8;   //RTC_Hours rang 0-23 and tm_hour rang 0-23
-	stm.tm_min	= read_1302 ( read[1] );   //RTC_Minutes rang 0-59 and tm_min rang 0-59
-	stm.tm_sec	= read_1302 ( read[0] );   
-	
-	sprintf(timestamp_buf,"%u",mktime(&stm));
-
-	printf("time_to_timestamp = %s\r\n",timestamp_buf);
-	return timestamp_buf;
+    struct tm stm;  
+    static char ret[11] = {0};  
+    memset(&stm,0,sizeof(stm)); 
+    
+    stm.tm_year = BCDToInt(read_1302 ( read[6] ))+100;  
+    stm.tm_mon = BCDToInt(read_1302 ( read[4] ))-1;  
+    stm.tm_mday = BCDToInt(read_1302 ( read[3] ));  
+    stm.tm_hour = BCDToInt(read_1302 ( read[2] ))-8;  
+    stm.tm_min = BCDToInt(read_1302 ( read[1] ));  
+    stm.tm_sec = BCDToInt(read_1302 ( read[0] ));  
+    
+    sprintf(ret,"%d",mktime(&stm));
+    printf("time_to_timestamp = %s\r\n",ret);
+    return ret;
 }
-
 
 void timestamp_to_time(unsigned int timestamp)
 {
 	struct tm *stm= NULL;
-	char buf[100] = {0};
-	time_t seconds;
-	
-	seconds = timestamp;
-	
+    char buf[32] = {0};
+    time_t seconds = timestamp;
+
+	printf("timestamp = %d\r\n",timestamp);
 	stm = localtime(&seconds);
 	
-	sprintf(buf,"\r\nstm %d-%d-%d  %d.%d.%d\r\n",\
-	stm->tm_year-100,stm->tm_mon+1,stm->tm_mday,\
+	sprintf(buf,"%04d-%02d-%02d  %02d:%02d:%02d",\
+	stm->tm_year+1900,stm->tm_mon+1,stm->tm_mday,\
 	stm->tm_hour+8,stm->tm_min,stm->tm_sec);
 
     printf("timestamp_to_time = %s\r\n",buf);
 }
-
 

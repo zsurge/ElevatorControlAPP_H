@@ -89,6 +89,7 @@ static SYSERRORCODE_E SetLocalTime( uint8_t* msgBuf ); //设置本地时间
 static SYSERRORCODE_E SetLocalSn( uint8_t* msgBuf ); //设置本地SN，MQTT用
 static SYSERRORCODE_E DelCard( uint8_t* msgBuf ); //删除卡号
 static SYSERRORCODE_E DelUserId( uint8_t* msgBuf ); //删除用户
+static SYSERRORCODE_E getRemoteTime ( uint8_t* msgBuf );//获取远程服务器时间
 
 static SYSERRORCODE_E ReturnDefault ( uint8_t* msgBuf ); //返回默认消息
 
@@ -125,6 +126,7 @@ CMD_HANDLE_T CmdList[] =
     {"3011", EnableDev}, //同绑定
     {"3012", DisableDev},//同解绑
     {"3013", SetLocalTime}, 
+    {"30131", getRemoteTime},
 };
 
 
@@ -511,6 +513,33 @@ SYSERRORCODE_E UpgradeDev ( uint8_t* msgBuf )
 	return result;
 
 }
+
+
+
+SYSERRORCODE_E getRemoteTime ( uint8_t* msgBuf )
+{
+	SYSERRORCODE_E result = NO_ERR;
+    uint8_t buf[MQTT_MAX_LEN] = {0};
+    uint16_t len = 0;
+
+    result = getTimePacket(buf);
+
+    if(result != NO_ERR)
+    {
+        return result;
+    }
+
+    len = strlen((const char*)buf);
+
+    log_d("OpenDoor len = %d,buf = %s\r\n",len,buf);
+
+    PublishData(buf,len);
+    
+	return result;
+
+}
+
+
 
 SYSERRORCODE_E UpgradeAck ( uint8_t* msgBuf )
 {
@@ -1196,6 +1225,7 @@ static SYSERRORCODE_E SetLocalSn( uint8_t* msgBuf )
     SYSERRORCODE_E result = NO_ERR;
     uint8_t buf[MQTT_MAX_LEN] = {0};
     uint8_t deviceCode[32] = {0};
+    uint8_t deviceID[4] = {0};
     uint16_t len = 0;
 //    char *tmpBuf[6] = {0}; //存放分割后的子字符串 
 //    int num = 0;
@@ -1206,6 +1236,7 @@ static SYSERRORCODE_E SetLocalSn( uint8_t* msgBuf )
     }
 
     strcpy((char *)deviceCode,(const char*)GetJsonItem((const uint8_t *)msgBuf,(const uint8_t *)"deviceCode",0));
+    strcpy((char *)deviceID,(const char*)GetJsonItem((const uint8_t *)msgBuf,(const uint8_t *)"id",0));
 
     result = modifyJsonItem(msgBuf,"status","1",0,buf);
 
@@ -1214,14 +1245,10 @@ static SYSERRORCODE_E SetLocalSn( uint8_t* msgBuf )
         return result;
     }
 
-
-//    split(deviceCode,":",tmpBuf,&num); //调用函数进行分割 
-//    log_d("num = %d\r\n",num);
-    
-
     //记录SN
     ef_set_env_blob("sn_flag","1111",4);    
-    ef_set_env_blob("remote_sn",deviceCode,strlen(deviceCode));    
+    ef_set_env_blob("remote_sn",deviceCode,strlen(deviceCode));   
+    ef_set_env_blob("device_sn",deviceID,strlen(deviceID)); 
 
     log_d("remote_sn = %s\r\n",deviceCode);
     

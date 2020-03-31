@@ -332,6 +332,47 @@ SYSERRORCODE_E upgradeDataPacket(uint8_t *descBuf)
     return result;
 }
 
+SYSERRORCODE_E getTimePacket(uint8_t *descBuf)
+{
+    SYSERRORCODE_E result = NO_ERR;
+    cJSON *root;  
+    char *tmpBuf;
+    
+    root = cJSON_CreateObject();
+    if (!root)  
+    {          
+        log_d("Error before: [%s]\r\n",cJSON_GetErrorPtr());  
+        cJSON_Delete(root);
+        my_free(tmpBuf);
+        return CJSON_PARSE_ERR;
+    } 
+    
+    cJSON_AddStringToObject(root,"commandCode","3013");
+    cJSON_AddStringToObject(root,"deviceCode",gMqttDevSn.sn);
+     
+    tmpBuf = cJSON_PrintUnformatted(root); 
+
+    if(tmpBuf == NULL)
+    {
+        log_d("cJSON_PrintUnformatted error \r\n");
+        my_free(tmpBuf);
+        cJSON_Delete(root);        
+        return CJSON_FORMAT_ERR;
+    }    
+
+    strcpy((char *)descBuf,tmpBuf);
+
+
+    log_d("getTimePacket = %s\r\n",tmpBuf);
+
+    cJSON_Delete(root);
+
+    my_free(tmpBuf);
+
+    return result;
+}
+
+
 
 uint8_t* packetBaseJson(uint8_t *jsonBuff)
 {
@@ -421,13 +462,7 @@ uint8_t packetPayload(LOCAL_USER_STRU *localUserData,uint8_t *descJson)
     SYSERRORCODE_E result = NO_ERR;
 	cJSON* root,*dataObj;
     char *tmpBuf;
-//    log_d("localUserData->cardNo = %s\r\n",localUserData->cardNo);
-//    log_d("localUserData->userId = %s\r\n",localUserData->userId);
-//    log_d("localUserData->accessLayer = %s\r\n",localUserData->accessLayer);
-//    log_d("localUserData->defaultLayer = %d\r\n",localUserData->defaultFloor);    
-//    log_d("localUserData->startTime = %s\r\n",localUserData->startTime);        
-//    log_d("localUserData->endTime = %s\r\n",localUserData->endTime);        
-//    log_d("localUserData->authMode = %d\r\n",localUserData->authMode);
+
 
     root = cJSON_CreateObject();
     dataObj = cJSON_CreateObject();
@@ -441,19 +476,17 @@ uint8_t packetPayload(LOCAL_USER_STRU *localUserData,uint8_t *descJson)
     }
 
     cJSON_AddStringToObject(root, "commandCode","3007");
-//    cJSON_AddStringToObject(root, "deviceCode", DEVICE_SN);
-    cJSON_AddStringToObject(root, "deviceCode", gMqttDevSn.sn);    
-
+    cJSON_AddStringToObject(root, "deviceCode", gMqttDevSn.sn);
     cJSON_AddItemToObject(root, "data", dataObj);
 
     cJSON_AddStringToObject(dataObj, "cardNo", localUserData->cardNo);
     cJSON_AddStringToObject(dataObj, "userId", localUserData->userId);
     cJSON_AddNumberToObject(dataObj, "callType", localUserData->authMode);
-    cJSON_AddStringToObject(dataObj, "callElevatorTime",  GetLocalTime());
+    cJSON_AddStringToObject(dataObj, "callElevatorTime",(const char*)bsp_ds1302_readtime());
+    cJSON_AddStringToObject(dataObj, "qrId",  localUserData->qrID);
     cJSON_AddStringToObject(dataObj, "type","1");
     cJSON_AddStringToObject(dataObj, "timeStamp",localUserData->timeStamp);
-    cJSON_AddStringToObject(dataObj, "status", "1");
-            
+    cJSON_AddStringToObject(dataObj, "status", "1");            
     tmpBuf = cJSON_PrintUnformatted(root); 
 
     if(!tmpBuf)
@@ -720,7 +753,7 @@ ERROR:
 }
 
 
-uint8_t parseQrCode(uint8_t *jsonBuff,uint8_t *tagFloor)
+uint8_t parseQrCode(uint8_t *jsonBuff,QRCODE_INFO_STRU *qrCodeInfo)
 {
     cJSON *root ,*devArray,*tagFloorArray,*tmpArray;
     int devNum = 0;
@@ -748,6 +781,7 @@ uint8_t parseQrCode(uint8_t *jsonBuff,uint8_t *tagFloor)
     if(devArray == NULL)
     {
         log_d("devArray NULL\r\n");
+        cJSON_Delete(root);
         return STR_EMPTY_ERR;
     }   
 
@@ -770,7 +804,7 @@ uint8_t parseQrCode(uint8_t *jsonBuff,uint8_t *tagFloor)
     if(tagFloorArray == NULL)
     {
         log_d("tagFloorArray NULL\r\n");
-        *tagFloor = 200;
+        cJSON_Delete(root);
         return STR_EMPTY_ERR;
     }
 
@@ -779,20 +813,37 @@ uint8_t parseQrCode(uint8_t *jsonBuff,uint8_t *tagFloor)
     if(tagFloorArray == 0)
     {
         log_d("tagFloorArray NULL\r\n");
-        *tagFloor = 200;
+
+        cJSON_Delete(root);
         return STR_EMPTY_ERR;
     }
     else
     {
         tmpArray = cJSON_GetArrayItem(tagFloorArray, 0);
         log_d("tmpArray->valueint = %d\r\n",tmpArray->valueint);        
-        *tagFloor = tmpArray->valueint;
+        qrCodeInfo->tagFloor = tmpArray->valueint;
     }
 
+    
+    tmpArray = cJSON_GetObjectItem(root, "sTime");
+    strcpy(qrCodeInfo->startTime,tmpArray->valuestring);
+    log_d("qrCodeInfo->startTime= %s\r\n",qrCodeInfo->startTime); 
+
+    tmpArray = cJSON_GetObjectItem(root, "eTime");
+    strcpy(qrCodeInfo->endTime,tmpArray->valuestring);
+    log_d("qrCodeInfo->endTime= %s\r\n",qrCodeInfo->endTime); 
+
+    tmpArray = cJSON_GetObjectItem(root, "qrSTime");
+    strcpy(qrCodeInfo->qrStarttimeStamp,tmpArray->valuestring);
+    log_d("qrCodeInfo->qrStarttimeStamp= %s\r\n",qrCodeInfo->qrStarttimeStamp); 
+    
+    tmpArray = cJSON_GetObjectItem(root, "qrETime");
+    strcpy(qrCodeInfo->qrEndtimeStamp,tmpArray->valuestring);
+    log_d("qrCodeInfo->qrEndtimeStamp= %s\r\n",qrCodeInfo->qrEndtimeStamp); 
+    tmpArray = cJSON_GetObjectItem(root, "qrId");
+    strcpy(qrCodeInfo->qrID,tmpArray->valuestring);
 
     cJSON_Delete(root);
-
-    my_free(localSn);
     
     return isFind;
 

@@ -50,7 +50,8 @@
 
 typedef struct
 {
-    char sn[32];
+    char deviceSn[4];
+    char sn[32];    
     char publish[128];
     char subscribe[128];
 }MQTT_DEVICE_SN_STRU;

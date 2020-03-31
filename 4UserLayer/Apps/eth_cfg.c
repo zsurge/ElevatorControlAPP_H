@@ -45,6 +45,7 @@ void ReadLocalDevSn ( void )
 {
 	char sn_flag[5] = {0};
 	char mac[6+1] = {0};
+	char id[4+1] = {0};
 	char temp[32] = {0};
 	char asc[12+1] = {0};
 	char remote_sn[20+1] = {0};
@@ -59,6 +60,7 @@ void ReadLocalDevSn ( void )
 	if ( ( memcmp ( sn_flag,"1111",4 ) == 0 ) && ( read_len == 4 ) )
 	{
 		read_len = ef_get_env_blob ( "remote_sn", remote_sn, sizeof ( remote_sn ), NULL );
+		ef_get_env_blob("device_sn",id,sizeof ( id ), NULL ); 
 		if ( read_len == 20 )
 		{
 			log_d ( "sn = %s,len = %d\r\n",remote_sn,read_len );
@@ -66,6 +68,7 @@ void ReadLocalDevSn ( void )
 			strcpy ( gMqttDevSn.publish,DEVICE_PUBLISH );
 			strcpy ( gMqttDevSn.subscribe,DEVICE_SUBSCRIBE );
 			strcat ( gMqttDevSn.subscribe,remote_sn );
+			strcpy ( gMqttDevSn.deviceSn,id);
 		}
 	}
 	else
