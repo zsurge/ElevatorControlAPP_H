@@ -103,7 +103,7 @@ void HardFault_Handler(void)
 		{
 			t++;
 			BEEP=!BEEP;
-			for(i=0;i<0X1FFFFF;i++);
+			for(i=0;i<0X1FF;i++);
 	 	}
  	
 	  	t = 0;

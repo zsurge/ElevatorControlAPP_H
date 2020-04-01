@@ -104,9 +104,7 @@ static void vTaskKey(void *pvParameters)
 					break;				
 				/* K2键按下，打印串口操作命令 */
 				case KEY_RR_PRES:                 
-                    check_msg_queue();
-                    
-//                    ef_print_env();
+                    check_msg_queue();                    
 
 //                    bsp_ds1302_mdifytime("2020-01-17 09:24:15");
                     
@@ -126,6 +124,7 @@ static void vTaskKey(void *pvParameters)
                     log_d("bsp_ds1302_readtime = %s\r\n",bsp_ds1302_readtime());
 
                     time_to_timestamp();
+                    ef_print_env();
 
 //                    searchHeaderIndex("00012926",USER_MODE,&index);
 

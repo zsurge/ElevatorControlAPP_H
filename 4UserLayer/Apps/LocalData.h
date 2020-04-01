@@ -45,7 +45,7 @@
 
 #define CARD_USER_LEN              8
 #define FLOOR_ARRAY_LENGTH         16 //每个普通用户最多10个层权限
-#define TIME_LENGTH                16
+#define TIME_LENGTH                10
 #define TIMESTAMP_LENGTH           10
 #define RESERVE_LENGTH             32 //预留空间
 

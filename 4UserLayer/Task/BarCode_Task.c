@@ -255,7 +255,7 @@ static void vTaskBarCode(void *pvParameters)
 static void vTaskBarCode(void *pvParameters)
 { 
     uint8_t recv_buf[255] = {0};
-    uint8_t sendBuff[1024] = {0};
+    uint8_t sendBuff[512] = {0};
     uint16_t len = 0; 
     uint16_t offset = 0; 
     uint8_t localTime[20] = {0};
@@ -264,10 +264,10 @@ static void vTaskBarCode(void *pvParameters)
 
     int cmpTimeFlag = -1;
     int cmpDateFlag = -1;
-    
-    READER_BUFF_STRU *ptQR; 
- 	/* 初始化结构体指针 */
-	ptQR = &gReaderMsg;
+
+    memset(&gReaderMsg,0x00,sizeof(READER_BUFF_STRU));
+    READER_BUFF_STRU *ptQR = &gReaderMsg; 
+
 
     log_d("start vTaskBarCode\r\n");
     while(1)
@@ -280,12 +280,17 @@ static void vTaskBarCode(void *pvParameters)
 
         memset(recv_buf,0x00,sizeof(recv_buf));           
         len = RS485_RecvAtTime(COM5,recv_buf,sizeof(recv_buf),800);
-        
+
+//        log_d("RS485_RecvAtTime = %d\r\n",len);
+
+        if(len>255)
+            len = 255;
+         
         memcpy(sendBuff+offset,recv_buf,len);
-        offset += len;   
-       
-        if(offset > 0  && sendBuff[offset-1] == 0x0A && sendBuff[offset-2] == 0x0D)
+        offset += len; 
+        if(offset > 10  && sendBuff[offset-1] == 0x0A && sendBuff[offset-2] == 0x0D)
         {
+            comClearRxFifo(COM5);
             log_d("sendbuff = %s\r\n",sendBuff);
             //添加模版是否启用的判定
             if(gTemplateParam.templateStatus == 0)
@@ -355,7 +360,9 @@ static void vTaskBarCode(void *pvParameters)
                  }  
 
                 log_d("ptQR = %s,len = %d,state = %d\r\n",ptQR->data,ptQR->dataLen,ptQR->state);
-                
+
+                       	/* 互斥信号量 */
+	            xSemaphoreTake(gxMutex, portMAX_DELAY);
                 if(ptQR->state)
                 {
                 	/* 使用消息队列实现指针变量的传递 */
@@ -371,16 +378,19 @@ static void vTaskBarCode(void *pvParameters)
                         dbh("barcode task the queue is send success",(char *)ptQR->data,ptQR->dataLen/2);
                     }   
                 }
+                xSemaphoreGive(gxMutex);
             }
 
             memset(sendBuff,0x00,sizeof(sendBuff));
             offset = 0;
         }
+        
+       
 
 
     	/* 发送事件标志，表示任务正常运行 */        
     	xEventGroupSetBits(xCreatedEventGroup, TASK_BIT_5);  
-        vTaskDelay(500);        
+        vTaskDelay(300);        
     }
 }
 
@@ -554,7 +564,7 @@ static void getDevData(char *src,int icFlag,int qrFlag,READER_BUFF_STRU *desc)
     READER_BUFF_STRU readerBuff = {0}; 
     uint8_t key[16] ={ 0x82,0x5d,0x82,0xd8,0xd5,0x2f,0xdf,0x85,0x28,0xa2,0xb5,0xd8,0x88,0x88,0x88,0x88 }; 
     uint8_t bcdBuff[512] = {0};
-    memset(&readerBuff,0x00,sizeof(readerBuff));   
+    memset(&readerBuff,0x00,sizeof(READER_BUFF_STRU));   
 
     //默认是支持上送的
     readerBuff.state = ENABLE;

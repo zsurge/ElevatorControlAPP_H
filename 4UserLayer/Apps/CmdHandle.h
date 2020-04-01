@@ -32,7 +32,7 @@
  * ∫Í∂®“Â                                       *
  *----------------------------------------------*/
 #define MQTT_MAX_LEN 1024*2
-#define MQTT_TEMP_LEN 255
+#define MQTT_TEMP_LEN 300
 
 
 #define AUTH_MODE_RELIEVECONTROL        1

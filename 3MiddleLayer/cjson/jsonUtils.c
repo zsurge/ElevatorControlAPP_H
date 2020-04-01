@@ -26,6 +26,7 @@
 #include "eth_cfg.h"
 #include "LocalData.h"
 #include "templateprocess.h"
+#include "malloc.h"
 
 
 
@@ -42,8 +43,9 @@
 /*----------------------------------------------*
  * 模块级变量                                   *
  *----------------------------------------------*/
-LOCAL_USER_STRU gLoalUserData;
+//LOCAL_USER_STRU gLoalUserData;
 TEMPLATE_PARAM_STRU gTemplateParam;
+
 
 /*----------------------------------------------*
  * 内部函数原型说明                             *
@@ -484,9 +486,11 @@ uint8_t packetPayload(LOCAL_USER_STRU *localUserData,uint8_t *descJson)
     cJSON_AddNumberToObject(dataObj, "callType", localUserData->authMode);
     cJSON_AddStringToObject(dataObj, "callElevatorTime",(const char*)bsp_ds1302_readtime());
     cJSON_AddStringToObject(dataObj, "qrId",  localUserData->qrID);
-    cJSON_AddStringToObject(dataObj, "type","1");
+    cJSON_AddNumberToObject(dataObj, "type",localUserData->qrType);
     cJSON_AddStringToObject(dataObj, "timeStamp",localUserData->timeStamp);
-    cJSON_AddStringToObject(dataObj, "status", "1");            
+    cJSON_AddNumberToObject(dataObj, "status", ON_LINE);        
+    cJSON_AddNumberToObject(dataObj, "callState", 1);//：1、成功 0失败，3 QR设备已禁用  
+    
     tmpBuf = cJSON_PrintUnformatted(root); 
 
     if(!tmpBuf)
@@ -513,7 +517,10 @@ SYSERRORCODE_E saveTemplateParam(uint8_t *jsonBuff)
     cJSON* root,*data,*templateData,*templateMap,*holidayTimeMap,*peakTimeMap;   
     cJSON* tmpArray,*arrayElement;
 
+     memset(&gTemplateParam,0x00,sizeof(gTemplateParam));
     TEMPLATE_PARAM_STRU *templateParam = &gTemplateParam; 
+
+    //TEMPLATE_PARAM_STRU *templateParam = my_malloc(sizeof(TEMPLATE_PARAM_STRU)); 
     int holidayTimeMapCnt=0,peakTimeMapCnt=0,index = 0;
     char tmpbuf[8] = {0};
 
@@ -753,6 +760,7 @@ ERROR:
 }
 
 
+
 uint8_t parseQrCode(uint8_t *jsonBuff,QRCODE_INFO_STRU *qrCodeInfo)
 {
     cJSON *root ,*devArray,*tagFloorArray,*tmpArray;
@@ -760,9 +768,10 @@ uint8_t parseQrCode(uint8_t *jsonBuff,QRCODE_INFO_STRU *qrCodeInfo)
     int tagFloorNum = 0;
     int index = 0;
     uint8_t isFind = 0;
-    int localSn = 567;
+    int localSn = 845;
 
-    if(!jsonBuff)
+    
+    if(!jsonBuff || !qrCodeInfo)
     {
         cJSON_Delete(root);
         log_d("error json data\r\n");
@@ -777,7 +786,7 @@ uint8_t parseQrCode(uint8_t *jsonBuff,QRCODE_INFO_STRU *qrCodeInfo)
         return CJSON_PARSE_ERR;
     }     
 
-    devArray = cJSON_GetObjectItem(root, "devs");
+    devArray = cJSON_GetObjectItem(root, "d");
     if(devArray == NULL)
     {
         log_d("devArray NULL\r\n");
@@ -800,7 +809,7 @@ uint8_t parseQrCode(uint8_t *jsonBuff,QRCODE_INFO_STRU *qrCodeInfo)
         }
     }
     
-    tagFloorArray = cJSON_GetObjectItem(root, "lifts");
+    tagFloorArray = cJSON_GetObjectItem(root, "l");
     if(tagFloorArray == NULL)
     {
         log_d("tagFloorArray NULL\r\n");
@@ -809,21 +818,137 @@ uint8_t parseQrCode(uint8_t *jsonBuff,QRCODE_INFO_STRU *qrCodeInfo)
     }
 
     tagFloorNum = cJSON_GetArraySize(tagFloorArray);
-    log_d("tagFloorNum = %d\r\n",tagFloorNum);    
-    if(tagFloorArray == 0)
+    log_d("tagFloorNum = %d\r\n",tagFloorNum);
+
+    //只是把权限楼层打印出来并没有存储
+    for(index=0;index<tagFloorNum;index++)
+    {
+        tmpArray = cJSON_GetArrayItem(tagFloorArray, index);
+        log_d("tmpArray->valueint = %d\r\n",tmpArray->valueint);
+    }
+        
+
+    tmpArray = cJSON_GetObjectItem(root, "tF");
+    qrCodeInfo->tagFloor=tmpArray->valueint;
+    log_d("qrCodeInfo->tagFloor = %d\r\n",qrCodeInfo->tagFloor);  
+
+    
+    tmpArray = cJSON_GetObjectItem(root, "oN");
+    qrCodeInfo->openNum = tmpArray->valueint;
+    log_d("qrCodeInfo->openNum= %d\r\n",qrCodeInfo->openNum); 
+    
+    tmpArray = cJSON_GetObjectItem(root, "t");
+    qrCodeInfo->type=tmpArray->valueint;
+    log_d("qrCodeInfo->type= %d\r\n",qrCodeInfo->type); 
+    
+    tmpArray = cJSON_GetObjectItem(root, "sT");
+    strcpy(qrCodeInfo->startTime,tmpArray->valuestring);
+    log_d("qrCodeInfo->startTime= %s\r\n",qrCodeInfo->startTime); 
+
+    tmpArray = cJSON_GetObjectItem(root, "eT");
+    strcpy(qrCodeInfo->endTime,tmpArray->valuestring);
+    log_d("qrCodeInfo->endTime= %s\r\n",qrCodeInfo->endTime); 
+
+    tmpArray = cJSON_GetObjectItem(root, "qS");
+    strcpy(qrCodeInfo->qrStarttimeStamp,tmpArray->valuestring);
+    log_d("qrCodeInfo->qrStarttimeStamp= %s\r\n",qrCodeInfo->qrStarttimeStamp); 
+    
+    tmpArray = cJSON_GetObjectItem(root, "qE");
+    strcpy(qrCodeInfo->qrEndtimeStamp,tmpArray->valuestring);
+    log_d("qrCodeInfo->qrEndtimeStamp= %s\r\n",qrCodeInfo->qrEndtimeStamp); 
+    
+    tmpArray = cJSON_GetObjectItem(root, "qI");
+    strcpy(qrCodeInfo->qrID,tmpArray->valuestring);
+
+
+
+    cJSON_Delete(root);
+    
+    return isFind;
+
+}
+
+#if 0
+
+QRCODE_INFO_STRU *parseQrCode(uint8_t *jsonBuff)
+{
+    cJSON *root ,*devArray,*tagFloorArray,*tmpArray;
+    int devNum = 0;
+    int tagFloorNum = 0;
+    int index = 0;
+    uint8_t isFind = 0;
+    int localSn = 845;
+    QRCODE_INFO_STRU *qrCodeInfo = my_malloc(sizeof(QRCODE_INFO_STRU));
+    
+    if(!jsonBuff || !qrCodeInfo)
+    {
+        cJSON_Delete(root);
+        log_d("error json data\r\n");
+        return NULL;
+    }    
+    
+    root = cJSON_Parse((char *)jsonBuff);    //解析数据包
+    if (!root)  
+    {  
+        cJSON_Delete(root);
+        log_d("Error before: [%s]\r\n",cJSON_GetErrorPtr());  
+        return NULL;
+    }     
+
+    devArray = cJSON_GetObjectItem(root, "devs");
+    if(devArray == NULL)
+    {
+        log_d("devArray NULL\r\n");
+        cJSON_Delete(root);
+        return NULL;
+    }   
+
+    devNum = cJSON_GetArraySize(devArray);
+
+    log_d("devNum = %d\r\n",devNum);
+
+    //查找是否在范围之内
+    for(index=0;index<devNum;index++)
+    {
+        tmpArray = cJSON_GetArrayItem(devArray, index);
+        log_d("tmpArray->valueint = %d\r\n",tmpArray->valueint);
+        if(localSn == tmpArray->valueint)
+        {
+            isFind = 1;
+        }
+    }
+    
+    tagFloorArray = cJSON_GetObjectItem(root, "lifts");
+    if(tagFloorArray == NULL)
     {
         log_d("tagFloorArray NULL\r\n");
-
         cJSON_Delete(root);
-        return STR_EMPTY_ERR;
-    }
-    else
-    {
-        tmpArray = cJSON_GetArrayItem(tagFloorArray, 0);
-        log_d("tmpArray->valueint = %d\r\n",tmpArray->valueint);        
-        qrCodeInfo->tagFloor = tmpArray->valueint;
+        return NULL;
     }
 
+    tagFloorNum = cJSON_GetArraySize(tagFloorArray);
+    log_d("tagFloorNum = %d\r\n",tagFloorNum);
+
+    //只是把权限楼层打印出来并没有存储
+    for(index=0;index<tagFloorNum;index++)
+    {
+        tmpArray = cJSON_GetArrayItem(tagFloorArray, index);
+        log_d("tmpArray->valueint = %d\r\n",tmpArray->valueint);
+    }
+        
+
+    tmpArray = cJSON_GetObjectItem(root, "tFloor");
+    qrCodeInfo->tagFloor=tmpArray->valueint;
+    log_d("qrCodeInfo->tagFloor = %d\r\n",qrCodeInfo->tagFloor);  
+
+    
+    tmpArray = cJSON_GetObjectItem(root, "oNum");
+    qrCodeInfo->openNum = tmpArray->valueint;
+    log_d("qrCodeInfo->openNum= %d\r\n",qrCodeInfo->openNum); 
+    
+    tmpArray = cJSON_GetObjectItem(root, "type");
+    qrCodeInfo->type=tmpArray->valueint;
+    log_d("qrCodeInfo->type= %d\r\n",qrCodeInfo->type); 
     
     tmpArray = cJSON_GetObjectItem(root, "sTime");
     strcpy(qrCodeInfo->startTime,tmpArray->valuestring);
@@ -840,14 +965,17 @@ uint8_t parseQrCode(uint8_t *jsonBuff,QRCODE_INFO_STRU *qrCodeInfo)
     tmpArray = cJSON_GetObjectItem(root, "qrETime");
     strcpy(qrCodeInfo->qrEndtimeStamp,tmpArray->valuestring);
     log_d("qrCodeInfo->qrEndtimeStamp= %s\r\n",qrCodeInfo->qrEndtimeStamp); 
+    
     tmpArray = cJSON_GetObjectItem(root, "qrId");
     strcpy(qrCodeInfo->qrID,tmpArray->valuestring);
 
+
+
     cJSON_Delete(root);
     
-    return isFind;
+    return qrCodeInfo;
 
 }
-
+#endif
 
 

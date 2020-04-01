@@ -725,14 +725,7 @@ uint8_t RS485_RecvAtTime(COM_PORT_E _ucPort,uint8_t *buf, uint8_t len,uint32_t t
     if(recvSize > pUart->usRxCount)  //指定读取长度大于实际接收到的数据长度时
     {
         recvSize=pUart->usRxCount; //读取长度设置为实际接收到的数据长度
-    }
-    
-//    for(i=0;i<len;i++)  //拷贝接收到的数据到接收指针中
-//    {
-//        UartGetChar(pUart,buf+i);  //将数据复制到buf中
-//    }
-
-//    return len;                   //返回实际读取长度
+    }  
 
 
 	g500usTimerRS485 = timeout;
@@ -744,11 +737,6 @@ uint8_t RS485_RecvAtTime(COM_PORT_E _ucPort,uint8_t *buf, uint8_t len,uint32_t t
 
         UartGetChar(pUart,buf + recvLen);
         recvLen++;
-
-//		if (UartGetChar (pUart,tmp) == 1) 
-//		{
-//			buf[recvLen++] = tmp[0];
-//		}
 
 		if (recvLen >= recvSize) return recvSize;
 	}  

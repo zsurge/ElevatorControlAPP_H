@@ -69,8 +69,9 @@ static void vTaskComm(void *pvParameters)
     uint8_t buf[5+1] = {0};
     uint8_t crc = 0;    
     uint8_t sendBuf[64] = {0};
+
     
-    READER_BUFF_STRU *ptMsg;
+    READER_BUFF_STRU *ptMsg  = &gReaderMsg;
     BaseType_t xReturn = pdTRUE;/* 定义一个创建信息返回值，默认为pdPASS */
     const TickType_t xMaxBlockTime = pdMS_TO_TICKS(1000); /* 设置最大等待时间为200ms */  
     
@@ -78,9 +79,6 @@ static void vTaskComm(void *pvParameters)
     uint16_t readID = bsp_dipswitch_read();
     
 
- 	/* 初始化结构体指针 */
-	ptMsg = &gReaderMsg;
-	
     /* 清零 */
     ptMsg->authMode = 0; //默认为刷卡
     ptMsg->dataLen = 0;

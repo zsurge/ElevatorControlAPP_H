@@ -26,7 +26,6 @@
 #include "bsp_ds1302.h"
 
 
-
 #define LOG_TAG    "FloorData"
 #include "elog.h"
 
@@ -72,22 +71,12 @@ void packetSendBuf(READER_BUFF_STRU *pQueue,uint8_t *buf)
     uint8_t sendBuf[64] = {0};
     uint16_t len = 0;
     uint16_t ret = 0;
-    LOCAL_USER_STRU *localUserData= &gLoalUserData;
+    LOCAL_USER_STRU localUserData= {0};
+    memset(&localUserData,0x00,sizeof(LOCAL_USER_STRU));
     
     sendBuf[0] = CMD_STX;
     sendBuf[1] = bsp_dipswitch_read();
     sendBuf[MAX_SEND_LEN-1] = xorCRC(sendBuf,MAX_SEND_LEN-2);
-
-    memset(localUserData->cardNo,0x00,sizeof(localUserData->cardNo));
-    memset(localUserData->userId,0x00,sizeof(localUserData->userId));
-    memset(localUserData->accessFloor,0x00,sizeof(localUserData->accessFloor));
-    memset(localUserData->startTime,0x00,sizeof(localUserData->startTime));
-    memset(localUserData->endTime,0x00,sizeof(localUserData->endTime));
-    memset(localUserData->qrID,0x00,sizeof(localUserData->qrID));
-    localUserData->defaultFloor = 0;
-    localUserData->authMode = 0;
-    
-//    memcpy(buf,sendBuf,MAX_SEND_LEN);
     
 
     switch(pQueue->authMode)
@@ -95,7 +84,7 @@ void packetSendBuf(READER_BUFF_STRU *pQueue,uint8_t *buf)
         case AUTH_MODE_CARD:
         case AUTH_MODE_QR:
             log_d("card or QR auth,pQueue->authMode = %d\r\n",pQueue->authMode);
-            ret = authReader(pQueue,localUserData);    
+            ret = authReader(pQueue,&localUserData);    
 
             if(ret != NO_ERR)
             {
@@ -104,10 +93,10 @@ void packetSendBuf(READER_BUFF_STRU *pQueue,uint8_t *buf)
             }
 
             //1.发给电梯的数据
-            packetToElevator(localUserData,buf);
+            packetToElevator(&localUserData,buf);
 
             //2.发给服务器
-            packetPayload(localUserData,jsonBuf); 
+            packetPayload(&localUserData,jsonBuf); 
 
             len = strlen(jsonBuf);
 
@@ -227,19 +216,16 @@ SYSERRORCODE_E authReader(READER_BUFF_STRU *pQueue,LOCAL_USER_STRU *localUserDat
 SYSERRORCODE_E authReader(READER_BUFF_STRU *pQueue,LOCAL_USER_STRU *localUserData)
 {
     SYSERRORCODE_E result = NO_ERR;
-    char value[JSON_ITEM_MAX_LEN] = {0};
-    int val_len = 0;
-    int num = 0;
     uint8_t key[8] = {0};  
     uint8_t isFind = 0;
     
     USERDATA_STRU rUserData = {0};
     QRCODE_INFO_STRU qrCodeInfo = {0};
-    
-    memset(&rUserData,0x00,sizeof(rUserData));
-    memset(key,0x00,sizeof(key));    
-    memset(&qrCodeInfo,0x00,sizeof(qrCodeInfo));
 
+    memset(key,0x00,sizeof(key));
+    memset(&rUserData,0x00,sizeof(USERDATA_STRU));        
+    memset(&qrCodeInfo,0x00,sizeof(QRCODE_INFO_STRU));
+    
     if(pQueue->authMode == AUTH_MODE_QR) 
     {
         //二维码
@@ -247,29 +233,37 @@ SYSERRORCODE_E authReader(READER_BUFF_STRU *pQueue,LOCAL_USER_STRU *localUserDat
         
         isFind = parseQrCode(pQueue->data,&qrCodeInfo);
 
-        log_d("isfind = %d\r\n",isFind);
+        log_d("qrCodeInfo->startTime= %s\r\n",qrCodeInfo.startTime); 
+        log_d("qrCodeInfo->endTime= %s\r\n",qrCodeInfo.endTime);         
+        log_d("qrCodeInfo->qrStarttimeStamp= %s\r\n",qrCodeInfo.qrStarttimeStamp); 
+        log_d("qrCodeInfo->qrEndtimeStamp= %s\r\n",qrCodeInfo.qrEndtimeStamp); 
+
+        log_d("isfind = %d\r\n",isFind);      
 
         if(isFind == 0)
         {
             //未找到记录，无权限
             log_d("not find record\r\n");
             return NO_AUTHARITY_ERR;
-        }
-
-        
-        log_d("qrCodeInfo->qrStarttimeStamp= %s\r\n",qrCodeInfo.qrStarttimeStamp); 
-        log_d("qrCodeInfo->qrEndtimeStamp= %s\r\n",qrCodeInfo.qrEndtimeStamp); 
+        }        
 
         timestamp_to_time(atoi(qrCodeInfo.qrStarttimeStamp));        
         timestamp_to_time(atoi(qrCodeInfo.qrEndtimeStamp)); 
         
         localUserData->authMode = pQueue->authMode; 
         localUserData->defaultFloor = qrCodeInfo.tagFloor;   
-        memcpy(localUserData->timeStamp,time_to_timestamp(),TIMESTAMP_LEN);    
-        memcpy(localUserData->startTime,qrCodeInfo.startTime,TIME_LENGTH);
-        memcpy(localUserData->endTime,qrCodeInfo.endTime,TIME_LENGTH);   
-        memcpy(localUserData->qrID,qrCodeInfo.qrID,QRID_LEN);
-
+        localUserData->qrType = qrCodeInfo.type;   
+        if(localUserData->qrType == 4)
+        {
+            memcpy(localUserData->userId,qrCodeInfo.qrID,QRID_LEN);        
+        }
+        else
+        {
+            memcpy(localUserData->qrID,qrCodeInfo.qrID,QRID_LEN);        
+        }
+        memcpy(localUserData->startTime,qrCodeInfo.startTime,TIME_LEN);
+        memcpy(localUserData->endTime,qrCodeInfo.endTime,TIME_LEN); 
+        memcpy(localUserData->timeStamp,time_to_timestamp(),TIMESTAMP_LEN); 
     }
     else
     {
@@ -300,10 +294,6 @@ SYSERRORCODE_E authReader(READER_BUFF_STRU *pQueue,LOCAL_USER_STRU *localUserDat
 //    log_d("userData.accessFloor = %s\r\n",rUserData.accessFloor);
 //    log_d("userData.defaultFloor = %d\r\n",rUserData.defaultFloor);
 //    log_d("userData.startTime = %s\r\n",rUserData.startTime);
-    
-
-
-
 
     log_d("localUserData->cardNo = %s\r\n",localUserData->cardNo);
     log_d("localUserData->userId = %s\r\n",localUserData->userId);
@@ -317,6 +307,8 @@ SYSERRORCODE_E authReader(READER_BUFF_STRU *pQueue,LOCAL_USER_STRU *localUserDat
 
     return result;
 }
+
+
 
 
 SYSERRORCODE_E authRemote(READER_BUFF_STRU *pQueue,LOCAL_USER_STRU *localUserData)
@@ -413,9 +405,7 @@ static SYSERRORCODE_E packetToElevator(LOCAL_USER_STRU *localUserData,uint8_t *b
     log_d("localUserData->defaultLayer = %d\r\n",localUserData->defaultFloor);    
     log_d("localUserData->startTime = %s\r\n",localUserData->startTime);        
     log_d("localUserData->endTime = %s\r\n",localUserData->endTime);        
-    log_d("localUserData->authMode = %d\r\n",localUserData->authMode);
-
-    
+    log_d("localUserData->authMode = %d\r\n",localUserData->authMode);    
 
 //    split(localUserData->accessFloor,",",authLayer,&num); //调用函数进行分割 
 
