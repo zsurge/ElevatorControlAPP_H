@@ -250,8 +250,8 @@ SYSERRORCODE_E authReader(READER_BUFF_STRU *pQueue,LOCAL_USER_STRU *localUserDat
             return NO_AUTHARITY_ERR;
         }        
 
-//        timestamp_to_time(atoi(qrCodeInfo.qrStarttimeStamp));        
-//        timestamp_to_time(atoi(qrCodeInfo.qrEndtimeStamp)); 
+        timestamp_to_time(atoi(qrCodeInfo.qrStarttimeStamp));        
+        timestamp_to_time(atoi(qrCodeInfo.qrEndtimeStamp)); 
         
         localUserData->authMode = pQueue->authMode; 
         localUserData->defaultFloor = qrCodeInfo.tagFloor;   

@@ -868,7 +868,7 @@ uint8_t parseQrCode(uint8_t *jsonBuff,QRCODE_INFO_STRU *qrCodeInfo)
     strcpy(qrCodeInfo->qrEndtimeStamp,tmpArray->valuestring);
     log_d("qrCodeInfo->qrEndtimeStamp= %s\r\n",qrCodeInfo->qrEndtimeStamp); 
     
-    tmpArray = cJSON_GetObjectItem(root, "qI");
+    tmpArray = cJSON_GetObjectItem(root, "qrId");
     strcpy(qrCodeInfo->qrID,tmpArray->valuestring);
     log_d("qrCodeInfo->qrID= %s\r\n",qrCodeInfo->qrID); 
     
