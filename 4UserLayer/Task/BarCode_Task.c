@@ -282,12 +282,14 @@ static void vTaskBarCode(void *pvParameters)
         len = RS485_RecvAtTime(COM5,recv_buf,sizeof(recv_buf),800);
 
 //        log_d("RS485_RecvAtTime = %d\r\n",len);
-
         if(len>255)
             len = 255;
          
         memcpy(sendBuff+offset,recv_buf,len);
         offset += len; 
+
+
+        
         if(offset > 10  && sendBuff[offset-1] == 0x0A && sendBuff[offset-2] == 0x0D)
         {
             comClearRxFifo(COM5);
@@ -361,8 +363,6 @@ static void vTaskBarCode(void *pvParameters)
 
                 log_d("ptQR = %s,len = %d,state = %d\r\n",ptQR->data,ptQR->dataLen,ptQR->state);
 
-                       	/* 互斥信号量 */
-	            xSemaphoreTake(gxMutex, portMAX_DELAY);
                 if(ptQR->state)
                 {
                 	/* 使用消息队列实现指针变量的传递 */
@@ -378,7 +378,6 @@ static void vTaskBarCode(void *pvParameters)
                         dbh("barcode task the queue is send success",(char *)ptQR->data,ptQR->dataLen/2);
                     }   
                 }
-                xSemaphoreGive(gxMutex);
             }
 
             memset(sendBuff,0x00,sizeof(sendBuff));

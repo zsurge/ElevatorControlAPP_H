@@ -79,6 +79,7 @@ static void vTaskComm(void *pvParameters)
     uint16_t readID = bsp_dipswitch_read();
     
 
+    memset(&gReaderMsg,0x00,sizeof(gReaderMsg));
     /* 清零 */
     ptMsg->authMode = 0; //默认为刷卡
     ptMsg->dataLen = 0;
@@ -117,6 +118,7 @@ static void vTaskComm(void *pvParameters)
             {
                 log_d("receve queue data\r\n");  
                 log_d("<<<<<<<<<<<pQueue->authMode>>>>>>>>>>>>:%d\r\n",ptMsg->authMode);
+                log_d("%s,%d\r\n",ptMsg->data,ptMsg->dataLen);
                 //消息接收成功，发送接收到的消息
                 packetSendBuf(ptMsg,sendBuf);     
             }

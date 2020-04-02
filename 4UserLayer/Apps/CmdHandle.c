@@ -343,7 +343,7 @@ static SYSERRORCODE_E DelUserId( uint8_t* msgBuf )
     len = readUserData(userId,USER_MODE,&userData);
 
     log_d("ret = %d\r\n",len);    
-    log_d("userData.userState = %d\r\n",userData.cardState);
+    log_d("userData.userState = %d\r\n",userData.userState);
     log_d("userData.cardNo = %s\r\n",userData.cardNo);
     log_d("userData.userId = %s\r\n",userData.userId);
     log_d("userData.accessFloor = %s\r\n",userData.accessFloor);
@@ -351,7 +351,7 @@ static SYSERRORCODE_E DelUserId( uint8_t* msgBuf )
     log_d("userData.startTime = %s\r\n",userData.startTime);
 
 
-    userData.userState = 0; //ÉèÖÃ¿¨×´Ì¬Îª0£¬É¾³ý¿¨
+    userData.userState = USER_DEL; //ÉèÖÃ¿¨×´Ì¬Îª0£¬É¾³ý¿¨
     len = modifyUserData(userData,USER_MODE);
 
     log_d("=================================\r\n");
@@ -359,7 +359,7 @@ static SYSERRORCODE_E DelUserId( uint8_t* msgBuf )
     memset(&userData,0x00,sizeof(userData));
     len = readUserData(userId,USER_MODE,&userData);
     log_d("ret = %d\r\n",len);    
-    log_d("userData.userState = %d\r\n",userData.cardState);
+    log_d("userData.userState = %d\r\n",userData.userState);
     log_d("userData.cardNo = %s\r\n",userData.cardNo);
     log_d("userData.userId = %s\r\n",userData.userId);
     log_d("userData.accessFloor = %s\r\n",userData.accessFloor);
@@ -466,7 +466,7 @@ SYSERRORCODE_E DelCardNo ( uint8_t* msgBuf )
     log_d("userData.startTime = %s\r\n",userData.startTime);
 
 
-    userData.cardState = 0; //ÉèÖÃ¿¨×´Ì¬Îª0£¬É¾³ý¿¨
+    userData.cardState = CARD_DEL; //ÉèÖÃ¿¨×´Ì¬Îª0£¬É¾³ý¿¨
     len = modifyUserData(userData,CARD_MODE);
 
     log_d("=================================\r\n");
@@ -850,7 +850,7 @@ static SYSERRORCODE_E GetUserInfo ( uint8_t* msgBuf )
     //È«0µÄUSER ID²»¼ÇÂ¼
     if(memcmp(tempUserData.userId,"00000000",CARD_USER_LEN) != 0)
     {
-        tempUserData.userState = 1;
+        tempUserData.userState = USER_VALID;
         ret = writeUserData(tempUserData,USER_MODE);
         log_d("write user id = %d\r\n",ret);       
     }
@@ -859,7 +859,7 @@ static SYSERRORCODE_E GetUserInfo ( uint8_t* msgBuf )
     {
         for(len=0;len<multipleCardNum;len++)
         {
-            tempUserData.cardState = 1;
+            tempUserData.cardState = CARD_VALID;
             memcpy(tempUserData.cardNo,multipleCard[len],CARD_NO_LEN);
             writeUserData(tempUserData,CARD_MODE);
         }
@@ -868,7 +868,7 @@ static SYSERRORCODE_E GetUserInfo ( uint8_t* msgBuf )
     {
         if(memcmp(tempUserData.cardNo,"00000000",CARD_USER_LEN) != 0)
         {
-            tempUserData.cardState = 1;
+            tempUserData.cardState = CARD_VALID;
             writeUserData(tempUserData,CARD_MODE);
             log_d("write card id = %d\r\n",ret);           
         }
@@ -923,6 +923,8 @@ static SYSERRORCODE_E RemoteOptDev ( uint8_t* msgBuf )
     log_d("RemoteOptDev len = %d,buf = %s\r\n",len,buf);
 
     PublishData(buf,len); 
+
+    
     
     return result;
 
@@ -964,18 +966,33 @@ static SYSERRORCODE_E PCOptDev ( uint8_t* msgBuf )
 
     PublishData(buf,len); 
 
+    userData.defaultFloor = 9;
+    userData.cardState = CARD_VALID;
+    memcpy(userData.cardNo,"89E1E35D",CARD_NO_LEN);
+    strcpy(userData.accessFloor,"7,8,9");    
+    memcpy(userData.startTime,"2020-01-01",TIME_LENGTH);
+    memcpy(userData.endTime,"2030-01-01",TIME_LENGTH);    
+    
+    writeUserData(userData,CARD_MODE);
+
 
     
-//    log_d("===============TEST==================\r\n");
-//    len = readUserData("00010359",USER_MODE,&userData);
+    log_d("===============TEST==================\r\n");
+    len = readUserData("89E1E35D",CARD_MODE,&userData);
 
-//    log_d("ret = %d\r\n",len);    
-//    log_d("userData.userState = %d\r\n",userData.userState);
-//    log_d("userData.cardNo = %s\r\n",userData.cardNo);
-//    log_d("userData.userId = %s\r\n",userData.userId);
-//    log_d("userData.accessFloor = %s\r\n",userData.accessFloor);
-//    log_d("userData.defaultFloor = %d\r\n",userData.defaultFloor);
-//    log_d("userData.startTime = %s\r\n",userData.startTime);
+    log_d("ret = %d\r\n",len);    
+    log_d("userData.userState = %d\r\n",userData.cardState);
+    log_d("userData.cardNo = %s\r\n",userData.cardNo);
+    log_d("userData.userId = %s\r\n",userData.userId);
+    log_d("userData.accessFloor = %s\r\n",userData.accessFloor);
+    log_d("userData.defaultFloor = %d\r\n",userData.defaultFloor);
+    log_d("userData.startTime = %s\r\n",userData.startTime);
+
+
+
+
+
+
 
 
 //    userData.userState = 1;
@@ -1092,7 +1109,7 @@ static SYSERRORCODE_E AddSingleUser( uint8_t* msgBuf )
     {
         for(len=0;len<multipleCardNum;len++)
         {
-            tempUserData.cardState = 1;
+            tempUserData.cardState = CARD_VALID;
             memcpy(tempUserData.cardNo,multipleCard[len],CARD_NO_LEN);
             writeUserData(tempUserData,CARD_MODE);
         }
@@ -1101,7 +1118,7 @@ static SYSERRORCODE_E AddSingleUser( uint8_t* msgBuf )
     {
         if(memcmp(tempUserData.cardNo,"00000000",CARD_USER_LEN) != 0)
         {
-            tempUserData.cardState = 1;
+            tempUserData.cardState = CARD_VALID;
             writeUserData(tempUserData,CARD_MODE);
             log_d("write card id = %d\r\n",ret);           
         }

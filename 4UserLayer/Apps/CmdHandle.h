@@ -47,7 +47,8 @@
 //ЖўЮЌТы
 #define AUTH_MODE_QR        7
 
-#define QUEUE_BUF_LEN   1024
+#define QUEUE_BUF_LEN   512
+
 
 #pragma pack(1)
 typedef struct
@@ -64,7 +65,6 @@ extern READER_BUFF_STRU gReaderMsg;
 extern int gConnectStatus;
 extern int gMySock;
 extern uint8_t gUpdateDevSn; 
-
 extern uint32_t gCurTick;
 
 

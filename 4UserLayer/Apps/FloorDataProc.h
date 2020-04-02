@@ -57,7 +57,6 @@
 void packetDefaultSendBuf(uint8_t *buf);
 void packetSendBuf(READER_BUFF_STRU *pQueue,uint8_t *buf);
 
-SYSERRORCODE_E authReader(READER_BUFF_STRU *pQueue,LOCAL_USER_STRU *localUserData);
 
 SYSERRORCODE_E authRemote(READER_BUFF_STRU *pQueue,LOCAL_USER_STRU *localUserData);
 

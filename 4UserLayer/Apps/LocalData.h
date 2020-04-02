@@ -43,14 +43,22 @@
 #define DATA_SECTOR_NUM     ((USER_ID_DATA_ADDR-CARD_NO_DATA_ADDR)/SECTOR_SIZE)
 
 
-#define CARD_USER_LEN              8
-#define FLOOR_ARRAY_LENGTH         16 //每个普通用户最多10个层权限
-#define TIME_LENGTH                10
-#define TIMESTAMP_LENGTH           10
+#define CARD_USER_LEN              (8)
+#define FLOOR_ARRAY_LENGTH         (64) //每个普通用户最多10个层权限
+#define TIME_LENGTH                (10)
+#define TIMESTAMP_LENGTH           (10)
 #define RESERVE_LENGTH             32 //预留空间
 
 #define CARD_MODE                   0 //卡模式
 #define USER_MODE                   1 //U用户ID模式
+
+////设置卡状态为0，删除卡
+#define CARD_DEL                    0
+#define CARD_VALID                  1
+
+#define USER_DEL                    CARD_DEL
+#define USER_VALID                  CARD_VALID
+
 
 #define TABLE_HEAD                 0xAA
 
@@ -91,13 +99,13 @@ typedef struct USERDATA
     uint8_t defaultFloor;                           //默认楼层  
     uint8_t cardState;                              //卡状态 有效/已删除/黑名单/临时卡    
     uint8_t userState;                              //用户状态 有效/已删除
-    uint8_t userId[CARD_USER_LEN];                  //用户ID
-    uint8_t cardNo[CARD_USER_LEN];                  //卡号
-    uint8_t accessFloor[FLOOR_ARRAY_LENGTH];        //楼层权限
-    uint8_t startTime[TIME_LENGTH];                 //账户有效时间
-    uint8_t endTime[TIME_LENGTH];                   //账户结束时间    
-    uint8_t timeStamp[TIME_LENGTH];                 //二维码时间戳
-    uint8_t reserve[RESERVE_LENGTH];                //预留空间
+    uint8_t userId[CARD_USER_LEN+1];                  //用户ID
+    uint8_t cardNo[CARD_USER_LEN+1];                  //卡号
+    uint8_t accessFloor[FLOOR_ARRAY_LENGTH+1];        //楼层权限
+    uint8_t startTime[TIME_LENGTH+1];                 //账户有效时间
+    uint8_t endTime[TIME_LENGTH+1];                   //账户结束时间    
+    uint8_t timeStamp[TIME_LENGTH+1];                 //二维码时间戳
+    uint8_t reserve[RESERVE_LENGTH+1];                //预留空间
     uint8_t crc;                                    //校验值 head~reseve
 }USERDATA_STRU;
 #pragma pack()

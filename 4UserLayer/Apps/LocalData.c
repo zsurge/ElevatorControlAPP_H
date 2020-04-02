@@ -396,7 +396,6 @@ uint8_t readUserData(uint8_t* header,uint8_t mode,USERDATA_STRU *userData)
 		return 3;//提示未找到索引
 	}
 	
-	log_d("sizeof(USERDATA_STRU) = %d\r\n",sizeof(USERDATA_STRU));
 
     if(mode == CARD_MODE)
     {

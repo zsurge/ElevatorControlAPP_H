@@ -50,7 +50,7 @@
  *----------------------------------------------*/
 static SYSERRORCODE_E packetToElevator(LOCAL_USER_STRU *localUserData,uint8_t *buff);
 static void calcFloor(uint8_t layer,uint8_t regMode,uint8_t *src,uint8_t *outFloor);
-
+static SYSERRORCODE_E authReader(READER_BUFF_STRU *pQueue,LOCAL_USER_STRU *localUserData);
 
 
 void packetDefaultSendBuf(uint8_t *buf)
@@ -77,7 +77,7 @@ void packetSendBuf(READER_BUFF_STRU *pQueue,uint8_t *buf)
     sendBuf[0] = CMD_STX;
     sendBuf[1] = bsp_dipswitch_read();
     sendBuf[MAX_SEND_LEN-1] = xorCRC(sendBuf,MAX_SEND_LEN-2);
-    
+    log_d("card or QR data = %s\r\n",pQueue->data);
 
     switch(pQueue->authMode)
     {
@@ -216,7 +216,7 @@ SYSERRORCODE_E authReader(READER_BUFF_STRU *pQueue,LOCAL_USER_STRU *localUserDat
 SYSERRORCODE_E authReader(READER_BUFF_STRU *pQueue,LOCAL_USER_STRU *localUserData)
 {
     SYSERRORCODE_E result = NO_ERR;
-    uint8_t key[8] = {0};  
+    uint8_t key[9] = {0};  
     uint8_t isFind = 0;
     
     USERDATA_STRU rUserData = {0};
@@ -225,6 +225,9 @@ SYSERRORCODE_E authReader(READER_BUFF_STRU *pQueue,LOCAL_USER_STRU *localUserDat
     memset(key,0x00,sizeof(key));
     memset(&rUserData,0x00,sizeof(USERDATA_STRU));        
     memset(&qrCodeInfo,0x00,sizeof(QRCODE_INFO_STRU));
+
+    
+    log_d("card or QR data = %s\r\n",pQueue->data);
     
     if(pQueue->authMode == AUTH_MODE_QR) 
     {
@@ -247,38 +250,35 @@ SYSERRORCODE_E authReader(READER_BUFF_STRU *pQueue,LOCAL_USER_STRU *localUserDat
             return NO_AUTHARITY_ERR;
         }        
 
-        timestamp_to_time(atoi(qrCodeInfo.qrStarttimeStamp));        
-        timestamp_to_time(atoi(qrCodeInfo.qrEndtimeStamp)); 
+//        timestamp_to_time(atoi(qrCodeInfo.qrStarttimeStamp));        
+//        timestamp_to_time(atoi(qrCodeInfo.qrEndtimeStamp)); 
         
         localUserData->authMode = pQueue->authMode; 
         localUserData->defaultFloor = qrCodeInfo.tagFloor;   
         localUserData->qrType = qrCodeInfo.type;   
-        if(localUserData->qrType == 4)
-        {
-            memcpy(localUserData->userId,qrCodeInfo.qrID,QRID_LEN);        
-        }
-        else
-        {
-            memcpy(localUserData->qrID,qrCodeInfo.qrID,QRID_LEN);        
-        }
+        memcpy(localUserData->qrID,qrCodeInfo.qrID,QRID_LEN); 
         memcpy(localUserData->startTime,qrCodeInfo.startTime,TIME_LEN);
         memcpy(localUserData->endTime,qrCodeInfo.endTime,TIME_LEN); 
         memcpy(localUserData->timeStamp,time_to_timestamp(),TIMESTAMP_LEN); 
     }
     else
     {
-        //读卡，-2 是减掉0D 0A
-        memcpy(key,pQueue->data+pQueue->dataLen-2-CARD_NO_LEN,CARD_NO_LEN);
+        //读卡 CARD 230000000089E1E35D,23
+    
+        memcpy(key,pQueue->data+pQueue->dataLen-CARD_NO_LEN,CARD_NO_LEN);
         log_d("key = %s\r\n",key);
-        isFind = readUserData(key,CARD_MODE,&rUserData);      
+        isFind = readUserData(key,CARD_MODE,&rUserData);   
 
-        if(rUserData.cardState !=1 || isFind != 0)
+        log_d("isFind = %d,rUserData.cardState = %d\r\n",isFind,rUserData.cardState);
+
+        if(rUserData.cardState != CARD_VALID || isFind != 0)
         {
             //未找到记录，无权限
             log_d("not find record\r\n");
             return NO_AUTHARITY_ERR;
         } 
-
+        
+        localUserData->qrType = 4;
         localUserData->authMode = pQueue->authMode; 
         localUserData->defaultFloor = rUserData.defaultFloor;
         memcpy(localUserData->userId,rUserData.userId,CARD_USER_LEN);        
@@ -288,12 +288,6 @@ SYSERRORCODE_E authReader(READER_BUFF_STRU *pQueue,LOCAL_USER_STRU *localUserDat
         memcpy(localUserData->startTime,rUserData.startTime,TIME_LENGTH);
         memcpy(localUserData->endTime,rUserData.endTime,TIME_LENGTH);            
     }
-
-//    log_d("userData.cardNo = %s\r\n",rUserData.cardNo);
-//    log_d("userData.userId = %s\r\n",rUserData.userId);
-//    log_d("userData.accessFloor = %s\r\n",rUserData.accessFloor);
-//    log_d("userData.defaultFloor = %d\r\n",rUserData.defaultFloor);
-//    log_d("userData.startTime = %s\r\n",rUserData.startTime);
 
     log_d("localUserData->cardNo = %s\r\n",localUserData->cardNo);
     log_d("localUserData->userId = %s\r\n",localUserData->userId);

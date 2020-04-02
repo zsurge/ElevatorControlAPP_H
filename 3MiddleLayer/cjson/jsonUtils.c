@@ -238,7 +238,7 @@ SYSERRORCODE_E PacketDeviceInfo ( const uint8_t* jsonBuff,const uint8_t* descJso
         cJSON_AddStringToObject(dataObj, "appName", gDevinfo.Model);
 
         memset(buf,0x00,sizeof(buf));
-        sprintf(buf,"%d",gCurUserHeaderIndex);
+        sprintf(buf,"%d",gCurCardHeaderIndex);
         cJSON_AddStringToObject(dataObj, "regRersion", buf);
         cJSON_AddStringToObject(dataObj, "regface", " ");
         cJSON_AddStringToObject(dataObj, "ip", gDevinfo.GetIP());
@@ -259,7 +259,6 @@ SYSERRORCODE_E PacketDeviceInfo ( const uint8_t* jsonBuff,const uint8_t* descJso
 	}
 
     cJSON_Delete(root);
-
     cJSON_Delete(newroot);
 
     my_free(tmpBuf);
@@ -477,19 +476,31 @@ uint8_t packetPayload(LOCAL_USER_STRU *localUserData,uint8_t *descJson)
 		return CJSON_CREATE_ERR;
     }
 
-    cJSON_AddStringToObject(root, "commandCode","3007");
     cJSON_AddStringToObject(root, "deviceCode", gMqttDevSn.sn);
     cJSON_AddItemToObject(root, "data", dataObj);
 
-    cJSON_AddStringToObject(dataObj, "cardNo", localUserData->cardNo);
-    cJSON_AddStringToObject(dataObj, "userId", localUserData->userId);
-    cJSON_AddNumberToObject(dataObj, "callType", localUserData->authMode);
-    cJSON_AddStringToObject(dataObj, "callElevatorTime",(const char*)bsp_ds1302_readtime());
-    cJSON_AddStringToObject(dataObj, "qrId",  localUserData->qrID);
-    cJSON_AddNumberToObject(dataObj, "type",localUserData->qrType);
-    cJSON_AddStringToObject(dataObj, "timeStamp",localUserData->timeStamp);
-    cJSON_AddNumberToObject(dataObj, "status", ON_LINE);        
-    cJSON_AddNumberToObject(dataObj, "callState", 1);//：1、成功 0失败，3 QR设备已禁用  
+    if(localUserData->qrType == 4)
+    {    
+        cJSON_AddStringToObject(root, "commandCode","3007");
+        cJSON_AddStringToObject(dataObj, "userId", localUserData->qrID);  
+        cJSON_AddStringToObject(dataObj, "cardNo", localUserData->cardNo);
+        cJSON_AddNumberToObject(dataObj, "callType", localUserData->authMode); 
+        cJSON_AddNumberToObject(dataObj, "status", ON_LINE);   
+        cJSON_AddNumberToObject(dataObj, "type",CALL_OK);
+        cJSON_AddStringToObject(dataObj, "callElevatorTime",(const char*)bsp_ds1302_readtime());        
+        cJSON_AddStringToObject(dataObj, "timeStamp",localUserData->timeStamp);
+    }
+    else
+    {
+        cJSON_AddStringToObject(root, "commandCode","4002");
+        cJSON_AddNumberToObject(dataObj, "enterType",  4);//这里设置为4是QRCODE在开发者平台上的数据，梯控上的数据为7        
+        cJSON_AddStringToObject(dataObj, "qrId",  localUserData->qrID);
+        cJSON_AddNumberToObject(dataObj, "status", ON_LINE);   
+        cJSON_AddStringToObject(dataObj, "enterTime",(const char*)bsp_ds1302_readtime());                
+        cJSON_AddNumberToObject(dataObj, "faceCompare",CALL_OK);//：1、成功 2失败，
+        cJSON_AddNumberToObject(dataObj, "direction", DIRECTION_IN);//1进，2出        
+        cJSON_AddStringToObject(dataObj, "cardNo", localUserData->cardNo);
+    }
     
     tmpBuf = cJSON_PrintUnformatted(root); 
 
@@ -768,7 +779,7 @@ uint8_t parseQrCode(uint8_t *jsonBuff,QRCODE_INFO_STRU *qrCodeInfo)
     int tagFloorNum = 0;
     int index = 0;
     uint8_t isFind = 0;
-    int localSn = 845;
+    int localSn = 11111111;
 
     
     if(!jsonBuff || !qrCodeInfo)
@@ -859,123 +870,13 @@ uint8_t parseQrCode(uint8_t *jsonBuff,QRCODE_INFO_STRU *qrCodeInfo)
     
     tmpArray = cJSON_GetObjectItem(root, "qI");
     strcpy(qrCodeInfo->qrID,tmpArray->valuestring);
-
-
-
+    log_d("qrCodeInfo->qrID= %s\r\n",qrCodeInfo->qrID); 
+    
     cJSON_Delete(root);
     
     return isFind;
 
 }
 
-#if 0
-
-QRCODE_INFO_STRU *parseQrCode(uint8_t *jsonBuff)
-{
-    cJSON *root ,*devArray,*tagFloorArray,*tmpArray;
-    int devNum = 0;
-    int tagFloorNum = 0;
-    int index = 0;
-    uint8_t isFind = 0;
-    int localSn = 845;
-    QRCODE_INFO_STRU *qrCodeInfo = my_malloc(sizeof(QRCODE_INFO_STRU));
-    
-    if(!jsonBuff || !qrCodeInfo)
-    {
-        cJSON_Delete(root);
-        log_d("error json data\r\n");
-        return NULL;
-    }    
-    
-    root = cJSON_Parse((char *)jsonBuff);    //解析数据包
-    if (!root)  
-    {  
-        cJSON_Delete(root);
-        log_d("Error before: [%s]\r\n",cJSON_GetErrorPtr());  
-        return NULL;
-    }     
-
-    devArray = cJSON_GetObjectItem(root, "devs");
-    if(devArray == NULL)
-    {
-        log_d("devArray NULL\r\n");
-        cJSON_Delete(root);
-        return NULL;
-    }   
-
-    devNum = cJSON_GetArraySize(devArray);
-
-    log_d("devNum = %d\r\n",devNum);
-
-    //查找是否在范围之内
-    for(index=0;index<devNum;index++)
-    {
-        tmpArray = cJSON_GetArrayItem(devArray, index);
-        log_d("tmpArray->valueint = %d\r\n",tmpArray->valueint);
-        if(localSn == tmpArray->valueint)
-        {
-            isFind = 1;
-        }
-    }
-    
-    tagFloorArray = cJSON_GetObjectItem(root, "lifts");
-    if(tagFloorArray == NULL)
-    {
-        log_d("tagFloorArray NULL\r\n");
-        cJSON_Delete(root);
-        return NULL;
-    }
-
-    tagFloorNum = cJSON_GetArraySize(tagFloorArray);
-    log_d("tagFloorNum = %d\r\n",tagFloorNum);
-
-    //只是把权限楼层打印出来并没有存储
-    for(index=0;index<tagFloorNum;index++)
-    {
-        tmpArray = cJSON_GetArrayItem(tagFloorArray, index);
-        log_d("tmpArray->valueint = %d\r\n",tmpArray->valueint);
-    }
-        
-
-    tmpArray = cJSON_GetObjectItem(root, "tFloor");
-    qrCodeInfo->tagFloor=tmpArray->valueint;
-    log_d("qrCodeInfo->tagFloor = %d\r\n",qrCodeInfo->tagFloor);  
-
-    
-    tmpArray = cJSON_GetObjectItem(root, "oNum");
-    qrCodeInfo->openNum = tmpArray->valueint;
-    log_d("qrCodeInfo->openNum= %d\r\n",qrCodeInfo->openNum); 
-    
-    tmpArray = cJSON_GetObjectItem(root, "type");
-    qrCodeInfo->type=tmpArray->valueint;
-    log_d("qrCodeInfo->type= %d\r\n",qrCodeInfo->type); 
-    
-    tmpArray = cJSON_GetObjectItem(root, "sTime");
-    strcpy(qrCodeInfo->startTime,tmpArray->valuestring);
-    log_d("qrCodeInfo->startTime= %s\r\n",qrCodeInfo->startTime); 
-
-    tmpArray = cJSON_GetObjectItem(root, "eTime");
-    strcpy(qrCodeInfo->endTime,tmpArray->valuestring);
-    log_d("qrCodeInfo->endTime= %s\r\n",qrCodeInfo->endTime); 
-
-    tmpArray = cJSON_GetObjectItem(root, "qrSTime");
-    strcpy(qrCodeInfo->qrStarttimeStamp,tmpArray->valuestring);
-    log_d("qrCodeInfo->qrStarttimeStamp= %s\r\n",qrCodeInfo->qrStarttimeStamp); 
-    
-    tmpArray = cJSON_GetObjectItem(root, "qrETime");
-    strcpy(qrCodeInfo->qrEndtimeStamp,tmpArray->valuestring);
-    log_d("qrCodeInfo->qrEndtimeStamp= %s\r\n",qrCodeInfo->qrEndtimeStamp); 
-    
-    tmpArray = cJSON_GetObjectItem(root, "qrId");
-    strcpy(qrCodeInfo->qrID,tmpArray->valuestring);
-
-
-
-    cJSON_Delete(root);
-    
-    return qrCodeInfo;
-
-}
-#endif
 
 
