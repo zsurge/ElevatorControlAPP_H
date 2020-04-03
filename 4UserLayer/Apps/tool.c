@@ -541,3 +541,28 @@ uint32_t hex2int( char *str)
     return res;
 } 
 
+
+uint8_t compareArray(uint8_t *array1,uint8_t *array2,int len)
+{
+    int i = 0;
+	if (array1 == NULL || array2==NULL)
+	{
+		return 1;
+	}
+	if (len==0)
+	{
+		return 2;
+	}
+	
+    for(i=0;i<len;i++)
+    {
+        if(array1[i] != array2[i])
+        {
+            return 3;
+        }
+    }
+
+    return 0;
+}
+
+

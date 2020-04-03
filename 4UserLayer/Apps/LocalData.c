@@ -72,10 +72,10 @@ uint8_t writeHeader(uint8_t  * header,uint8_t mode)
 uint8_t writeHeader(uint8_t  * header,uint8_t mode)
 {
     uint8_t times = 3;
-    uint8_t readBuff[HEAD_lEN] = {0};
+    uint8_t readBuff[HEAD_lEN+1] = {0};
 	uint8_t ret = 0;
     uint8_t headCnt[6] = {0};
-    uint8_t temp[HEAD_lEN] = {0};
+    uint8_t temp[HEAD_lEN+1] = {0};
     uint32_t addr = 0;
          
 
@@ -89,13 +89,13 @@ uint8_t writeHeader(uint8_t  * header,uint8_t mode)
     }
 
 
-    
-
-    if(header == NULL)
+    if(header == NULL || strlen((const char*)header) == 0)
     {
-        log_d("cardNoHeader 为空\r\n");
+        log_d("<<<<<<<<<<<<<<cardNoHeader is empty>>>>>>>>>>>>>>\r\n");
         return 1;
     }
+
+    log_d("writeHeader = %s\r\n",header);
 
     memset(temp,0x00,sizeof(temp));
     asc2bcd(temp, header,HEAD_lEN*2, 0);
@@ -108,16 +108,19 @@ uint8_t writeHeader(uint8_t  * header,uint8_t mode)
 		memset(readBuff,0x00,sizeof(readBuff));
 		bsp_sf_ReadBuffer (readBuff, addr, HEAD_lEN);
 		
-		ret = memcmp(temp,readBuff,HEAD_lEN);
+		ret = compareArray(temp,readBuff,HEAD_lEN);
+
+//		log_d("ret = %d\r\n",ret);
 		
 		if(ret == 0)
 		{
+		    dbh("header bcd", temp, HEAD_lEN);
 			break;
 		}
 
 		if(ret != 0 && times == 1)
 		{
-            log_d("写sn失败\r\n");
+            log_d("write header error\r\n");
 			return 3;
 		}
 
@@ -282,7 +285,7 @@ uint8_t writeUserData(USERDATA_STRU userData,uint8_t mode)
     uint32_t addr = 0;
     
     int32_t iTime1, iTime2;
-	log_d("sizeof(USERDATA_STRU) = %d\r\n",sizeof(USERDATA_STRU));
+//	log_d("sizeof(USERDATA_STRU) = %d\r\n",sizeof(USERDATA_STRU));
     
     iTime1 = xTaskGetTickCount();	/* 记下开始时间 */
  
@@ -295,15 +298,15 @@ uint8_t writeUserData(USERDATA_STRU userData,uint8_t mode)
         return 1; //提示已经满了
     }
 
-    //写表头
+    
     if(mode == CARD_MODE)
     {
-        addr = CARD_NO_DATA_ADDR + gCurCardHeaderIndex * (sizeof(USERDATA_STRU)+2);
+        addr = CARD_NO_DATA_ADDR + gCurCardHeaderIndex * (sizeof(USERDATA_STRU));
         memcpy(header,userData.cardNo,CARD_USER_LEN);
     }
     else
     {
-        addr = USER_ID_DATA_ADDR + gCurUserHeaderIndex * (sizeof(USERDATA_STRU)+2);
+        addr = USER_ID_DATA_ADDR + gCurUserHeaderIndex * (sizeof(USERDATA_STRU));
         memcpy(header,userData.userId,CARD_USER_LEN);
     }
 
@@ -312,7 +315,7 @@ uint8_t writeUserData(USERDATA_STRU userData,uint8_t mode)
         return 1;//提示表头无效
     }
     
-
+   //写表头
    ret = writeHeader(header,mode);
 
    if(ret != 0)
@@ -321,32 +324,29 @@ uint8_t writeUserData(USERDATA_STRU userData,uint8_t mode)
    }
 
     //packet write buff
-    memset(wBuff,0x00,sizeof(wBuff));
-
-    //set head
-	wBuff[0] = TABLE_HEAD;    
+    memset(wBuff,0x00,sizeof(wBuff));  
 	
     //copy to buff
-    memcpy(wBuff+1, &userData, sizeof(USERDATA_STRU));
+    memcpy(wBuff, &userData, sizeof(USERDATA_STRU)-1);
 	
     //calc crc
-	crc = xorCRC(wBuff, sizeof(USERDATA_STRU)+1);
+	crc = xorCRC(wBuff, sizeof(USERDATA_STRU)-1);
 
 	//copy crc
-	wBuff[sizeof(USERDATA_STRU) + 1] = crc;	
+	wBuff[sizeof(USERDATA_STRU)-1] = crc;	
 
 
     //write flash
 	while(times)
 	{
 	
-		bsp_sf_WriteBuffer (wBuff, addr, sizeof(USERDATA_STRU)+2);
+		bsp_sf_WriteBuffer (wBuff, addr, sizeof(USERDATA_STRU));
 
 		//再读出来，对比是否一致
 		memset(rBuff,0x00,sizeof(rBuff));
-		bsp_sf_ReadBuffer (rBuff, addr, sizeof(USERDATA_STRU)+2);
+		bsp_sf_ReadBuffer (rBuff, addr, sizeof(USERDATA_STRU));
 
-		ret = memcmp(wBuff,rBuff,sizeof(USERDATA_STRU)+2);
+		ret = compareArray(wBuff,rBuff,sizeof(USERDATA_STRU));
 		
 		if(ret == 0)
 		{
@@ -366,6 +366,8 @@ uint8_t writeUserData(USERDATA_STRU userData,uint8_t mode)
     iTime2 = xTaskGetTickCount();	/* 记下结束时间 */
 	log_d("writeUserData成功，耗时: %dms\r\n",iTime2 - iTime1);	
 
+//    dbh("writeUserData", wBuff, sizeof(USERDATA_STRU));
+
     return 0;
 }
 
@@ -383,6 +385,7 @@ uint8_t readUserData(uint8_t* header,uint8_t mode,USERDATA_STRU *userData)
 
 	if(header == NULL)
 	{
+        log_d("invalid head\r\n"); 
         return 1; //提示错误的参数
 	}
 
@@ -393,40 +396,48 @@ uint8_t readUserData(uint8_t* header,uint8_t mode,USERDATA_STRU *userData)
 	
 	if(ret != 1)
 	{
+        log_d("can't find the head index\r\n");    
+	
 		return 3;//提示未找到索引
 	}
 	
 
     if(mode == CARD_MODE)
     {
-        addr = CARD_NO_DATA_ADDR + index * (sizeof(USERDATA_STRU)+2);
+        addr = CARD_NO_DATA_ADDR + index * (sizeof(USERDATA_STRU));
     }
     else
     {
-        addr = USER_ID_DATA_ADDR + index * (sizeof(USERDATA_STRU)+2);
+        addr = USER_ID_DATA_ADDR + index * (sizeof(USERDATA_STRU));
     }	
 
-    bsp_sf_ReadBuffer (rBuff, addr, sizeof(USERDATA_STRU)+2);
+    bsp_sf_ReadBuffer (rBuff, addr, sizeof(USERDATA_STRU));
 
     //judge head
 	if(rBuff[0] != TABLE_HEAD)
 	{
+        log_d("invalid start char\r\n");    	
 		return 4;
 	}
 
     //calc crc
-	crc = xorCRC(rBuff, sizeof(USERDATA_STRU)+1);
+	crc = xorCRC(rBuff, sizeof(USERDATA_STRU)-1);
 
 	//judge crc
-	if(crc != rBuff[sizeof(USERDATA_STRU) + 1])
+	if(crc != rBuff[sizeof(USERDATA_STRU) - 1])
 	{
+        log_d("crc check error\r\n");   
 		return 5;
 	}
 
-	memcpy(userData, rBuff+1, sizeof(USERDATA_STRU));
+	memcpy(userData, rBuff, sizeof(USERDATA_STRU));
+
+
 
     iTime2 = xTaskGetTickCount();	/* 记下结束时间 */
 	log_d("readUserData成功，耗时: %dms\r\n",iTime2 - iTime1);		
+
+    dbh("readUserData", rBuff, sizeof(USERDATA_STRU));
 
 	return 0;
 
@@ -482,6 +493,7 @@ uint8_t modifyUserData(USERDATA_STRU userData,uint8_t mode)
 
     if(isFull == 1)
     {
+        log_d("not enough speac storage the data\r\n");    
         return 1; //提示已经满了
     } 
 
@@ -500,45 +512,44 @@ uint8_t modifyUserData(USERDATA_STRU userData,uint8_t mode)
 	
 	if(ret != 1)
 	{
+	    log_d("can't find the head index\r\n");
 		return 3;//提示未找到索引
 	}
 
 	if(mode == CARD_MODE)
 	{
-        addr = CARD_NO_DATA_ADDR + index * (sizeof(USERDATA_STRU)+2);
-   }
+        addr = CARD_NO_DATA_ADDR + index * (sizeof(USERDATA_STRU));
+
+   }
     else
     {
-        addr = USER_ID_DATA_ADDR + index * (sizeof(USERDATA_STRU)+2);
+        addr = USER_ID_DATA_ADDR + index * (sizeof(USERDATA_STRU));
     }
 
     //packet write buff
-    memset(wBuff,0x00,sizeof(wBuff));
-
-    //set head
-	wBuff[0] = TABLE_HEAD;    
+    memset(wBuff,0x00,sizeof(wBuff)); 
 	
     //copy to buff
-    memcpy(wBuff+1, &userData, sizeof(USERDATA_STRU));
+    memcpy(wBuff, &userData, sizeof(USERDATA_STRU));
 	
     //calc crc
-	crc = xorCRC(wBuff, sizeof(USERDATA_STRU)+1);
+	crc = xorCRC(wBuff, sizeof(USERDATA_STRU)-1);
 
 	//copy crc
-	wBuff[sizeof(USERDATA_STRU) + 1] = crc;	
+	wBuff[sizeof(USERDATA_STRU) - 1] = crc;	
 
 
     //write flash
 	while(times)
 	{
 	
-		bsp_sf_WriteBuffer (wBuff, addr, sizeof(USERDATA_STRU)+2);
+		bsp_sf_WriteBuffer (wBuff, addr, sizeof(USERDATA_STRU));
 
 		//再读出来，对比是否一致
 		memset(rBuff,0x00,sizeof(rBuff));
-		bsp_sf_ReadBuffer (rBuff, addr, sizeof(USERDATA_STRU)+2);
+		bsp_sf_ReadBuffer (rBuff, addr, sizeof(USERDATA_STRU));
 
-		ret = memcmp(wBuff,rBuff,sizeof(USERDATA_STRU)+2);
+		ret = compareArray(wBuff,rBuff,sizeof(USERDATA_STRU));
 		
 		if(ret == 0)
 		{
@@ -548,7 +559,7 @@ uint8_t modifyUserData(USERDATA_STRU userData,uint8_t mode)
 
 		if(ret != 0 && times == 1)
 		{
-			log_d("修改记录失败!\r\n");
+			log_d("modify record is error\r\n");
 			return 3;
 		}
 
@@ -559,6 +570,59 @@ uint8_t modifyUserData(USERDATA_STRU userData,uint8_t mode)
 	log_d("修改记录成功，耗时: %dms\r\n",iTime2 - iTime1);	
 
     return 0;
+}
+
+
+void TestFlash(uint8_t mode)
+{
+    char buff[156] = {0};
+    uint8_t temp[4] = {0};
+    uint32_t addr = 0;
+    uint32_t data_addr = 0;
+    uint16_t i = 0;
+    uint32_t num = 0;
+
+     if (buff == NULL )
+     {
+        my_free(buff);
+        log_d("my_malloc error\r\n");
+        return ;
+     }
+
+    memset(temp,0x00,sizeof(temp));
+     
+    if(mode == CARD_MODE)
+    {
+        addr = CARD_NO_HEAD_ADDR;
+        data_addr = CARD_NO_DATA_ADDR;
+        num = gCurCardHeaderIndex;
+    }
+    else
+    {
+        addr = USER_ID_HEAD_ADDR;   
+        data_addr = USER_ID_DATA_ADDR;
+        num = gCurUserHeaderIndex;        
+    } 
+
+    for(i=0;i<num;i++)
+    {
+        memset(temp,0x00,sizeof(temp));
+        memset(buff,0x00,sizeof(buff));
+        bsp_sf_ReadBuffer (temp, addr+i*4, 4);
+        bcd2asc(buff, temp, 8, 0);
+        printf("the %d header ====================== %s\r\n",i,buff);    
+ 
+    }
+
+    for(i=0;i<num;i++)
+    {
+        memset(buff,0x00,sizeof(buff));
+        bsp_sf_ReadBuffer (temp, data_addr+i * (sizeof(USERDATA_STRU)), sizeof(USERDATA_STRU));        
+        printf("the %d data ====================== \r\n",i); 
+        dbh("data", temp, (sizeof(USERDATA_STRU)));
+
+    }    
+
 }
 
 

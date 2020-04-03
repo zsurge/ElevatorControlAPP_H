@@ -36,7 +36,7 @@
  *----------------------------------------------*/
 #define JSON_ITEM_MAX_LEN   1024*1 
 #define CARD_NO_LEN             (8)
-#define USER_ID_LEN             (4)
+#define USER_ID_LEN             (8)
 #define FLOOR_ARRAY_LEN         (16) //每个普通用户最多10个层权限
 #define TIME_LEN                (10)
 #define QRID_LEN                (10)

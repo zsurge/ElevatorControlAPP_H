@@ -364,7 +364,7 @@ MQTT_START:
 MQTT_reconnect:    
 	transport_close ( gMySock );    
 	log_d ( "mqtt thread exit.try again 3 sec\r\n" );  
-    vTaskDelay (500);
+    vTaskDelay (300);
     goto MQTT_START;        
 }
 

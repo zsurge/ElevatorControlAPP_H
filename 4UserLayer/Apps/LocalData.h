@@ -131,6 +131,7 @@ uint8_t writeUserData(USERDATA_STRU userData,uint8_t mode);
 uint8_t readUserData(uint8_t* header,uint8_t mode,USERDATA_STRU *userData);
 uint8_t modifyUserData(USERDATA_STRU userData,uint8_t mode);
 
+void TestFlash(uint8_t mode);
 
 
 

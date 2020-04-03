@@ -482,7 +482,8 @@ uint8_t packetPayload(LOCAL_USER_STRU *localUserData,uint8_t *descJson)
     if(localUserData->qrType == 4)
     {    
         cJSON_AddStringToObject(root, "commandCode","3007");
-        cJSON_AddStringToObject(dataObj, "userId", localUserData->qrID);  
+        cJSON_AddStringToObject(dataObj, "userId", localUserData->userId);  
+        cJSON_AddStringToObject(dataObj, "qrID", localUserData->qrID); 
         cJSON_AddStringToObject(dataObj, "cardNo", localUserData->cardNo);
         cJSON_AddNumberToObject(dataObj, "callType", localUserData->authMode); 
         cJSON_AddNumberToObject(dataObj, "status", ON_LINE);   

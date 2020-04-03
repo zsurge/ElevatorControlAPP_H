@@ -803,6 +803,8 @@ static SYSERRORCODE_E GetUserInfo ( uint8_t* msgBuf )
         return STR_EMPTY_ERR;
     }
 
+    tempUserData.head = TABLE_HEAD;
+
     //1.保存以userID为key的表
     memset(tmp,0x00,sizeof(tmp));
     strcpy((char *)tmp,(const char*)GetJsonItem((const uint8_t *)msgBuf,(const uint8_t *)"userId",1));
@@ -845,8 +847,6 @@ static SYSERRORCODE_E GetUserInfo ( uint8_t* msgBuf )
     log_d("tempUserData.endTime = %s\r\n",tempUserData.endTime);
 
 
-
-
     //全0的USER ID不记录
     if(memcmp(tempUserData.userId,"00000000",CARD_USER_LEN) != 0)
     {
@@ -859,8 +859,11 @@ static SYSERRORCODE_E GetUserInfo ( uint8_t* msgBuf )
     {
         for(len=0;len<multipleCardNum;len++)
         {
-            tempUserData.cardState = CARD_VALID;
-            memcpy(tempUserData.cardNo,multipleCard[len],CARD_NO_LEN);
+            memset(tmp,0x00,sizeof(tmp));
+            tempUserData.cardState = CARD_VALID;            
+            memcpy(tmp,multipleCard[len],CARD_NO_LEN);
+            sprintf(tempUserData.cardNo,"%08s",tmp);   
+            log_d("multipleCard[len] = %s,tempUserData.cardNo= %s\r\n",multipleCard[len],tempUserData.cardNo);            
             writeUserData(tempUserData,CARD_MODE);
         }
     }
@@ -965,29 +968,47 @@ static SYSERRORCODE_E PCOptDev ( uint8_t* msgBuf )
     log_d("RemoteOptDev len = %d,buf = %s\r\n",len,buf);
 
     PublishData(buf,len); 
-
-    userData.defaultFloor = 9;
-    userData.cardState = CARD_VALID;
-    memcpy(userData.cardNo,"89E1E35D",CARD_NO_LEN);
-    strcpy(userData.accessFloor,"7,8,9");    
-    memcpy(userData.startTime,"2020-01-01",TIME_LENGTH);
-    memcpy(userData.endTime,"2030-01-01",TIME_LENGTH);    
     
-    writeUserData(userData,CARD_MODE);
+//    userData.head = TABLE_HEAD;
+//    userData.authMode =2;
+//    userData.defaultFloor = 9;
+//    userData.cardState = CARD_VALID;
+//    memcpy(userData.cardNo,"89E1E35D",CARD_NO_LEN);
+//    memcpy(userData.userId,"00002815",USER_ID_LEN);
+//    strcpy(userData.accessFloor,"7,8,9");    
+//    memcpy(userData.startTime,"2020-01-01",TIME_LENGTH);
+//    memcpy(userData.endTime,"2030-01-01",TIME_LENGTH);    
+//    
+//    writeUserData(userData,CARD_MODE);
+//    
+//    log_d("===============TEST==================\r\n");
+//    len = readUserData("89E1E35D",CARD_MODE,&userData);
 
+//    log_d("ret = %d\r\n",len);    
+//    log_d("userData.userState = %d\r\n",userData.cardState);
+//    log_d("userData.cardNo = %s\r\n",userData.cardNo);
+//    log_d("userData.userId = %s\r\n",userData.userId);
+//    log_d("userData.accessFloor = %s\r\n",userData.accessFloor);
+//    log_d("userData.defaultFloor = %d\r\n",userData.defaultFloor);
+//    log_d("userData.startTime = %s\r\n",userData.startTime);
+
+//    log_d("===============TEST==================\r\n");
+//    memset(&userData,0x00,sizeof(USERDATA_STRU));
+//    len = readUserData("00002815",USER_MODE,&userData);
+//    
+//    log_d("ret = %d\r\n",len);    
+//    log_d("userData.userState = %d\r\n",userData.cardState);
+//    log_d("userData.cardNo = %s\r\n",userData.cardNo);
+//    log_d("userData.userId = %s\r\n",userData.userId);
+//    log_d("userData.accessFloor = %s\r\n",userData.accessFloor);
+//    log_d("userData.defaultFloor = %d\r\n",userData.defaultFloor);
+//    log_d("userData.startTime = %s\r\n",userData.startTime);
+
+
+TestFlash(CARD_MODE);
 
     
-    log_d("===============TEST==================\r\n");
-    len = readUserData("89E1E35D",CARD_MODE,&userData);
-
-    log_d("ret = %d\r\n",len);    
-    log_d("userData.userState = %d\r\n",userData.cardState);
-    log_d("userData.cardNo = %s\r\n",userData.cardNo);
-    log_d("userData.userId = %s\r\n",userData.userId);
-    log_d("userData.accessFloor = %s\r\n",userData.accessFloor);
-    log_d("userData.defaultFloor = %d\r\n",userData.defaultFloor);
-    log_d("userData.startTime = %s\r\n",userData.startTime);
-
+TestFlash(USER_MODE);
 
 
 
@@ -1069,6 +1090,9 @@ static SYSERRORCODE_E AddSingleUser( uint8_t* msgBuf )
         return STR_EMPTY_ERR;
     }
 
+    //1.添加起始标志
+    tempUserData.head = TABLE_HEAD;
+     
     //2.保存卡号
     memset(tmp,0x00,sizeof(tmp));
     strcpy((char *)tmp,(const char *)GetJsonItem((const uint8_t *)msgBuf,(const uint8_t *)"cardNo",1));

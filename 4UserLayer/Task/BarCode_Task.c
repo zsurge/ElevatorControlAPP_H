@@ -373,10 +373,10 @@ static void vTaskBarCode(void *pvParameters)
                         log_d("the queue is full!\r\n");                
                         xQueueReset(xTransQueue);
                     } 
-                    else
-                    {
-                        dbh("barcode task the queue is send success",(char *)ptQR->data,ptQR->dataLen/2);
-                    }   
+//                    else
+//                    {
+//                        dbh("barcode task the queue is send success",(char *)ptQR->data,ptQR->dataLen/2);
+//                    }   
                 }
             }
 
