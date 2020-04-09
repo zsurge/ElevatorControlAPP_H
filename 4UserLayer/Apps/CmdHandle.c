@@ -365,6 +365,7 @@ static SYSERRORCODE_E DelUserId( uint8_t* msgBuf )
     log_d("userData.accessFloor = %s\r\n",userData.accessFloor);
     log_d("userData.defaultFloor = %d\r\n",userData.defaultFloor);
     log_d("userData.startTime = %s\r\n",userData.startTime);
+    
     return result;
 
 
@@ -810,23 +811,6 @@ static SYSERRORCODE_E GetUserInfo ( uint8_t* msgBuf )
     strcpy((char *)tmp,(const char*)GetJsonItem((const uint8_t *)msgBuf,(const uint8_t *)"userId",1));
     sprintf(tempUserData.userId,"%08s",tmp);
     log_d("tempUserData.userId = %s,len = %d\r\n",tempUserData.userId,strlen(tempUserData.userId));
-
-    //2.保存卡号
-    memset(tmp,0x00,sizeof(tmp));
-    strcpy((char *)tmp,(const char *)GetJsonItem((const uint8_t *)msgBuf,(const uint8_t *)"cardNo",1));
-
-    if(strlen((const char *)tmp) > CARD_NO_LEN)
-    {
-        split(tmp,",",multipleCard,&multipleCardNum); //调用函数进行分割 
-        log_d("multipleCardNum = %d\r\n",multipleCardNum);
-    }
-    else
-    {
-        sprintf(tempUserData.cardNo,"%08s",tmp);
-    }
-    
-    log_d("tempUserData.cardNo = %s,len = %d\r\n",tempUserData.cardNo,strlen(tempUserData.cardNo));
-
     
     //3.保存楼层权限
     strcpy((char *)tempUserData.accessFloor,  (const char*)GetJsonItem((const uint8_t *)msgBuf,(const uint8_t *)"accessLayer",1));
@@ -846,23 +830,29 @@ static SYSERRORCODE_E GetUserInfo ( uint8_t* msgBuf )
     strcpy((char *)tempUserData.endTime,  (const char*)GetJsonItem((const uint8_t *)msgBuf,(const uint8_t *)"endTime",1));
     log_d("tempUserData.endTime = %s\r\n",tempUserData.endTime);
 
+    //2.保存卡号
+    memset(tmp,0x00,sizeof(tmp));
+    strcpy((char *)tmp,(const char *)GetJsonItem((const uint8_t *)msgBuf,(const uint8_t *)"cardNo",1));
 
-    //全0的USER ID不记录
-    if(memcmp(tempUserData.userId,"00000000",CARD_USER_LEN) != 0)
+    if(strlen((const char *)tmp) > CARD_NO_LEN)
     {
-        tempUserData.userState = USER_VALID;
-        ret = writeUserData(tempUserData,USER_MODE);
-        log_d("write user id = %d\r\n",ret);       
+        split(tmp,",",multipleCard,&multipleCardNum); //调用函数进行分割 
+        log_d("multipleCardNum = %d\r\n",multipleCardNum);
+        log_d("m0 = %s,m1= %s\r\n",multipleCard[0],multipleCard[1]);            
+        
     }
+    else
+    {
+        sprintf(tempUserData.cardNo,"%08s",tmp);
+    }    
 
     if(multipleCardNum > 1)
     {
         for(len=0;len<multipleCardNum;len++)
         {
-            memset(tmp,0x00,sizeof(tmp));
-            tempUserData.cardState = CARD_VALID;            
-            memcpy(tmp,multipleCard[len],CARD_NO_LEN);
-            sprintf(tempUserData.cardNo,"%08s",tmp);   
+            tempUserData.cardState = CARD_VALID;     
+            memset(tempUserData.cardNo,0x00,sizeof(tempUserData.cardNo));
+            memcpy(tempUserData.cardNo,multipleCard[len],CARD_USER_LEN);    
             log_d("multipleCard[len] = %s,tempUserData.cardNo= %s\r\n",multipleCard[len],tempUserData.cardNo);            
             writeUserData(tempUserData,CARD_MODE);
         }
@@ -876,6 +866,14 @@ static SYSERRORCODE_E GetUserInfo ( uint8_t* msgBuf )
             log_d("write card id = %d\r\n",ret);           
         }
     }
+
+    //全0的USER ID不记录
+    if(memcmp(tempUserData.userId,"00000000",CARD_USER_LEN) != 0)
+    {
+        tempUserData.userState = USER_VALID;
+        ret = writeUserData(tempUserData,USER_MODE);
+        log_d("write user id = %d\r\n",ret);       
+    }    
 
     //影响服务器
     result = modifyJsonItem((const uint8_t *)msgBuf,(const uint8_t *)"status","1",1,buf);
@@ -974,23 +972,23 @@ static SYSERRORCODE_E PCOptDev ( uint8_t* msgBuf )
 //    userData.defaultFloor = 9;
 //    userData.cardState = CARD_VALID;
 //    memcpy(userData.cardNo,"89E1E35D",CARD_NO_LEN);
-//    memcpy(userData.userId,"00002815",USER_ID_LEN);
+//    memcpy(userData.userId,"00000788",USER_ID_LEN);
 //    strcpy(userData.accessFloor,"7,8,9");    
 //    memcpy(userData.startTime,"2020-01-01",TIME_LENGTH);
 //    memcpy(userData.endTime,"2030-01-01",TIME_LENGTH);    
 //    
 //    writeUserData(userData,CARD_MODE);
 //    
-//    log_d("===============TEST==================\r\n");
-//    len = readUserData("89E1E35D",CARD_MODE,&userData);
+    log_d("===============TEST==================\r\n");
+    len = readUserData("89E1E35D",CARD_MODE,&userData);
 
-//    log_d("ret = %d\r\n",len);    
-//    log_d("userData.userState = %d\r\n",userData.cardState);
-//    log_d("userData.cardNo = %s\r\n",userData.cardNo);
-//    log_d("userData.userId = %s\r\n",userData.userId);
-//    log_d("userData.accessFloor = %s\r\n",userData.accessFloor);
-//    log_d("userData.defaultFloor = %d\r\n",userData.defaultFloor);
-//    log_d("userData.startTime = %s\r\n",userData.startTime);
+    log_d("ret = %d\r\n",len);    
+    log_d("userData.userState = %d\r\n",userData.cardState);
+    log_d("userData.cardNo = %s\r\n",userData.cardNo);
+    log_d("userData.userId = %s\r\n",userData.userId);
+    log_d("userData.accessFloor = %s\r\n",userData.accessFloor);
+    log_d("userData.defaultFloor = %d\r\n",userData.defaultFloor);
+    log_d("userData.startTime = %s\r\n",userData.startTime);
 
 //    log_d("===============TEST==================\r\n");
 //    memset(&userData,0x00,sizeof(USERDATA_STRU));
@@ -1005,10 +1003,10 @@ static SYSERRORCODE_E PCOptDev ( uint8_t* msgBuf )
 //    log_d("userData.startTime = %s\r\n",userData.startTime);
 
 
-TestFlash(CARD_MODE);
+//TestFlash(CARD_MODE);
 
-    
-TestFlash(USER_MODE);
+//    
+//TestFlash(USER_MODE);
 
 
 
@@ -1076,7 +1074,7 @@ static SYSERRORCODE_E AddSingleUser( uint8_t* msgBuf )
 {
 	SYSERRORCODE_E result = NO_ERR;
 	uint16_t len =0;
-    uint8_t buf[512] = {0};
+    uint8_t buf[1024] = {0};
     USERDATA_STRU tempUserData = {0};
     uint8_t ret = 0;
     uint8_t tmp[128] = {0};

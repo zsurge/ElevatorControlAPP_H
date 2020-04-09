@@ -95,7 +95,7 @@ uint8_t writeHeader(uint8_t  * header,uint8_t mode)
         return 1;
     }
 
-    log_d("writeHeader = %s\r\n",header);
+    log_e("writeHeader = %s\r\n",header);
 
     memset(temp,0x00,sizeof(temp));
     asc2bcd(temp, header,HEAD_lEN*2, 0);
@@ -109,12 +109,9 @@ uint8_t writeHeader(uint8_t  * header,uint8_t mode)
 		bsp_sf_ReadBuffer (readBuff, addr, HEAD_lEN);
 		
 		ret = compareArray(temp,readBuff,HEAD_lEN);
-
-//		log_d("ret = %d\r\n",ret);
 		
 		if(ret == 0)
 		{
-		    dbh("header bcd", temp, HEAD_lEN);
 			break;
 		}
 

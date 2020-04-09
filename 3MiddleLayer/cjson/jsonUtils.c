@@ -113,7 +113,7 @@ SYSERRORCODE_E modifyJsonItem(const uint8_t *srcJson,const uint8_t *item,const u
     strcpy((char *)descJson,tmpBuf);
 
 
-    log_d("send json data = %s\r\n",tmpBuf);
+//    log_d("send json data = %s\r\n",tmpBuf);
 
     cJSON_Delete(root);
 
@@ -175,12 +175,12 @@ uint8_t* GetJsonItem ( const uint8_t* jsonBuff,const uint8_t* item,uint8_t isSub
 			}
 
 			strcpy ( value, json_item->valuestring );
-			log_d ( "json_item =  %s\r\n",json_item->valuestring );
+//			log_d ( "json_item =  %s\r\n",json_item->valuestring );
 		}
 		else if ( json_item->type == cJSON_Number )
 		{
 			sprintf ( value,"%d",json_item->valueint );
-			log_d ( "json_item =  %s\r\n",value);
+//			log_d ( "json_item =  %s\r\n",value);
 		}
 		else
 		{

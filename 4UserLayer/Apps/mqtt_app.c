@@ -314,7 +314,7 @@ MQTT_START:
 
 				if ( rc == len )
 				{
-					log_d ( "send PINGREQ Successfully\r\n" );
+					printf ( "send PINGREQ Successfully\r\n" );
                     msgtypes = 0; 
 				}
 				else
@@ -364,7 +364,7 @@ MQTT_START:
 MQTT_reconnect:    
 	transport_close ( gMySock );    
 	log_d ( "mqtt thread exit.try again 3 sec\r\n" );  
-    vTaskDelay (300);
+    vTaskDelay (200);
     goto MQTT_START;        
 }
 
