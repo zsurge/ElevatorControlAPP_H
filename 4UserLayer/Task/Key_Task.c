@@ -124,7 +124,7 @@ static void vTaskKey(void *pvParameters)
                     log_d("bsp_ds1302_readtime = %s\r\n",bsp_ds1302_readtime());
 
                     time_to_timestamp();
-                    ef_print_env();
+//                    ef_print_env();
 
 //                    searchHeaderIndex("00012926",USER_MODE,&index);
 
@@ -134,7 +134,9 @@ static void vTaskKey(void *pvParameters)
 //                    test_env();
                     log_w("KEY_DOWN_K4\r\n");
                     ef_set_env_blob("sn_flag","1111",4); 
-                    ef_set_env_blob("remote_sn","823545AE9B2345B08FD8",20);
+                    ef_set_env_blob("remote_sn","4547E082D8A8770AACAF",20);
+//                ef_set_env_blob("remote_sn","823545AE9B2345B08FD8",20);
+                    
 					break;                
 				
 				/* 其他的键值不处理 */

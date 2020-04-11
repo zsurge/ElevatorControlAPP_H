@@ -145,6 +145,8 @@ uint8_t* GetJsonItem ( const uint8_t* jsonBuff,const uint8_t* item,uint8_t isSub
 {
 	static uint8_t value[JSON_ITEM_MAX_LEN] = {0};
 	cJSON* root,*json_item,*dataObj;
+	cJSON* arrayElement;
+    int tmpArrayNum = 0;
 	root = cJSON_Parse ( ( char* ) jsonBuff );    //解析数据包
 
 	if ( !root )
@@ -181,6 +183,23 @@ uint8_t* GetJsonItem ( const uint8_t* jsonBuff,const uint8_t* item,uint8_t isSub
 		{
 			sprintf ( value,"%d",json_item->valueint );
 //			log_d ( "json_item =  %s\r\n",value);
+		}
+		else if( json_item->type == cJSON_Array )
+		{
+
+            //  2.日    期   : 2020年4月11日
+            //    作    者   :  
+            //    修改内容   : 添加对数组的支持，返回值还不完善    
+            tmpArrayNum = cJSON_GetArraySize(json_item);
+
+            for(int n=0;n<tmpArrayNum;n++)
+            {
+                arrayElement = cJSON_GetArrayItem(json_item, n);                 
+                strcpy ( value, arrayElement->valuestring );
+            
+                log_d("cJSON_Array = %s\r\n",arrayElement->valuestring );
+            }
+
 		}
 		else
 		{

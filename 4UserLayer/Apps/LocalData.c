@@ -183,27 +183,20 @@ uint8_t searchHeaderIndex(uint8_t* header,uint8_t mode,uint16_t *index)
      }
 
 	memset(temp,0x00,sizeof(temp));
-    asc2bcd(temp, header,HEAD_lEN*2, 0);     
-//    dbh("header", temp, HEAD_lEN);
+    asc2bcd(temp, header,HEAD_lEN*2, 0);   
+    
     if(mode == CARD_MODE)
     {
         addr = CARD_NO_HEAD_ADDR;
         bsp_sf_ReadBuffer (buff, addr, gCurCardHeaderIndex*4);        
         num = gCurCardHeaderIndex;
-
-//        dbh("all header", buff, gCurCardHeaderIndex*4);
     }
     else
     {
         addr = USER_ID_HEAD_ADDR;
         bsp_sf_ReadBuffer (buff, addr, gCurUserHeaderIndex*4);
-        num = gCurUserHeaderIndex;
-
-//        dbh("all header", buff, gCurCardHeaderIndex*4);
-        
+        num = gCurUserHeaderIndex;        
     } 
-
-//    dbh("table", buff, CARD_NO_HEAD_SIZE);
 
 	for(i=0; i<num; i++)
 	{
@@ -388,8 +381,6 @@ uint8_t readUserData(uint8_t* header,uint8_t mode,USERDATA_STRU *userData)
 
 		
 	ret = searchHeaderIndex(header,mode,&index);
-
-	log_d("searchHeaderIndex ret = %d",ret);
 	
 	if(ret != 1)
 	{

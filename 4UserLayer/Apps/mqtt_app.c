@@ -21,6 +21,7 @@
 #include "pub_options.h"
 #include "bsp_beep.h"
 #include "jsonUtils.h"
+#include "bsp_ds1302.h"
 
 
 
@@ -108,7 +109,10 @@ MQTT_START:
 
 	ReadLocalDevSn();
 
-	data.clientID.cstring = gMqttDevSn.sn;              //随机
+    strcpy(data.clientID.cstring,gMqttDevSn.sn);
+    strcat(data.clientID.cstring,time_to_timestamp());
+    
+	//data.clientID.cstring = gMqttDevSn.sn;              //随机
 	data.keepAliveInterval = KEEPLIVE_TIME;         //保持活跃
 	data.username.cstring = USER_NAME;              //用户名
 	data.password.cstring = PASSWORD;               //秘钥
