@@ -339,6 +339,10 @@ static SYSERRORCODE_E DelUserId( uint8_t* msgBuf )
     }
 
     //1.保存卡号和用户ID
+
+//  2.日    期   : 2020年4月13日
+//    作    者   :  
+//    修改内容   : 这里返回人员ID 数组，是可以批量删除人员的
     strcpy((char *)tmp,(const char *)GetJsonItem((const uint8_t *)msgBuf,(const uint8_t *)"userId",1));
     sprintf((char *)userId,"%08s",tmp);
     log_d("userId = %s\r\n",userId);
@@ -347,6 +351,7 @@ static SYSERRORCODE_E DelUserId( uint8_t* msgBuf )
     rRet = readUserData(userId,USER_MODE,&userData);
 
     log_d("ret = %d\r\n",rRet);    
+    log_d("userData.cardState = %d\r\n",userData.cardState);    
     log_d("userData.userState = %d\r\n",userData.userState);
     log_d("userData.cardNo = %s\r\n",userData.cardNo);
     log_d("userData.userId = %s\r\n",userData.userId);
@@ -357,6 +362,7 @@ static SYSERRORCODE_E DelUserId( uint8_t* msgBuf )
 
     if(rRet == 0)
     {
+        userData.head = TABLE_HEAD;
         userData.userState = USER_DEL; //设置卡状态为0，删除卡
         wRet = modifyUserData(userData,USER_MODE);
     }
@@ -386,6 +392,7 @@ static SYSERRORCODE_E DelUserId( uint8_t* msgBuf )
     memset(&userData,0x00,sizeof(userData));
     len = readUserData(userId,USER_MODE,&userData);
     log_d("ret = %d\r\n",len);    
+    log_d("userData.cardState = %d\r\n",userData.cardState);    
     log_d("userData.userState = %d\r\n",userData.userState);
     log_d("userData.cardNo = %s\r\n",userData.cardNo);
     log_d("userData.userId = %s\r\n",userData.userId);
@@ -426,12 +433,14 @@ SYSERRORCODE_E AddCardNo ( uint8_t* msgBuf )
     //2.保存卡号
     memset(cardNo,0x00,sizeof(cardNo));
     strcpy((char *)cardNo,(const char *)GetJsonItem((const uint8_t *)msgBuf,(const uint8_t *)"cardNo",1));
+//    sprintf(userData.cardNo,"%08s",cardNo);
     log_d("cardNo = %s,len = %d\r\n",cardNo,strlen(cardNo));
 
     log_d("=================================\r\n");
     ret  = readUserData(userData.userId,USER_MODE,&userData);
     log_d("ret = %d\r\n",ret);    
-    log_d("userData.userState = %d\r\n",userData.cardState);
+    log_d("userData.cardState = %d\r\n",userData.cardState);    
+    log_d("userData.userState = %d\r\n",userData.userState);
     log_d("userData.cardNo = %s\r\n",userData.cardNo);
     log_d("userData.userId = %s\r\n",userData.userId);
     log_d("userData.accessFloor = %s\r\n",userData.accessFloor);
@@ -442,6 +451,7 @@ SYSERRORCODE_E AddCardNo ( uint8_t* msgBuf )
     {
         sprintf(userData.cardNo,"%08s",cardNo);
         userData.head = TABLE_HEAD;
+        userData.cardState = CARD_VALID;
         ret = writeUserData(userData,CARD_MODE);  
     }
 
@@ -467,6 +477,16 @@ SYSERRORCODE_E AddCardNo ( uint8_t* msgBuf )
     len = strlen((const char*)buf);
     
     PublishData(buf,len); 
+
+    ret  = readUserData(userData.cardNo,CARD_MODE,&userData);
+    log_d("ret = %d\r\n",ret);    
+    log_d("userData.cardState = %d\r\n",userData.cardState);    
+    log_d("userData.userState = %d\r\n",userData.userState);
+    log_d("userData.cardNo = %s\r\n",userData.cardNo);
+    log_d("userData.userId = %s\r\n",userData.userId);
+    log_d("userData.accessFloor = %s\r\n",userData.accessFloor);
+    log_d("userData.defaultFloor = %d\r\n",userData.defaultFloor);
+    log_d("userData.startTime = %s\r\n",userData.startTime);    
   
 	return result;
 }
@@ -491,6 +511,10 @@ SYSERRORCODE_E DelCardNo ( uint8_t* msgBuf )
     }
 
     //1.保存卡号和用户ID
+
+//  2.日    期   : 2020年4月13日
+//    作    者   :  
+//    修改内容   : 这里需要取JSON数组，数组里包含所有要删除的人员
     strcpy((char *)tmp,(const char *)GetJsonItem((const uint8_t *)msgBuf,(const uint8_t *)"userId",1));
     sprintf((char *)userId,"%08s",tmp);
     log_d("userId = %s\r\n",userId);    
@@ -500,7 +524,8 @@ SYSERRORCODE_E DelCardNo ( uint8_t* msgBuf )
     rRet = readUserData(userId,USER_MODE,&userData);
 
     log_d("ret = %d\r\n",rRet);    
-    log_d("userData.userState = %d\r\n",userData.cardState);
+    log_d("userData.cardState = %d\r\n",userData.cardState);    
+    log_d("userData.userState = %d\r\n",userData.userState);
     log_d("userData.cardNo = %s\r\n",userData.cardNo);
     log_d("userData.userId = %s\r\n",userData.userId);
     log_d("userData.accessFloor = %s\r\n",userData.accessFloor);
@@ -510,6 +535,7 @@ SYSERRORCODE_E DelCardNo ( uint8_t* msgBuf )
 
     if(rRet == 0)
     {
+        userData.head = TABLE_HEAD;
         userData.cardState = CARD_DEL; //设置卡状态为0，删除卡
         wRet = modifyUserData(userData,USER_MODE);
     }
@@ -540,7 +566,8 @@ SYSERRORCODE_E DelCardNo ( uint8_t* msgBuf )
     memset(&userData,0x00,sizeof(userData));
     rRet = readUserData(userId,USER_MODE,&userData);
     log_d("ret = %d\r\n",rRet);    
-    log_d("userData.userState = %d\r\n",userData.cardState);
+    log_d("userData.cardState = %d\r\n",userData.cardState);    
+    log_d("userData.userState = %d\r\n",userData.userState);
     log_d("userData.cardNo = %s\r\n",userData.cardNo);
     log_d("userData.userId = %s\r\n",userData.userId);
     log_d("userData.accessFloor = %s\r\n",userData.accessFloor);
@@ -760,12 +787,13 @@ static SYSERRORCODE_E DelCard( uint8_t* msgBuf )
     }
 
     //1.获取卡号和用户ID
+    memset(tmp,0x00,sizeof(tmp));
     strcpy((char *)tmp,(const char *)GetJsonItem((const uint8_t *)msgBuf,(const uint8_t *)"userId",1));   
-    sprintf(cardNo,"%08s",tmp); 
+    sprintf(userId,"%08s",tmp); 
 
     memset(tmp,0x00,sizeof(tmp));
     strcpy((char *)tmp,(const char *)GetJsonItem((const uint8_t *)msgBuf,(const uint8_t *)"cardNo",1));
-    sprintf(userId,"%08s",tmp);     
+    sprintf(cardNo,"%08s",tmp);     
     log_d("cardNo = %s，userId = %s\r\n",cardNo,userId);
 
 
@@ -773,7 +801,8 @@ static SYSERRORCODE_E DelCard( uint8_t* msgBuf )
     log_d("=================================\r\n");
     rRet = readUserData(cardNo,CARD_MODE,&userData);
 
-    log_d("ret = %d\r\n",len);    
+    log_d("ret = %d\r\n",rRet);    
+    log_d("userData.cardState = %d\r\n",userData.cardState);    
     log_d("userData.userState = %d\r\n",userData.userState);
     log_d("userData.cardNo = %s\r\n",userData.cardNo);
     log_d("userData.userId = %s\r\n",userData.userId);
@@ -784,6 +813,7 @@ static SYSERRORCODE_E DelCard( uint8_t* msgBuf )
 
     if(rRet == 0)
     {
+        userData.head   = TABLE_HEAD;
         userData.cardState = CARD_DEL; //设置卡状态为0，删除卡
         wRet = modifyUserData(userData,CARD_MODE);
     }
@@ -812,8 +842,9 @@ static SYSERRORCODE_E DelCard( uint8_t* msgBuf )
     log_d("=================================\r\n");
 
     memset(&userData,0x00,sizeof(userData));
-    readUserData(userId,USER_MODE,&userData);
-    log_d("ret = %d\r\n",len);    
+    rRet = readUserData(userId,USER_MODE,&userData);
+    log_d("ret = %d\r\n",rRet); 
+    log_d("userData.cardState = %d\r\n",userData.cardState);    
     log_d("userData.userState = %d\r\n",userData.userState);
     log_d("userData.cardNo = %s\r\n",userData.cardNo);
     log_d("userData.userId = %s\r\n",userData.userId);

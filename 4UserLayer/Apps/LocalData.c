@@ -46,7 +46,10 @@
 uint16_t gCurCardHeaderIndex = 0;
 uint16_t gCurUserHeaderIndex = 0;
 uint16_t gCurRecordIndex = 0;
+uint16_t gDelCardHeaderIndex = 0;    //已删除卡号索引
+uint16_t gDelUserHeaderIndex = 0;    //已删除用户ID索引
 
+static ISFIND_ENUM findIndex(uint8_t* header,uint32_t address,uint16_t curIndex,uint16_t *index);
 
 /*----------------------------------------------*
  * 内部函数原型说明                             *
@@ -168,52 +171,105 @@ uint8_t searchHeaderIndex(uint8_t* header,uint8_t mode,uint16_t *index)
 *****************************************************************************/
 uint8_t searchHeaderIndex(uint8_t* header,uint8_t mode,uint16_t *index)
 {
-    char *buff = my_malloc(CARD_NO_HEAD_SIZE);
+	ISFIND_ENUM isFind = ISFIND_NO;
 	uint8_t temp[HEAD_lEN] = {0};
 	uint32_t addr = 0;
-	uint16_t i = 0;
-    uint32_t num = 0;
-    uint8_t isFind = 0;   
+	uint16_t retIndex = 0;
 
-     if (buff == NULL || header == NULL)
-     {
-        my_free(buff);
-        log_d("my_malloc error\r\n");
+    if (header == NULL)
+    {
         return isFind;
-     }
+    }
 
 	memset(temp,0x00,sizeof(temp));
-    asc2bcd(temp, header,HEAD_lEN*2, 0);   
-    
+    asc2bcd(temp, header,HEAD_lEN*2, 0);  
+
     if(mode == CARD_MODE)
     {
         addr = CARD_NO_HEAD_ADDR;
-        bsp_sf_ReadBuffer (buff, addr, gCurCardHeaderIndex*4);        
-        num = gCurCardHeaderIndex;
+        isFind = findIndex(temp,addr,gCurCardHeaderIndex,&retIndex);
     }
-    else
+    else if(mode == USER_MODE)
     {
         addr = USER_ID_HEAD_ADDR;
-        bsp_sf_ReadBuffer (buff, addr, gCurUserHeaderIndex*4);
-        num = gCurUserHeaderIndex;        
+        isFind = findIndex(temp,addr,gCurUserHeaderIndex,&retIndex);
+        
+    }
+    else if(mode == CARD_DEL_MODE)
+    {
+        addr = CARD_DEL_HEAD_ADDR;
+        isFind = findIndex(temp,addr,gDelCardHeaderIndex,&retIndex);
+        
+    }
+    else if(mode == USER_DEL_HEAD_ADDR)
+    {
+        addr = USER_DEL_HEAD_ADDR;
+        isFind = findIndex(temp,addr,gDelUserHeaderIndex,&retIndex);        
     } 
+    
+    *index = retIndex;
+    
+    return isFind;   
+     
+}
 
-	for(i=0; i<num; i++)
-	{
-        if(memcmp(temp,buff+i*HEAD_lEN,HEAD_lEN) == 0)
+ISFIND_ENUM findIndex(uint8_t* header,uint32_t address,uint16_t curIndex,uint16_t *index)
+{
+    ISFIND_ENUM isFind = ISFIND_NO;     
+    uint8_t i = 0;
+    uint8_t multiple = 0;
+	uint16_t remainder = 0;
+	uint16_t loop = 0;   
+
+    char *buff = my_malloc(SECTOR_SIZE);
+    
+    if (buff == NULL || header == NULL)
+    {
+       my_free(buff);
+       log_d("my_malloc error\r\n");
+       return isFind;
+    }
+
+    multiple = curIndex / HEAD_NUM_SECTOR;
+    remainder = curIndex % HEAD_NUM_SECTOR;
+
+    for(i= 0;i<multiple;i++)
+    {
+        memset(buff,0x00,sizeof(buff));
+        bsp_sf_ReadBuffer ((uint8_t *)buff, address+i*SECTOR_SIZE, SECTOR_SIZE);   
+
+        for(loop=0; loop<HEAD_NUM_SECTOR; loop++)
         {
-            isFind = 1;
-            *index = i;
+            if(memcmp(header,buff+loop*HEAD_lEN,HEAD_lEN) == 0)
+            {
+                isFind = ISFIND_YES;
+                *index = loop + i*HEAD_NUM_SECTOR;
 
+                my_free(buff);
+                return isFind;
+            }        
+        }
+    }    
+
+    memset(buff,0x00,sizeof(buff));
+    bsp_sf_ReadBuffer ((uint8_t *)buff, address + multiple*SECTOR_SIZE, remainder*HEAD_lEN); 
+    for(loop=0; loop<remainder; loop++)
+    {
+        if(memcmp(header,buff+loop*HEAD_lEN,HEAD_lEN) == 0)
+        {
+            isFind = ISFIND_YES;
+            *index = loop + i*HEAD_NUM_SECTOR;
+    
             my_free(buff);
             return isFind;
         }        
     }
-
+    
     *index = 0;
     my_free(buff);
-    return isFind;	     
+    return isFind;
 }
+
 
 void eraseUserDataAll(void)
 {
@@ -244,7 +300,7 @@ void eraseHeadSector(void)
 {  
     uint16_t i = 0;
 
-    for(i=0;i<USER_SECTOR_NUM+CARD_SECTOR_NUM;i++)
+    for(i=0;i<CARD_HEAD_SECTOR_NUM+USER_HEAD_SECTOR_NUM;i++)
     {
         bsp_sf_EraseSector(CARD_NO_HEAD_ADDR+i*SECTOR_SIZE);
     }

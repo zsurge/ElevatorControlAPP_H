@@ -15,6 +15,14 @@
     作    者   :  
     修改内容   : 创建文件
 
+  FLASH划分
+  0-0x200000：参数区域
+  0x300000    存放bin文件
+  0x400000    存放已存储卡号，已删除卡号，已存储用户ID，已删除用户ID，
+  0x500000    存放卡号数据
+  0x900000    存放用户数据
+  0x1300000   预留
+
 ******************************************************************************/
 #ifndef __LOCALDATA_H__
 #define __LOCALDATA_H__
@@ -24,21 +32,33 @@
  *----------------------------------------------*/
 #include "stm32f4xx.h" 
 
-
-#define HEAD_lEN 4               //每条记录占4个字节
-#define MAX_HEAD_RECORD     2048 //最大2048条记录
+#define HEAD_lEN 4                  //每条记录占4个字节
+#define MAX_HEAD_RECORD     32768   //最大32768条记录
 #define SECTOR_SIZE         4096    //每个扇区大小
-#define CARD_NO_HEAD_ADDR   0x600000
-#define CARD_NO_HEAD_SIZE   (HEAD_lEN*MAX_HEAD_RECORD)
-#define USER_ID_HEAD_ADDR   (CARD_NO_HEAD_ADDR+CARD_NO_HEAD_SIZE)
+
+
+#define CARD_NO_HEAD_SIZE   (HEAD_lEN*MAX_HEAD_RECORD)  //128K
 #define USER_ID_HEAD_SIZE   (CARD_NO_HEAD_SIZE)
+#define CARD_DEL_HEAD_SIZE  (CARD_NO_HEAD_SIZE)
+#define USER_DEL_HEAD_SIZE  (CARD_NO_HEAD_SIZE)
 
-#define CARD_SECTOR_NUM     (CARD_NO_HEAD_SIZE/SECTOR_SIZE)
-#define USER_SECTOR_NUM     CARD_SECTOR_NUM
+
+#define CARD_HEAD_SECTOR_NUM     (CARD_NO_HEAD_SIZE/SECTOR_SIZE) //32个扇区
+#define USER_HEAD_SECTOR_NUM     (CARD_HEAD_SECTOR_NUM)
+#define CARD_HEAD_DEL_SECTOR_NUM (CARD_HEAD_SECTOR_NUM)
+#define USER_HEAD_DEL_SECTOR_NUM (CARD_HEAD_SECTOR_NUM)
+
+#define HEAD_NUM_SECTOR     (SECTOR_SIZE/HEAD_lEN) //1024个
 
 
-#define CARD_NO_DATA_ADDR   0X700000
-#define USER_ID_DATA_ADDR   0X800000
+#define CARD_NO_HEAD_ADDR   0x400000
+#define USER_ID_HEAD_ADDR   (CARD_NO_HEAD_ADDR+CARD_NO_HEAD_SIZE)
+#define CARD_DEL_HEAD_ADDR  (USER_ID_HEAD_ADDR+USER_ID_HEAD_SIZE)
+#define USER_DEL_HEAD_ADDR  (CARD_DEL_HEAD_ADDR+CARD_DEL_HEAD_SIZE)
+
+
+#define CARD_NO_DATA_ADDR   0X500000
+#define USER_ID_DATA_ADDR   0X900000
 
 #define DATA_SECTOR_NUM     ((USER_ID_DATA_ADDR-CARD_NO_DATA_ADDR)/SECTOR_SIZE)
 
@@ -47,20 +67,20 @@
 #define FLOOR_ARRAY_LENGTH         (64) //每个普通用户最多10个层权限
 #define TIME_LENGTH                (10)
 #define TIMESTAMP_LENGTH           (10)
-#define RESERVE_LENGTH             32 //预留空间
+#define RESERVE_LENGTH             (5) //预留空间 为了对齐，补足一个扇区可以整除的字节数
 
-#define CARD_MODE                   0 //卡模式
-#define USER_MODE                   1 //U用户ID模式
+#define CARD_MODE                   1 //卡模式
+#define USER_MODE                   2 //用户ID模式
+#define CARD_DEL_MODE               3 //删除卡模式
+#define USER_DEL_MODE               4 //删除用户ID模式
+
 
 ////设置卡状态为0，删除卡
 #define CARD_DEL                    0
 #define CARD_VALID                  1
-
 #define USER_DEL                    CARD_DEL
 #define USER_VALID                  CARD_VALID
-
-
-#define TABLE_HEAD                 0xAA
+#define TABLE_HEAD                  0xAA
 
 
 
@@ -77,6 +97,8 @@
  *----------------------------------------------*/
 extern uint16_t gCurCardHeaderIndex;    //卡号索引
 extern uint16_t gCurUserHeaderIndex;    //用户ID索引
+extern uint16_t gDelCardHeaderIndex;    //已删除卡号索引
+extern uint16_t gDelUserHeaderIndex;    //已删除用户ID索引
 extern uint16_t gCurRecordIndex;
 
 
@@ -87,6 +109,12 @@ typedef struct HEADER
 {    
     uint8_t value[HEAD_lEN];     //表头的值
 }HEADER_STRU;
+
+typedef enum 
+{
+  ISFIND_YES = 1,
+  ISFIND_NO = 2,
+}ISFIND_ENUM;
 
 
 //HEADER_STRU cardNoHeader,userIdHeader;
@@ -105,7 +133,7 @@ typedef struct USERDATA
     uint8_t startTime[TIME_LENGTH+1];                 //账户有效时间
     uint8_t endTime[TIME_LENGTH+1];                   //账户结束时间    
     uint8_t timeStamp[TIME_LENGTH+1];                 //二维码时间戳
-    uint8_t reserve[RESERVE_LENGTH+1];                //预留空间
+    uint8_t reserve[RESERVE_LENGTH+1];                //预留空间 
     uint8_t crc;                                    //校验值 head~reseve
 }USERDATA_STRU;
 #pragma pack()

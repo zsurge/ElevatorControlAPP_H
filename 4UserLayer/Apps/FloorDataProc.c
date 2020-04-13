@@ -284,7 +284,7 @@ SYSERRORCODE_E authReader(READER_BUFF_STRU *pQueue,LOCAL_USER_STRU *localUserDat
         memcpy(localUserData->userId,rUserData.userId,CARD_USER_LEN);        
         memcpy(localUserData->cardNo,rUserData.cardNo,CARD_USER_LEN);      
         memcpy(localUserData->timeStamp,time_to_timestamp(),TIMESTAMP_LEN);
-    log_d("localUserData->timeStamp = %s\r\n",localUserData->timeStamp);        
+        log_d("localUserData->timeStamp = %s\r\n",localUserData->timeStamp);        
         memcpy(localUserData->accessFloor,rUserData.accessFloor,FLOOR_ARRAY_LENGTH);    
         memcpy(localUserData->startTime,rUserData.startTime,TIME_LENGTH);
         memcpy(localUserData->endTime,rUserData.endTime,TIME_LENGTH);            
