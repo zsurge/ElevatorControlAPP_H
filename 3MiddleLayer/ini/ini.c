@@ -239,16 +239,26 @@ void readTemplateData(void)
 
 void readCardAndUserIdIndex(void)
 {
-    uint8_t tempBuff[6] = {0};
+    uint8_t tempBuff[8] = {0};
     
     ef_get_env_blob("CardHeaderIndex", tempBuff, sizeof(tempBuff) , NULL);
     gCurCardHeaderIndex = atoi(tempBuff);
-    log_d("readCardAndUserIdIndex = %d\r\n",gCurCardHeaderIndex);
+    log_d("gCurCardHeaderIndex = %d\r\n",gCurCardHeaderIndex);
 
     memset(tempBuff,0x00,sizeof(tempBuff));
     ef_get_env_blob("UserHeaderIndex", tempBuff, sizeof(tempBuff) , NULL);
     gCurUserHeaderIndex = atoi(tempBuff);  
     log_d("gCurUserHeaderIndex = %d\r\n",gCurUserHeaderIndex);
+
+    memset(tempBuff,0x00,sizeof(tempBuff));
+    ef_get_env_blob("DelCardHeaderIndex", tempBuff, sizeof(tempBuff) , NULL);                     
+    gDelCardHeaderIndex = atoi(tempBuff);  
+    log_d("gDelCardHeaderIndex = %d\r\n",gDelCardHeaderIndex);
+
+    memset(tempBuff,0x00,sizeof(tempBuff));
+    ef_get_env_blob("DelUserHeaderIndex", tempBuff, sizeof(tempBuff) , NULL);
+    gDelUserHeaderIndex = atoi(tempBuff);  
+    log_d("gDelUserHeaderIndex = %d\r\n",gDelUserHeaderIndex);    
 }
 
 

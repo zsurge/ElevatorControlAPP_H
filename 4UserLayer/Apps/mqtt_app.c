@@ -139,36 +139,8 @@ MQTT_START:
         {
            msgtypes = CONNECT;
            gUpdateDevSn = 0;
-        }
-        
-//		if(connect_flag == 1)
-//		{
-//			if((xTaskGetTickCount() - sendtick) >= (send_duration*200))
-//			{
-//                log_d("send PUBLISH!!  get msgtypes = %d \r\n",msgtypes);
-//
-//				sendtick = xTaskGetTickCount();
-//
-//				taskENTER_CRITICAL();	//进入临界区(无法被中断打断)
-//				temp =10.0;
-//				taskEXIT_CRITICAL();		//退出临界区(可以被中断打断)
-//
-//				humid = 54.8+rand()%10+1;
-		//sprintf((char*)payload_out,"{\"params\":{\"CurrentTemperature\":+%0.1f,\"RelativeHumidity\":%0.1f},\"method\":\"thing.event.property.post\"}",temp, humid);
-//                sprintf((char*)payload_out,"{\"commandCode\":\"1000\",\"data\":{\"CurrentTemperature\":\"%0.1f\",\"RelativeHumidity\":\"%0.1f\"},\"dev\":\"arm test\"}",temp, humid);
+        }        
 
-//				payload_out_len = strlen((char*)payload_out);
-//				topicString.cstring = DEVICE_PUBLISH;		//属性上报 发布
-//				log_d("send PUBLISH buff = %s\r\n",payload_out);
-//				len = MQTTSerialize_publish((unsigned char*)buf, buflen, 0, req_qos, retained, msgid, topicString, payload_out, payload_out_len);//发布消息
-//				rc = transport_sendPacketBuffer(gMySock, (unsigned char*)buf, len);
-//				if(rc == len)															//
-//					log_d("the %dth send PUBLISH Successfully\r\n",send_cnt++);
-//				else
-//					log_d("send PUBLISH failed\r\n");
-//				log_d("send temp(%0.1f)&humid(%0.1f) !\r\n",temp, humid);
-//			}
-//		}
 		switch ( msgtypes )
 		{
 			//连接服务端 客户端请求连接服务端

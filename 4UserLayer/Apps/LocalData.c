@@ -49,14 +49,18 @@ uint16_t gCurRecordIndex = 0;
 uint16_t gDelCardHeaderIndex = 0;    //已删除卡号索引
 uint16_t gDelUserHeaderIndex = 0;    //已删除用户ID索引
 
-static ISFIND_ENUM findIndex(uint8_t* header,uint32_t address,uint16_t curIndex,uint16_t *index);
 
 /*----------------------------------------------*
  * 内部函数原型说明                             *
  *----------------------------------------------*/
 static uint8_t checkFlashSpace(uint8_t mode);
 static void eraseUserDataIndex(void);
- 
+static ISFIND_ENUM findIndex(uint8_t* header,uint32_t address,uint16_t curIndex,uint16_t *index);
+static uint32_t readDelIndexValue(uint8_t mode,uint16_t curIndex);
+
+static uint8_t delSourceHeader(uint16_t index,uint8_t mode);
+
+
 /*****************************************************************************
  函 数 名  : writeHeader
  功能描述  : 写表头文件
@@ -72,25 +76,15 @@ uint8_t writeHeader(uint8_t  * header,uint8_t mode)
     修改内容   : 新生成函数
 
 *****************************************************************************/
-uint8_t writeHeader(uint8_t  * header,uint8_t mode)
+uint8_t writeHeader(uint8_t  * header,uint8_t mode,uint32_t *headIndex)
 {
     uint8_t times = 3;
     uint8_t readBuff[HEAD_lEN+1] = {0};
 	uint8_t ret = 0;
-    uint8_t headCnt[6] = {0};
+    uint8_t headCnt[CARD_USER_LEN] = {0};
     uint8_t temp[HEAD_lEN+1] = {0};
     uint32_t addr = 0;
-         
-
-    if(mode == CARD_MODE)
-    {
-        addr = CARD_NO_HEAD_ADDR + gCurCardHeaderIndex * HEAD_lEN;
-    }
-    else 
-    {
-        addr = USER_ID_HEAD_ADDR + gCurUserHeaderIndex * HEAD_lEN;
-    }
-
+    uint32_t tempIndex = 0;     
 
     if(header == NULL || strlen((const char*)header) == 0)
     {
@@ -102,6 +96,56 @@ uint8_t writeHeader(uint8_t  * header,uint8_t mode)
 
     memset(temp,0x00,sizeof(temp));
     asc2bcd(temp, header,HEAD_lEN*2, 0);
+    
+
+    if(mode == CARD_MODE)
+    {
+        if(gDelCardHeaderIndex > 0)
+        {
+            tempIndex = readDelIndexValue(CARD_MODE,gDelCardHeaderIndex);
+            addr = CARD_NO_HEAD_ADDR + tempIndex * HEAD_lEN;
+        }
+        else
+        {
+            //依次写入
+            addr = CARD_NO_HEAD_ADDR + gCurCardHeaderIndex * HEAD_lEN;
+        }        
+        
+    }    
+    else if(mode == USER_MODE)
+    {
+        if(gDelUserHeaderIndex > 0)
+        {
+            //写入已删除的空间中,根据已删除索引，获取到当前索引下卡或者用户的索引
+            tempIndex = readDelIndexValue(USER_MODE,gDelUserHeaderIndex);
+            addr = USER_ID_HEAD_ADDR + tempIndex * HEAD_lEN;
+        }
+        else
+        {
+            //依次写入
+            addr = USER_ID_HEAD_ADDR + gCurUserHeaderIndex * HEAD_lEN;
+        }    
+    }
+//    else if(mode == CARD_DEL_MODE)
+//    {
+//        if(gDelCardHeaderIndex > 0)
+//        {
+//            tempIndex = readDelIndexValue(CARD_DEL_MODE,gDelCardHeaderIndex);
+//            addr = CARD_NO_HEAD_ADDR + tempIndex * HEAD_lEN;
+//        }
+//    }
+//    else if(mode == USER_DEL_MODE)
+//    {
+//        if(gDelUserHeaderIndex > 0)
+//        {
+//            //写入已删除的空间中,根据已删除索引，获取到当前索引下卡或者用户的索引
+//            tempIndex = readDelIndexValue(USER_DEL_MODE,gDelUserHeaderIndex);
+//            addr = USER_ID_HEAD_ADDR + tempIndex * HEAD_lEN;
+//        } 
+//    }
+    
+
+    log_d("addr = %d,tempIndex = %d\r\n",addr,tempIndex);
     
    	while(times)
 	{		
@@ -125,30 +169,81 @@ uint8_t writeHeader(uint8_t  * header,uint8_t mode)
 		}
 
 		times--;
-	} 
+	} 	
 
     //这里需要保存  
     if(mode == CARD_MODE)
     {
-        gCurCardHeaderIndex++;
-        memset(headCnt,0x00,sizeof(headCnt));
-        sprintf(headCnt,"%06d",gCurCardHeaderIndex);
-        ef_set_env_blob("CardHeaderIndex",headCnt,6);          
+        if(gDelCardHeaderIndex > 0)
+        {
+            *headIndex = tempIndex;
+            gDelCardHeaderIndex--;
+            memset(headCnt,0x00,sizeof(headCnt));
+            sprintf(headCnt,"%08d",gDelCardHeaderIndex);
+            ef_set_env_blob("DelCardHeaderIndex",headCnt,CARD_USER_LEN);  
+        }
+        else 
+        {
+            *headIndex = gCurCardHeaderIndex++;
+            memset(headCnt,0x00,sizeof(headCnt));
+            sprintf(headCnt,"%08d",gCurCardHeaderIndex);
+            ef_set_env_blob("CardHeaderIndex",headCnt,CARD_USER_LEN);   
+        }
     }
-    else
+    else if(mode == USER_MODE)
     {
-        gCurUserHeaderIndex++;
-        memset(headCnt,0x00,sizeof(headCnt));
-        sprintf(headCnt,"%06d",gCurUserHeaderIndex);
-        ef_set_env_blob("UserHeaderIndex",headCnt,6);           
+        if(gDelUserHeaderIndex > 0)
+        {
+            *headIndex = tempIndex;
+            gDelUserHeaderIndex--;
+            memset(headCnt,0x00,sizeof(headCnt));
+            sprintf(headCnt,"%08d",gDelUserHeaderIndex);
+            ef_set_env_blob("DelUserHeaderIndex",headCnt,CARD_USER_LEN);   
+        }
+        else
+        {
+            *headIndex = gCurUserHeaderIndex++;
+            memset(headCnt,0x00,sizeof(headCnt));
+            sprintf(headCnt,"%08d",gCurUserHeaderIndex);
+            ef_set_env_blob("UserHeaderIndex",headCnt,CARD_USER_LEN);   
+        }
     }
 
 	log_d("gCurCardHeaderIndex = %d,gCurUserHeaderIndex = %d\r\n",gCurCardHeaderIndex,gCurUserHeaderIndex);
-
     
     return 0;
     
 }
+
+uint32_t readDelIndexValue(uint8_t mode,uint16_t curIndex)
+{
+    uint8_t readBuff[HEAD_lEN+1] = {0};
+    uint8_t temp[HEAD_lEN*2+1] = {0};
+    uint32_t addr = 0;
+    uint32_t value = 0;
+
+    memset(readBuff,0x00,sizeof(readBuff));
+    //写入已删除的空间中,根据已删除索引，获取到当前索引下卡或者用户的索引
+
+    if(mode == CARD_DEL_MODE)
+    {
+        addr = CARD_DEL_HEAD_ADDR + curIndex * HEAD_lEN;
+    }
+    else if(mode == USER_DEL_MODE)
+    {
+        addr = USER_DEL_HEAD_ADDR + curIndex * HEAD_lEN;
+    }
+    
+    bsp_sf_ReadBuffer (readBuff, addr, HEAD_lEN);
+    
+    bcd2asc(temp, readBuff,HEAD_lEN*2, 0);
+
+    value = atoi(temp);
+
+    return value;
+
+}
+
 
 
 
@@ -169,11 +264,10 @@ uint8_t searchHeaderIndex(uint8_t* header,uint8_t mode,uint16_t *index)
     修改内容   : 新生成函数
 
 *****************************************************************************/
-uint8_t searchHeaderIndex(uint8_t* header,uint8_t mode,uint16_t *index)
+ISFIND_ENUM searchHeaderIndex(uint8_t* header,uint8_t mode,uint16_t *index)
 {
 	ISFIND_ENUM isFind = ISFIND_NO;
 	uint8_t temp[HEAD_lEN] = {0};
-	uint32_t addr = 0;
 	uint16_t retIndex = 0;
 
     if (header == NULL)
@@ -186,25 +280,19 @@ uint8_t searchHeaderIndex(uint8_t* header,uint8_t mode,uint16_t *index)
 
     if(mode == CARD_MODE)
     {
-        addr = CARD_NO_HEAD_ADDR;
-        isFind = findIndex(temp,addr,gCurCardHeaderIndex,&retIndex);
+        isFind = findIndex(temp,CARD_NO_HEAD_ADDR,gCurCardHeaderIndex,&retIndex);
     }
     else if(mode == USER_MODE)
     {
-        addr = USER_ID_HEAD_ADDR;
-        isFind = findIndex(temp,addr,gCurUserHeaderIndex,&retIndex);
-        
+        isFind = findIndex(temp,USER_ID_HEAD_ADDR,gCurUserHeaderIndex,&retIndex);        
     }
     else if(mode == CARD_DEL_MODE)
     {
-        addr = CARD_DEL_HEAD_ADDR;
-        isFind = findIndex(temp,addr,gDelCardHeaderIndex,&retIndex);
-        
+        isFind = findIndex(temp,CARD_DEL_HEAD_ADDR,gDelCardHeaderIndex,&retIndex);        
     }
     else if(mode == USER_DEL_HEAD_ADDR)
     {
-        addr = USER_DEL_HEAD_ADDR;
-        isFind = findIndex(temp,addr,gDelUserHeaderIndex,&retIndex);        
+        isFind = findIndex(temp,USER_DEL_HEAD_ADDR,gDelUserHeaderIndex,&retIndex);        
     } 
     
     *index = retIndex;
@@ -233,6 +321,8 @@ ISFIND_ENUM findIndex(uint8_t* header,uint32_t address,uint16_t curIndex,uint16_
     multiple = curIndex / HEAD_NUM_SECTOR;
     remainder = curIndex % HEAD_NUM_SECTOR;
 
+    log_d("multiple = %d,remainder = %d\r\n",multiple,remainder);
+    
     for(i= 0;i<multiple;i++)
     {
         memset(buff,0x00,sizeof(buff));
@@ -253,6 +343,7 @@ ISFIND_ENUM findIndex(uint8_t* header,uint32_t address,uint16_t curIndex,uint16_
 
     memset(buff,0x00,sizeof(buff));
     bsp_sf_ReadBuffer ((uint8_t *)buff, address + multiple*SECTOR_SIZE, remainder*HEAD_lEN); 
+ 
     for(loop=0; loop<remainder; loop++)
     {
         if(memcmp(header,buff+loop*HEAD_lEN,HEAD_lEN) == 0)
@@ -283,15 +374,24 @@ void eraseUserDataAll(void)
 
 static void eraseUserDataIndex(void)
 {
-    uint8_t headCnt[6] = {0};
+    uint8_t headCnt[CARD_USER_LEN] = {0};
     gCurCardHeaderIndex = 0;
-    sprintf(headCnt,"%06d",gCurCardHeaderIndex);
-    ef_set_env_blob("CardHeaderIndex",headCnt,6);    
+    sprintf(headCnt,"%08d",gCurCardHeaderIndex);
+    ef_set_env_blob("CardHeaderIndex",headCnt,CARD_USER_LEN);    
 
     memset(headCnt,0x00,sizeof(headCnt));
     gCurUserHeaderIndex = 0;
-    sprintf(headCnt,"%06d",gCurUserHeaderIndex);
-    ef_set_env_blob("UserHeaderIndex",headCnt,6);      
+    sprintf(headCnt,"%08d",gCurUserHeaderIndex);
+    ef_set_env_blob("UserHeaderIndex",headCnt,CARD_USER_LEN);      
+
+    gDelCardHeaderIndex = 0;
+    sprintf(headCnt,"%08d",gDelCardHeaderIndex);
+    ef_set_env_blob("DelCardHeaderIndex",headCnt,CARD_USER_LEN);    
+
+    memset(headCnt,0x00,sizeof(headCnt));
+    gDelUserHeaderIndex = 0;
+    sprintf(headCnt,"%08d",gDelUserHeaderIndex);
+    ef_set_env_blob("DelUserHeaderIndex",headCnt,CARD_USER_LEN);          
 
 }
 
@@ -300,7 +400,7 @@ void eraseHeadSector(void)
 {  
     uint16_t i = 0;
 
-    for(i=0;i<CARD_HEAD_SECTOR_NUM+USER_HEAD_SECTOR_NUM;i++)
+    for(i=0;i<CARD_HEAD_SECTOR_NUM+USER_HEAD_SECTOR_NUM+CARD_HEAD_DEL_SECTOR_NUM+USER_HEAD_DEL_SECTOR_NUM;i++)
     {
         bsp_sf_EraseSector(CARD_NO_HEAD_ADDR+i*SECTOR_SIZE);
     }
@@ -329,9 +429,9 @@ uint8_t writeUserData(USERDATA_STRU userData,uint8_t mode)
     uint8_t ret = 0;
     uint8_t times = 3;
     uint32_t addr = 0;
+    uint32_t index = 0;
     
     int32_t iTime1, iTime2;
-//	log_d("sizeof(USERDATA_STRU) = %d\r\n",sizeof(USERDATA_STRU));
     
     iTime1 = xTaskGetTickCount();	/* 记下开始时间 */
  
@@ -342,44 +442,53 @@ uint8_t writeUserData(USERDATA_STRU userData,uint8_t mode)
     if(isFull == 1)
     {
         return 1; //提示已经满了
-    }
+    }  
 
-    
     if(mode == CARD_MODE)
     {
-        addr = CARD_NO_DATA_ADDR + gCurCardHeaderIndex * (sizeof(USERDATA_STRU));
         memcpy(header,userData.cardNo,CARD_USER_LEN);
     }
     else
     {
-        addr = USER_ID_DATA_ADDR + gCurUserHeaderIndex * (sizeof(USERDATA_STRU));
         memcpy(header,userData.userId,CARD_USER_LEN);
     }
 
     if(header == NULL)
     {
-        return 1;//提示表头无效
-    }
+       return 1;//提示表头无效
+    }    
     
    //写表头
-   ret = writeHeader(header,mode);
+   ret = writeHeader(header,mode,&index);
 
-   if(ret != 0)
-   {
+    if(ret != 0)
+    {
        return 1;//提示写表头失败
-   }
+    }    
 
+    //获取地址
+    if(mode == CARD_MODE )
+    {
+        addr = CARD_NO_DATA_ADDR + index * (sizeof(USERDATA_STRU));;
+    }
+    else if(mode == USER_MODE)
+    {
+        addr = USER_ID_DATA_ADDR + index * (sizeof(USERDATA_STRU));
+    }
+    
+    log_d("writeHeader success! index = %d,addr = %d\r\n",index,addr);
+    
     //packet write buff
     memset(wBuff,0x00,sizeof(wBuff));  
-	
+
     //copy to buff
     memcpy(wBuff, &userData, sizeof(USERDATA_STRU)-1);
-	
-    //calc crc
-	crc = xorCRC(wBuff, sizeof(USERDATA_STRU)-1);
 
-	//copy crc
-	wBuff[sizeof(USERDATA_STRU)-1] = crc;	
+    //calc crc
+    crc = xorCRC(wBuff, sizeof(USERDATA_STRU)-1);
+
+    //copy crc
+    wBuff[sizeof(USERDATA_STRU)-1] = crc;	
 
 
     //write flash
@@ -445,12 +554,13 @@ uint8_t readUserData(uint8_t* header,uint8_t mode,USERDATA_STRU *userData)
 		return 3;//提示未找到索引
 	}
 	
-
+    log_d("searchHeaderIndex success! index = %d\r\n",index);
+    
     if(mode == CARD_MODE)
     {
         addr = CARD_NO_DATA_ADDR + index * (sizeof(USERDATA_STRU));
     }
-    else
+    else if(mode == USER_MODE)
     {
         addr = USER_ID_DATA_ADDR + index * (sizeof(USERDATA_STRU));
     }	
@@ -563,8 +673,7 @@ uint8_t modifyUserData(USERDATA_STRU userData,uint8_t mode)
 	if(mode == CARD_MODE)
 	{
         addr = CARD_NO_DATA_ADDR + index * (sizeof(USERDATA_STRU));
-
-   }
+    }
     else
     {
         addr = USER_ID_DATA_ADDR + index * (sizeof(USERDATA_STRU));
@@ -616,6 +725,241 @@ uint8_t modifyUserData(USERDATA_STRU userData,uint8_t mode)
     return 0;
 }
 
+uint8_t delUserData(USERDATA_STRU userData,uint8_t mode)
+{
+    uint8_t wBuff[255] = {0};
+    uint8_t rBuff[255] = {0}; 
+    uint8_t isFull = 0;
+    uint8_t header[CARD_USER_LEN] = {0};
+    uint8_t crc=0;
+    uint8_t ret = 0;
+    uint8_t times = 3;
+    uint32_t addr = 0;
+    uint16_t index = 0;
+    
+    int32_t iTime1, iTime2;
+    log_d("sizeof(USERDATA_STRU) = %d\r\n",sizeof(USERDATA_STRU));
+    
+    iTime1 = xTaskGetTickCount();   /* 记下开始时间 */
+ 
+    
+    //检查存储空间是否已满；
+    isFull = checkFlashSpace(mode);
+
+    if(isFull == 1)
+    {
+        log_d("not enough speac storage the data\r\n");    
+        return 1; //提示已经满了
+    } 
+
+    if(mode == CARD_MODE)
+    {
+        memcpy(header,userData.cardNo,CARD_USER_LEN);
+    }
+    else
+    {
+        memcpy(header,userData.userId,CARD_USER_LEN);
+    }   
+
+    ret = searchHeaderIndex(header,mode,&index);
+
+    log_d("searchHeaderIndex index = %d",index);
+    
+    if(ret != 1)
+    {
+        log_d("can't find the head index\r\n");
+        return 3;//提示未找到索引
+    }
+
+    if(mode == CARD_MODE)
+    {
+        addr = CARD_NO_DATA_ADDR + index * (sizeof(USERDATA_STRU));
+    }
+    else
+    {
+        addr = USER_ID_DATA_ADDR + index * (sizeof(USERDATA_STRU));
+    }
+
+    //packet write buff
+    memset(wBuff,0xFF,sizeof(wBuff));   
+
+    //write flash
+    while(times)
+    {    
+        bsp_sf_WriteBuffer (wBuff, addr, sizeof(USERDATA_STRU));
+
+        //再读出来，对比是否一致
+        memset(rBuff,0x00,sizeof(rBuff));
+        bsp_sf_ReadBuffer (rBuff, addr, sizeof(USERDATA_STRU));
+
+        ret = compareArray(wBuff,rBuff,sizeof(USERDATA_STRU));
+        
+        if(ret == 0)
+        {
+            break;
+        }
+                
+
+        if(ret != 0 && times == 1)
+        {
+            log_d("modify record is error\r\n");
+            return 3;
+        }
+
+        times--;
+    }
+
+    //写删除索引
+    ret = writeDelHeader(header,mode);
+    if(ret != 0)
+    {
+        log_d("write del index error\r\n");
+        return 5;//提示未找到索引
+    }
+
+    //删除原索引    
+    ret = delSourceHeader(index,mode);
+    if(ret != 0)
+    {
+        log_d("write del source index error\r\n");
+        return 6;//提示未找到索引
+    }
+
+
+    iTime2 = xTaskGetTickCount();   /* 记下结束时间 */
+    log_d("修改记录成功，耗时: %dms\r\n",iTime2 - iTime1); 
+
+    return 0;
+}
+
+
+uint8_t writeDelHeader(uint8_t* header,uint8_t mode)
+{
+    uint8_t times = 3;
+    uint8_t readBuff[HEAD_lEN+1] = {0};
+	uint8_t ret = 0;
+    uint8_t headCnt[CARD_USER_LEN] = {0};
+    uint8_t temp[HEAD_lEN+1] = {0};
+    uint32_t addr = 0;
+    
+    if(mode == CARD_MODE)
+    {
+        addr = CARD_DEL_HEAD_ADDR + gDelCardHeaderIndex * HEAD_lEN;
+    }
+    else if(mode == USER_MODE)
+    {
+        addr = USER_DEL_HEAD_ADDR + gDelUserHeaderIndex * HEAD_lEN;
+    }
+
+    if(header == NULL || strlen((const char*)header) == 0)
+    {
+        log_d("<<<<<<<<<<<<<<cardNoHeader is empty>>>>>>>>>>>>>>\r\n");
+        return 1;
+    }
+
+    log_d("writeHeader = %s,addr = %d\r\n",header,addr);
+
+    memset(temp,0x00,sizeof(temp));
+    asc2bcd(temp, header,HEAD_lEN*2, 0);    
+
+   	while(times)
+	{		
+		ret = bsp_sf_WriteBuffer (temp, addr, HEAD_lEN);
+        
+		//再读出来，对比是否一致
+		memset(readBuff,0x00,sizeof(readBuff));
+		bsp_sf_ReadBuffer (readBuff, addr, HEAD_lEN);
+		
+		ret = compareArray(temp,readBuff,HEAD_lEN);
+		
+		if(ret == 0)
+		{
+			break;
+		}
+
+		if(ret != 0 && times == 1)
+		{
+            log_d("write header error\r\n");
+			return 3;
+		}
+
+		times--;
+	} 
+
+    //这里需要保存  
+    if(mode == CARD_MODE)
+    {
+        gDelCardHeaderIndex++;
+        memset(headCnt,0x00,sizeof(headCnt));
+        sprintf(headCnt,"%08d",gDelCardHeaderIndex);
+        ef_set_env_blob("DelCardHeaderIndex",headCnt,CARD_USER_LEN);       
+                         
+    }
+    else
+    {
+        gDelUserHeaderIndex++;
+        memset(headCnt,0x00,sizeof(headCnt));
+        sprintf(headCnt,"%08d",gDelUserHeaderIndex);
+        ef_set_env_blob("DelUserHeaderIndex",headCnt,CARD_USER_LEN);           
+    }
+
+	log_d("gDelCardHeaderIndex = %d,gDelUserHeaderIndex = %d\r\n",gDelCardHeaderIndex,gDelUserHeaderIndex);
+
+    
+    return 0;    
+
+}
+
+static uint8_t delSourceHeader(uint16_t index,uint8_t mode)
+{
+    uint8_t times = 3;
+    uint8_t readBuff[HEAD_lEN+1] = {0};
+    uint8_t ret = 0;
+    uint8_t headCnt[CARD_USER_LEN] = {0};
+    uint8_t temp[HEAD_lEN+1] = {0};
+    uint32_t addr = 0;
+    
+    if(mode == CARD_MODE)
+    {
+        addr = CARD_NO_HEAD_ADDR + index * HEAD_lEN;
+    }
+    else if(mode == USER_MODE)
+    {
+        addr = USER_ID_HEAD_ADDR + index * HEAD_lEN;
+    }
+
+    memset(temp,0xFF,sizeof(temp));
+    
+    while(times)
+    {       
+        ret = bsp_sf_WriteBuffer (temp, addr, HEAD_lEN);
+        
+        //再读出来，对比是否一致
+        memset(readBuff,0x00,sizeof(readBuff));
+        bsp_sf_ReadBuffer (readBuff, addr, HEAD_lEN);
+        
+        ret = compareArray(temp,readBuff,HEAD_lEN);
+        
+        if(ret == 0)
+        {
+            break;
+        }
+
+        if(ret != 0 && times == 1)
+        {
+            log_d("write header error\r\n");
+            return 3;
+        }
+
+        times--;
+    } 
+    
+    return 0;    
+
+}
+
+
+
 
 void TestFlash(uint8_t mode)
 {
@@ -641,12 +985,22 @@ void TestFlash(uint8_t mode)
         data_addr = CARD_NO_DATA_ADDR;
         num = gCurCardHeaderIndex;
     }
-    else
+    else if(mode == USER_MODE)
     {
         addr = USER_ID_HEAD_ADDR;   
         data_addr = USER_ID_DATA_ADDR;
         num = gCurUserHeaderIndex;        
     } 
+    else if(mode == CARD_DEL_MODE)
+    {
+        addr = CARD_DEL_HEAD_ADDR;   
+        num = gDelCardHeaderIndex;        
+    } 
+    else if(mode == USER_DEL_MODE)
+    {
+        addr = USER_DEL_HEAD_ADDR;   
+        num = gDelUserHeaderIndex;        
+    }     
 
     for(i=0;i<num;i++)
     {
@@ -661,9 +1015,9 @@ void TestFlash(uint8_t mode)
     for(i=0;i<num;i++)
     {
         memset(buff,0x00,sizeof(buff));
-        bsp_sf_ReadBuffer (temp, data_addr+i * (sizeof(USERDATA_STRU)), sizeof(USERDATA_STRU));        
+        bsp_sf_ReadBuffer (buff, data_addr+i * (sizeof(USERDATA_STRU)), sizeof(USERDATA_STRU));        
         printf("the %d data ====================== \r\n",i); 
-        dbh("data", temp, (sizeof(USERDATA_STRU)));
+        dbh("data", buff, (sizeof(USERDATA_STRU)));
 
     }    
 

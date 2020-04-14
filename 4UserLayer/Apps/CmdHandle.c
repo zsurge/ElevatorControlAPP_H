@@ -537,7 +537,7 @@ SYSERRORCODE_E DelCardNo ( uint8_t* msgBuf )
     {
         userData.head = TABLE_HEAD;
         userData.cardState = CARD_DEL; //ÉèÖÃ¿¨×´Ì¬Îª0£¬É¾³ý¿¨
-        wRet = modifyUserData(userData,USER_MODE);
+        wRet = delUserData(userData,USER_MODE);
     }
     
     //2.²éÑ¯ÒÔ¿¨ºÅÎªIDµÄ¼ÇÂ¼£¬²¢É¾³ý
@@ -790,10 +790,12 @@ static SYSERRORCODE_E DelCard( uint8_t* msgBuf )
     memset(tmp,0x00,sizeof(tmp));
     strcpy((char *)tmp,(const char *)GetJsonItem((const uint8_t *)msgBuf,(const uint8_t *)"userId",1));   
     sprintf(userId,"%08s",tmp); 
+    log_d("userId = %s\r\n",userId);
 
     memset(tmp,0x00,sizeof(tmp));
     strcpy((char *)tmp,(const char *)GetJsonItem((const uint8_t *)msgBuf,(const uint8_t *)"cardNo",1));
-    sprintf(cardNo,"%08s",tmp);     
+    sprintf(cardNo,"%08s",tmp);   
+    
     log_d("cardNo = %s£¬userId = %s\r\n",cardNo,userId);
 
 
@@ -813,9 +815,7 @@ static SYSERRORCODE_E DelCard( uint8_t* msgBuf )
 
     if(rRet == 0)
     {
-        userData.head   = TABLE_HEAD;
-        userData.cardState = CARD_DEL; //ÉèÖÃ¿¨×´Ì¬Îª0£¬É¾³ý¿¨
-        wRet = modifyUserData(userData,CARD_MODE);
+        wRet = delUserData(userData,CARD_MODE);
     }
     
     //2.²éÑ¯ÒÔ¿¨ºÅÎªIDµÄ¼ÇÂ¼£¬²¢É¾³ý
@@ -1011,11 +1011,13 @@ static SYSERRORCODE_E GetUserInfo ( uint8_t* msgBuf )
         {
             tempUserData.cardState = CARD_VALID;
             ret = writeUserData(tempUserData,CARD_MODE);
-            log_d("write card id = %d\r\n",ret);   
+               
             if(ret != 0)
             {
                 result = FLASH_W_ERR;
-            }            
+            }   
+
+            log_d("write card id is success! ret = %d\r\n",ret);
         }
     }
 
@@ -1146,34 +1148,42 @@ static SYSERRORCODE_E PCOptDev ( uint8_t* msgBuf )
 //    
 //    writeUserData(userData,CARD_MODE);
 //    
-//    log_d("===============TEST==================\r\n");
-//    len = readUserData("89E1E35D",CARD_MODE,&userData);
+    log_d("===============TEST==================\r\n");
+    len = readUserData("12345688",CARD_MODE,&userData);
 
-//    log_d("ret = %d\r\n",len);    
-//    log_d("userData.userState = %d\r\n",userData.cardState);
-//    log_d("userData.cardNo = %s\r\n",userData.cardNo);
-//    log_d("userData.userId = %s\r\n",userData.userId);
-//    log_d("userData.accessFloor = %s\r\n",userData.accessFloor);
-//    log_d("userData.defaultFloor = %d\r\n",userData.defaultFloor);
-//    log_d("userData.startTime = %s\r\n",userData.startTime);
+    log_d("ret = %d\r\n",len);    
+    log_d("userData.userState = %d\r\n",userData.cardState);
+    log_d("userData.cardNo = %s\r\n",userData.cardNo);
+    log_d("userData.userId = %s\r\n",userData.userId);
+    log_d("userData.accessFloor = %s\r\n",userData.accessFloor);
+    log_d("userData.defaultFloor = %d\r\n",userData.defaultFloor);
+    log_d("userData.startTime = %s\r\n",userData.startTime);
 
-//    log_d("===============TEST==================\r\n");
-//    memset(&userData,0x00,sizeof(USERDATA_STRU));
-//    len = readUserData("00002815",USER_MODE,&userData);
-//    
-//    log_d("ret = %d\r\n",len);    
-//    log_d("userData.userState = %d\r\n",userData.cardState);
-//    log_d("userData.cardNo = %s\r\n",userData.cardNo);
-//    log_d("userData.userId = %s\r\n",userData.userId);
-//    log_d("userData.accessFloor = %s\r\n",userData.accessFloor);
-//    log_d("userData.defaultFloor = %d\r\n",userData.defaultFloor);
-//    log_d("userData.startTime = %s\r\n",userData.startTime);
+    log_d("===============TEST==================\r\n");
+    memset(&userData,0x00,sizeof(USERDATA_STRU));
+    len = readUserData("00020419",USER_MODE,&userData);
+    
+    log_d("ret = %d\r\n",len);    
+    log_d("userData.userState = %d\r\n",userData.cardState);
+    log_d("userData.cardNo = %s\r\n",userData.cardNo);
+    log_d("userData.userId = %s\r\n",userData.userId);
+    log_d("userData.accessFloor = %s\r\n",userData.accessFloor);
+    log_d("userData.defaultFloor = %d\r\n",userData.defaultFloor);
+    log_d("userData.startTime = %s\r\n",userData.startTime);
 
 
 TestFlash(CARD_MODE);
+log_d("=================================\r\n");
 
-// 
 TestFlash(USER_MODE);
+log_d("=================================\r\n");
+
+TestFlash(CARD_DEL_MODE);
+log_d("=================================\r\n");
+
+TestFlash(USER_DEL_MODE);
+log_d("=================================\r\n");
+
 
 
 

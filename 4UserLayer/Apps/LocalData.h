@@ -23,6 +23,16 @@
   0x900000    存放用户数据
   0x1300000   预留
 
+FLASH操作思路：
+增：0.先读取已删除索引，若不为零，则把已删除最后一个索引值赋值给卡号索引并写卡号，
+      已删除索引值自减，并且执行步骤2；
+    1.若删除索引为零，以卡号为索引，存储在FLASH中，做为索引表，每增加一个卡号，索引自增；
+    2.卡号关连内容为固定数据长度，存储时，写卡号数据地址+偏移量(索引*固定长度)
+删：1.查找卡号，若有，查记录该卡索引值，存储在已删除空间内，且已删除索引值自增,
+      若无，则返回未找到；
+改：1.查找卡号，确定位置，修改相应的值，并写入到FLASH
+查：1.查找卡号，确定位置，并返回相应的值  
+
 ******************************************************************************/
 #ifndef __LOCALDATA_H__
 #define __LOCALDATA_H__
@@ -64,7 +74,7 @@
 
 
 #define CARD_USER_LEN              (8)
-#define FLOOR_ARRAY_LENGTH         (64) //每个普通用户最多10个层权限
+#define FLOOR_ARRAY_LENGTH         (64) //每个普通用户最多64层权限
 #define TIME_LENGTH                (10)
 #define TIMESTAMP_LENGTH           (10)
 #define RESERVE_LENGTH             (5) //预留空间 为了对齐，补足一个扇区可以整除的字节数
@@ -112,9 +122,10 @@ typedef struct HEADER
 
 typedef enum 
 {
-  ISFIND_YES = 1,
-  ISFIND_NO = 2,
+  ISFIND_NO = 0,
+  ISFIND_YES 
 }ISFIND_ENUM;
+
 
 
 //HEADER_STRU cardNoHeader,userIdHeader;
@@ -153,11 +164,16 @@ typedef struct USERSTATE
 void eraseHeadSector(void);
 void eraseDataSector(void);
 void eraseUserDataAll(void);
-uint8_t writeHeader(uint8_t* header,uint8_t mode);
-uint8_t searchHeaderIndex(uint8_t* header,uint8_t mode,uint16_t *index);
+uint8_t writeHeader(uint8_t* header,uint8_t mode,uint32_t *headIndex);
+ISFIND_ENUM searchHeaderIndex(uint8_t* header,uint8_t mode,uint16_t *index);
 uint8_t writeUserData(USERDATA_STRU userData,uint8_t mode);
 uint8_t readUserData(uint8_t* header,uint8_t mode,USERDATA_STRU *userData);
 uint8_t modifyUserData(USERDATA_STRU userData,uint8_t mode);
+uint8_t delUserData(USERDATA_STRU userData,uint8_t mode);
+
+uint8_t writeDelHeader(uint8_t* header,uint8_t mode);
+
+
 
 void TestFlash(uint8_t mode);
 
