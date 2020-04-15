@@ -102,7 +102,7 @@ int main(void)
 static void AppTaskCreate (void)
 {
     //进入临界区
-    taskENTER_CRITICAL(); 
+    taskENTER_CRITICAL();    
 
     //网卡初始化
     StartEthernet();   

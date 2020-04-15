@@ -169,7 +169,7 @@ ISFIND_ENUM searchHeaderIndex(uint8_t* header,uint8_t mode,uint16_t *index);
 uint8_t writeUserData(USERDATA_STRU userData,uint8_t mode);
 uint8_t readUserData(uint8_t* header,uint8_t mode,USERDATA_STRU *userData);
 uint8_t modifyUserData(USERDATA_STRU userData,uint8_t mode);
-uint8_t delUserData(USERDATA_STRU userData,uint8_t mode);
+uint8_t delUserData(uint8_t *header,uint8_t mode);
 
 uint8_t writeDelHeader(uint8_t* header,uint8_t mode);
 

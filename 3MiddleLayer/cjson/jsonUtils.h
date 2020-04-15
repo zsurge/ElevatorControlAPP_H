@@ -37,7 +37,7 @@
 #define JSON_ITEM_MAX_LEN   1024*1 
 #define CARD_NO_LEN             (8)
 #define USER_ID_LEN             (8)
-#define FLOOR_ARRAY_LEN         (16) //每个普通用户最多10个层权限
+#define FLOOR_ARRAY_LEN         (64) //每个普通用户最多10个层权限
 #define TIME_LEN                (10)
 #define QRID_LEN                (10)
 #define TIMESTAMP_LEN           (10)
@@ -84,14 +84,12 @@ typedef struct
 
 typedef struct 
 {    
-    uint8_t tagFloor;                               //目标楼层    
     uint8_t type;                                   //二维码类型
+    uint8_t defaultFloor;                           //默认楼层    
     uint8_t qrID[QRID_LEN+1];                         //QRID
-    uint8_t qrStarttimeStamp[TIMESTAMP_LEN+1];        //二维码开始时间戳  
-    uint8_t qrEndtimeStamp[TIMESTAMP_LEN+1];          //二维码结束时间戳  
     uint8_t startTime[TIME_LEN+1];                    //开始有效时间
     uint8_t endTime[TIME_LEN+1];                      //结束时间 
-    uint16_t openNum;                               //允许呼梯次数    
+    uint8_t accessFloor[FLOOR_ARRAY_LEN+1];           //目标楼层 
 }QRCODE_INFO_STRU;
 
 #pragma pack()
@@ -131,6 +129,10 @@ SYSERRORCODE_E saveTemplateParam(uint8_t *jsonBuff);
 
 //解析QRCODE数据
 uint8_t parseQrCode(uint8_t *jsonBuff,QRCODE_INFO_STRU *qrCodeInfo);
+
+
+//获取JSON数组
+uint8_t** GetJsonArray ( const uint8_t* jsonBuff,const uint8_t* item,uint8_t *num);
 
 
 

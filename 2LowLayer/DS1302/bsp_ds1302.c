@@ -207,7 +207,7 @@ void bsp_ds1302_init ( void )
 char* time_to_timestamp(void)
 {
     struct tm stm;  
-    static char ret[11] = {0};  
+    static char ret[10] = {0};  
     memset(&stm,0,sizeof(stm)); 
     
     stm.tm_year = BCDToInt(read_1302 ( read[6] ))+100;  

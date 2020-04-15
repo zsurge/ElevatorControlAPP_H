@@ -88,11 +88,11 @@ uint8_t writeHeader(uint8_t  * header,uint8_t mode,uint32_t *headIndex)
 
     if(header == NULL || strlen((const char*)header) == 0)
     {
-        log_d("<<<<<<<<<<<<<<cardNoHeader is empty>>>>>>>>>>>>>>\r\n");
+        //log_d("<<<<<<<<<<<<<<cardNoHeader is empty>>>>>>>>>>>>>>\r\n");
         return 1;
     }
 
-    log_e("writeHeader = %s\r\n",header);
+    //log_d("writeHeader = %s\r\n",header);
 
     memset(temp,0x00,sizeof(temp));
     asc2bcd(temp, header,HEAD_lEN*2, 0);
@@ -102,7 +102,7 @@ uint8_t writeHeader(uint8_t  * header,uint8_t mode,uint32_t *headIndex)
     {
         if(gDelCardHeaderIndex > 0)
         {
-            tempIndex = readDelIndexValue(CARD_MODE,gDelCardHeaderIndex);
+            tempIndex = readDelIndexValue(CARD_MODE,gDelCardHeaderIndex-1);
             addr = CARD_NO_HEAD_ADDR + tempIndex * HEAD_lEN;
         }
         else
@@ -117,7 +117,7 @@ uint8_t writeHeader(uint8_t  * header,uint8_t mode,uint32_t *headIndex)
         if(gDelUserHeaderIndex > 0)
         {
             //写入已删除的空间中,根据已删除索引，获取到当前索引下卡或者用户的索引
-            tempIndex = readDelIndexValue(USER_MODE,gDelUserHeaderIndex);
+            tempIndex = readDelIndexValue(USER_MODE,gDelUserHeaderIndex-1);
             addr = USER_ID_HEAD_ADDR + tempIndex * HEAD_lEN;
         }
         else
@@ -145,7 +145,7 @@ uint8_t writeHeader(uint8_t  * header,uint8_t mode,uint32_t *headIndex)
 //    }
     
 
-    log_d("addr = %d,tempIndex = %d\r\n",addr,tempIndex);
+    //log_d("addr = %d,tempIndex = %d,gDelCardHeaderIndex = %d\r\n",addr,tempIndex,gDelCardHeaderIndex);
     
    	while(times)
 	{		
@@ -164,7 +164,7 @@ uint8_t writeHeader(uint8_t  * header,uint8_t mode,uint32_t *headIndex)
 
 		if(ret != 0 && times == 1)
 		{
-            log_d("write header error\r\n");
+            //log_d("write header error\r\n");
 			return 3;
 		}
 
@@ -209,8 +209,9 @@ uint8_t writeHeader(uint8_t  * header,uint8_t mode,uint32_t *headIndex)
         }
     }
 
-	log_d("gCurCardHeaderIndex = %d,gCurUserHeaderIndex = %d\r\n",gCurCardHeaderIndex,gCurUserHeaderIndex);
-    
+	//log_d("gCurCardHeaderIndex = %d,gCurUserHeaderIndex = %d\r\n",gCurCardHeaderIndex,gCurUserHeaderIndex);    
+	//log_d("gDelCardHeaderIndex = %d,gDelUserHeaderIndex = %d\r\n",gDelCardHeaderIndex,gDelUserHeaderIndex);
+	
     return 0;
     
 }
@@ -225,20 +226,26 @@ uint32_t readDelIndexValue(uint8_t mode,uint16_t curIndex)
     memset(readBuff,0x00,sizeof(readBuff));
     //写入已删除的空间中,根据已删除索引，获取到当前索引下卡或者用户的索引
 
-    if(mode == CARD_DEL_MODE)
+    if(mode == CARD_MODE)
     {
         addr = CARD_DEL_HEAD_ADDR + curIndex * HEAD_lEN;
     }
-    else if(mode == USER_DEL_MODE)
+    else if(mode == USER_MODE)
     {
         addr = USER_DEL_HEAD_ADDR + curIndex * HEAD_lEN;
     }
+
+    //log_d("curIndex = %d,addr = %d\r\n",curIndex,addr);
     
     bsp_sf_ReadBuffer (readBuff, addr, HEAD_lEN);
+
+    dbh("del index", readBuff, HEAD_lEN);
     
-    bcd2asc(temp, readBuff,HEAD_lEN*2, 0);
+    bcd2asc(temp, readBuff,HEAD_lEN*2, 0);    
 
     value = atoi(temp);
+
+    //log_d("readDelIndexValue = %s,value =%d\r\n",temp,value);
 
     return value;
 
@@ -314,14 +321,14 @@ ISFIND_ENUM findIndex(uint8_t* header,uint32_t address,uint16_t curIndex,uint16_
     if (buff == NULL || header == NULL)
     {
        my_free(buff);
-       log_d("my_malloc error\r\n");
+       //log_d("my_malloc error\r\n");
        return isFind;
     }
 
     multiple = curIndex / HEAD_NUM_SECTOR;
     remainder = curIndex % HEAD_NUM_SECTOR;
 
-    log_d("multiple = %d,remainder = %d\r\n",multiple,remainder);
+    //log_d("multiple = %d,remainder = %d\r\n",multiple,remainder);
     
     for(i= 0;i<multiple;i++)
     {
@@ -476,7 +483,7 @@ uint8_t writeUserData(USERDATA_STRU userData,uint8_t mode)
         addr = USER_ID_DATA_ADDR + index * (sizeof(USERDATA_STRU));
     }
     
-    log_d("writeHeader success! index = %d,addr = %d\r\n",index,addr);
+    //log_d("writeHeader success! index = %d,addr = %d\r\n",index,addr);
     
     //packet write buff
     memset(wBuff,0x00,sizeof(wBuff));  
@@ -511,7 +518,7 @@ uint8_t writeUserData(USERDATA_STRU userData,uint8_t mode)
 
 		if(ret != 0 && times == 1)
 		{
-			log_d("写交易记录表失败!\r\n");
+			//log_d("写交易记录表失败!\r\n");
 			return 3;
 		}
 
@@ -540,7 +547,7 @@ uint8_t readUserData(uint8_t* header,uint8_t mode,USERDATA_STRU *userData)
 
 	if(header == NULL)
 	{
-        log_d("invalid head\r\n"); 
+        //log_d("invalid head\r\n"); 
         return 1; //提示错误的参数
 	}
 
@@ -549,12 +556,12 @@ uint8_t readUserData(uint8_t* header,uint8_t mode,USERDATA_STRU *userData)
 	
 	if(ret != 1)
 	{
-        log_d("can't find the head index\r\n");    
+        //log_d("can't find the head index\r\n");    
 	
 		return 3;//提示未找到索引
 	}
 	
-    log_d("searchHeaderIndex success! index = %d\r\n",index);
+    //log_d("searchHeaderIndex success! index = %d\r\n",index);
     
     if(mode == CARD_MODE)
     {
@@ -570,7 +577,7 @@ uint8_t readUserData(uint8_t* header,uint8_t mode,USERDATA_STRU *userData)
     //judge head
 	if(rBuff[0] != TABLE_HEAD)
 	{
-        log_d("invalid start char\r\n");    	
+        //log_d("invalid start char\r\n");    	
 		return 4;
 	}
 
@@ -580,7 +587,7 @@ uint8_t readUserData(uint8_t* header,uint8_t mode,USERDATA_STRU *userData)
 	//judge crc
 	if(crc != rBuff[sizeof(USERDATA_STRU) - 1])
 	{
-        log_d("crc check error\r\n");   
+        //log_d("crc check error\r\n");   
 		return 5;
 	}
 
@@ -604,7 +611,7 @@ static uint8_t checkFlashSpace(uint8_t mode)
     {
         if(gCurCardHeaderIndex > MAX_HEAD_RECORD-5)
         {
-            log_d("card flash is full\r\n");
+            //log_d("card flash is full\r\n");
 
             return 1;
         }
@@ -613,7 +620,7 @@ static uint8_t checkFlashSpace(uint8_t mode)
     {
         if(gCurUserHeaderIndex > MAX_HEAD_RECORD-5)
         {
-            log_d("card flash is full\r\n");
+            //log_d("card flash is full\r\n");
             return 1;
         }        
     }
@@ -637,7 +644,7 @@ uint8_t modifyUserData(USERDATA_STRU userData,uint8_t mode)
     uint16_t index = 0;
     
     int32_t iTime1, iTime2;
-	log_d("sizeof(USERDATA_STRU) = %d\r\n",sizeof(USERDATA_STRU));
+	//log_d("sizeof(USERDATA_STRU) = %d\r\n",sizeof(USERDATA_STRU));
     
     iTime1 = xTaskGetTickCount();	/* 记下开始时间 */
  
@@ -647,7 +654,7 @@ uint8_t modifyUserData(USERDATA_STRU userData,uint8_t mode)
 
     if(isFull == 1)
     {
-        log_d("not enough speac storage the data\r\n");    
+        //log_d("not enough speac storage the data\r\n");    
         return 1; //提示已经满了
     } 
 
@@ -662,11 +669,11 @@ uint8_t modifyUserData(USERDATA_STRU userData,uint8_t mode)
 
 	ret = searchHeaderIndex(header,mode,&index);
 
-	log_d("searchHeaderIndex ret = %d",ret);
+	//log_d("searchHeaderIndex ret = %d",ret);
 	
 	if(ret != 1)
 	{
-	    log_d("can't find the head index\r\n");
+	    //log_d("can't find the head index\r\n");
 		return 3;//提示未找到索引
 	}
 
@@ -712,7 +719,7 @@ uint8_t modifyUserData(USERDATA_STRU userData,uint8_t mode)
 
 		if(ret != 0 && times == 1)
 		{
-			log_d("modify record is error\r\n");
+			//log_d("modify record is error\r\n");
 			return 3;
 		}
 
@@ -725,12 +732,11 @@ uint8_t modifyUserData(USERDATA_STRU userData,uint8_t mode)
     return 0;
 }
 
-uint8_t delUserData(USERDATA_STRU userData,uint8_t mode)
+uint8_t delUserData(uint8_t *header,uint8_t mode)
 {
     uint8_t wBuff[255] = {0};
     uint8_t rBuff[255] = {0}; 
     uint8_t isFull = 0;
-    uint8_t header[CARD_USER_LEN] = {0};
     uint8_t crc=0;
     uint8_t ret = 0;
     uint8_t times = 3;
@@ -738,7 +744,7 @@ uint8_t delUserData(USERDATA_STRU userData,uint8_t mode)
     uint16_t index = 0;
     
     int32_t iTime1, iTime2;
-    log_d("sizeof(USERDATA_STRU) = %d\r\n",sizeof(USERDATA_STRU));
+    //log_d("sizeof(USERDATA_STRU) = %d\r\n",sizeof(USERDATA_STRU));
     
     iTime1 = xTaskGetTickCount();   /* 记下开始时间 */
  
@@ -748,18 +754,9 @@ uint8_t delUserData(USERDATA_STRU userData,uint8_t mode)
 
     if(isFull == 1)
     {
-        log_d("not enough speac storage the data\r\n");    
+        //log_d("not enough speac storage the data\r\n");    
         return 1; //提示已经满了
-    } 
-
-    if(mode == CARD_MODE)
-    {
-        memcpy(header,userData.cardNo,CARD_USER_LEN);
-    }
-    else
-    {
-        memcpy(header,userData.userId,CARD_USER_LEN);
-    }   
+    }  
 
     ret = searchHeaderIndex(header,mode,&index);
 
@@ -767,7 +764,7 @@ uint8_t delUserData(USERDATA_STRU userData,uint8_t mode)
     
     if(ret != 1)
     {
-        log_d("can't find the head index\r\n");
+        //log_d("can't find the head index\r\n");
         return 3;//提示未找到索引
     }
 
@@ -775,7 +772,7 @@ uint8_t delUserData(USERDATA_STRU userData,uint8_t mode)
     {
         addr = CARD_NO_DATA_ADDR + index * (sizeof(USERDATA_STRU));
     }
-    else
+    else if(mode == USER_MODE)
     {
         addr = USER_ID_DATA_ADDR + index * (sizeof(USERDATA_STRU));
     }
@@ -802,7 +799,7 @@ uint8_t delUserData(USERDATA_STRU userData,uint8_t mode)
 
         if(ret != 0 && times == 1)
         {
-            log_d("modify record is error\r\n");
+            //log_d("modify record is error\r\n");
             return 3;
         }
 
@@ -810,10 +807,16 @@ uint8_t delUserData(USERDATA_STRU userData,uint8_t mode)
     }
 
     //写删除索引
-    ret = writeDelHeader(header,mode);
+    //删除索引值为原索引的值
+    memset(header,0x00,sizeof(header));
+    sprintf(header,"%08d",index);
+    
+    //log_d("need del header value = %s,\r\n",header);
+    
+    ret = writeDelHeader(header,mode);    
     if(ret != 0)
     {
-        log_d("write del index error\r\n");
+        //log_d("write del index error\r\n");
         return 5;//提示未找到索引
     }
 
@@ -821,7 +824,7 @@ uint8_t delUserData(USERDATA_STRU userData,uint8_t mode)
     ret = delSourceHeader(index,mode);
     if(ret != 0)
     {
-        log_d("write del source index error\r\n");
+        //log_d("write del source index error\r\n");
         return 6;//提示未找到索引
     }
 
@@ -853,11 +856,11 @@ uint8_t writeDelHeader(uint8_t* header,uint8_t mode)
 
     if(header == NULL || strlen((const char*)header) == 0)
     {
-        log_d("<<<<<<<<<<<<<<cardNoHeader is empty>>>>>>>>>>>>>>\r\n");
+        //log_d("<<<<<<<<<<<<<<cardNoHeader is empty>>>>>>>>>>>>>>\r\n");
         return 1;
     }
 
-    log_d("writeHeader = %s,addr = %d\r\n",header,addr);
+    log_d("<<<<<<<<<<<<<<write del Header = %s,addr = %d>>>>>>>>>>>>>>\r\n",header,addr);
 
     memset(temp,0x00,sizeof(temp));
     asc2bcd(temp, header,HEAD_lEN*2, 0);    
@@ -879,7 +882,7 @@ uint8_t writeDelHeader(uint8_t* header,uint8_t mode)
 
 		if(ret != 0 && times == 1)
 		{
-            log_d("write header error\r\n");
+            //log_d("write header error\r\n");
 			return 3;
 		}
 
@@ -973,7 +976,7 @@ void TestFlash(uint8_t mode)
      if (buff == NULL )
      {
         my_free(buff);
-        log_d("my_malloc error\r\n");
+        //log_d("my_malloc error\r\n");
         return ;
      }
 

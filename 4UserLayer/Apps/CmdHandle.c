@@ -35,6 +35,7 @@
 #include "eth_cfg.h"
 #include "bsp_ds1302.h"
 #include "LocalData.h"
+#include "templateprocess.h"
 
 
 #define LOG_TAG    "CmdHandle"
@@ -501,6 +502,9 @@ SYSERRORCODE_E DelCardNo ( uint8_t* msgBuf )
     uint16_t len = 0;
     uint8_t rRet=1;
     uint8_t wRet=1;
+    uint8_t num=0;
+    int i = 0;  
+    uint8_t **cardArray;
     
     USERDATA_STRU userData = {0};
     memset(&userData,0x00,sizeof(USERDATA_STRU));    
@@ -510,35 +514,37 @@ SYSERRORCODE_E DelCardNo ( uint8_t* msgBuf )
         return STR_EMPTY_ERR;
     }
 
-    //1.保存卡号和用户ID
+    cardArray = (uint8_t **)my_malloc(20 * sizeof(uint8_t *));
+    
+    for (i = 0; i < 20; i++)
+    {
+        cardArray[i] = (uint8_t *)my_malloc(8 * sizeof(uint8_t));
+    }  
 
-//  2.日    期   : 2020年4月13日
-//    作    者   :  
-//    修改内容   : 这里需要取JSON数组，数组里包含所有要删除的人员
+    if(cardArray == NULL)
+    {
+        return STR_EMPTY_ERR;
+    }
+
+    //1.保存卡号和用户ID
     strcpy((char *)tmp,(const char *)GetJsonItem((const uint8_t *)msgBuf,(const uint8_t *)"userId",1));
     sprintf((char *)userId,"%08s",tmp);
-    log_d("userId = %s\r\n",userId);    
+    log_d("userId = %s\r\n",userId);
 
-
-    log_d("=================================\r\n");
-    rRet = readUserData(userId,USER_MODE,&userData);
-
-    log_d("ret = %d\r\n",rRet);    
-    log_d("userData.cardState = %d\r\n",userData.cardState);    
-    log_d("userData.userState = %d\r\n",userData.userState);
-    log_d("userData.cardNo = %s\r\n",userData.cardNo);
-    log_d("userData.userId = %s\r\n",userData.userId);
-    log_d("userData.accessFloor = %s\r\n",userData.accessFloor);
-    log_d("userData.defaultFloor = %d\r\n",userData.defaultFloor);
-    log_d("userData.startTime = %s\r\n",userData.startTime);
-
-
-    if(rRet == 0)
+    cardArray = GetJsonArray ((const uint8_t *)msgBuf,(const uint8_t *)"cardNo",&num);
+    
+    log_d("array num =%d\r\n",num); 
+    
+    //删除USERID
+    //wRet = delUserData(userId,USER_MODE);
+    
+    //删除CARDNO
+    for(i=0; i<num;i++)
     {
-        userData.head = TABLE_HEAD;
-        userData.cardState = CARD_DEL; //设置卡状态为0，删除卡
-        wRet = delUserData(userData,USER_MODE);
+        wRet = delUserData(cardArray[i],CARD_MODE);
+        log_d("cardArray %d = %s\r\n",i,cardArray[i]);        
     }
+    
     
     //2.查询以卡号为ID的记录，并删除
     if(wRet ==0)
@@ -798,25 +804,7 @@ static SYSERRORCODE_E DelCard( uint8_t* msgBuf )
     
     log_d("cardNo = %s，userId = %s\r\n",cardNo,userId);
 
-
-
-    log_d("=================================\r\n");
-    rRet = readUserData(cardNo,CARD_MODE,&userData);
-
-    log_d("ret = %d\r\n",rRet);    
-    log_d("userData.cardState = %d\r\n",userData.cardState);    
-    log_d("userData.userState = %d\r\n",userData.userState);
-    log_d("userData.cardNo = %s\r\n",userData.cardNo);
-    log_d("userData.userId = %s\r\n",userData.userId);
-    log_d("userData.accessFloor = %s\r\n",userData.accessFloor);
-    log_d("userData.defaultFloor = %d\r\n",userData.defaultFloor);
-    log_d("userData.startTime = %s\r\n",userData.startTime);
-
-
-    if(rRet == 0)
-    {
-        wRet = delUserData(userData,CARD_MODE);
-    }
+    wRet = delUserData(cardNo,CARD_MODE);
     
     //2.查询以卡号为ID的记录，并删除
     if(wRet ==0)
@@ -842,7 +830,7 @@ static SYSERRORCODE_E DelCard( uint8_t* msgBuf )
     log_d("=================================\r\n");
 
     memset(&userData,0x00,sizeof(userData));
-    rRet = readUserData(userId,USER_MODE,&userData);
+    rRet = readUserData(cardNo,CARD_MODE,&userData);
     log_d("ret = %d\r\n",rRet); 
     log_d("userData.cardState = %d\r\n",userData.cardState);    
     log_d("userData.userState = %d\r\n",userData.userState);
@@ -1074,27 +1062,27 @@ static SYSERRORCODE_E RemoteOptDev ( uint8_t* msgBuf )
         return STR_EMPTY_ERR;
     }
 
-    
-    strcpy((char *)accessFloor,(const char*)GetJsonItem((const uint8_t *)msgBuf,(const uint8_t *)"accessLayer",1));
-
-    result = modifyJsonItem(msgBuf,"status","1",1,buf);
-
-    if(result != NO_ERR)
+    if(gTemplateParam.templateCallingWay.isFace)
     {
-        return result;
-    }
-    
+        strcpy((char *)accessFloor,(const char*)GetJsonItem((const uint8_t *)msgBuf,(const uint8_t *)"accessLayer",1));
 
-    //这里需要发消息到消息队列，进行呼梯
-    SendToQueue(accessFloor,strlen((const char*)accessFloor),AUTH_MODE_REMOTE);
+        result = modifyJsonItem(msgBuf,"status","1",1,buf);
 
-    len = strlen((const char*)buf);
+        if(result != NO_ERR)
+        {
+            return result;
+        }
+        
 
-    log_d("RemoteOptDev len = %d,buf = %s\r\n",len,buf);
+        //这里需要发消息到消息队列，进行呼梯
+        SendToQueue(accessFloor,strlen((const char*)accessFloor),AUTH_MODE_REMOTE);
 
-    PublishData(buf,len); 
+        len = strlen((const char*)buf);
 
-    
+        log_d("RemoteOptDev len = %d,buf = %s\r\n",len,buf);
+
+        PublishData(buf,len); 
+    }    
     
     return result;
 
@@ -1172,17 +1160,21 @@ static SYSERRORCODE_E PCOptDev ( uint8_t* msgBuf )
     log_d("userData.startTime = %s\r\n",userData.startTime);
 
 
+
+log_d("===============CARD_MODE==================\r\n");
 TestFlash(CARD_MODE);
-log_d("=================================\r\n");
 
+
+log_d("===============USER_MODE==================\r\n");
 TestFlash(USER_MODE);
-log_d("=================================\r\n");
 
+
+log_d("===============CARD_DEL_MODE==================\r\n");
 TestFlash(CARD_DEL_MODE);
-log_d("=================================\r\n");
 
+
+log_d("===============USER_DEL_MODE==================\r\n");
 TestFlash(USER_DEL_MODE);
-log_d("=================================\r\n");
 
 
 

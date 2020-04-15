@@ -26,6 +26,7 @@
 #include "bsp_ds1302.h"
 
 
+
 #define LOG_TAG    "FloorData"
 #include "elog.h"
 
@@ -216,7 +217,7 @@ SYSERRORCODE_E authReader(READER_BUFF_STRU *pQueue,LOCAL_USER_STRU *localUserDat
 SYSERRORCODE_E authReader(READER_BUFF_STRU *pQueue,LOCAL_USER_STRU *localUserData)
 {
     SYSERRORCODE_E result = NO_ERR;
-    uint8_t key[9] = {0};  
+    uint8_t key[16] = {0};  
     uint8_t isFind = 0;
     
     USERDATA_STRU rUserData = {0};
@@ -238,8 +239,6 @@ SYSERRORCODE_E authReader(READER_BUFF_STRU *pQueue,LOCAL_USER_STRU *localUserDat
 
         log_d("qrCodeInfo->startTime= %s\r\n",qrCodeInfo.startTime); 
         log_d("qrCodeInfo->endTime= %s\r\n",qrCodeInfo.endTime);         
-        log_d("qrCodeInfo->qrStarttimeStamp= %s\r\n",qrCodeInfo.qrStarttimeStamp); 
-        log_d("qrCodeInfo->qrEndtimeStamp= %s\r\n",qrCodeInfo.qrEndtimeStamp); 
 
         log_d("isfind = %d\r\n",isFind);      
 
@@ -250,11 +249,10 @@ SYSERRORCODE_E authReader(READER_BUFF_STRU *pQueue,LOCAL_USER_STRU *localUserDat
             return NO_AUTHARITY_ERR;
         }        
 
-        timestamp_to_time(atoi(qrCodeInfo.qrStarttimeStamp));        
-        timestamp_to_time(atoi(qrCodeInfo.qrEndtimeStamp)); 
+
         
         localUserData->authMode = pQueue->authMode; 
-        localUserData->defaultFloor = qrCodeInfo.tagFloor;   
+        //localUserData->defaultFloor = qrCodeInfo.tagFloor;   
         localUserData->qrType = qrCodeInfo.type;   
         memcpy(localUserData->qrID,qrCodeInfo.qrID,QRID_LEN); 
         memcpy(localUserData->startTime,qrCodeInfo.startTime,TIME_LEN);
@@ -278,16 +276,16 @@ SYSERRORCODE_E authReader(READER_BUFF_STRU *pQueue,LOCAL_USER_STRU *localUserDat
             return NO_AUTHARITY_ERR;
         } 
         
-        localUserData->qrType = 4;
+        localUserData->qrType = 2;
         localUserData->authMode = pQueue->authMode; 
         localUserData->defaultFloor = rUserData.defaultFloor;
         memcpy(localUserData->userId,rUserData.userId,CARD_USER_LEN);        
-        memcpy(localUserData->cardNo,rUserData.cardNo,CARD_USER_LEN);      
-        memcpy(localUserData->timeStamp,time_to_timestamp(),TIMESTAMP_LEN);
-        log_d("localUserData->timeStamp = %s\r\n",localUserData->timeStamp);        
+        memcpy(localUserData->cardNo,rUserData.cardNo,CARD_USER_LEN); 
         memcpy(localUserData->accessFloor,rUserData.accessFloor,FLOOR_ARRAY_LENGTH);    
         memcpy(localUserData->startTime,rUserData.startTime,TIME_LENGTH);
-        memcpy(localUserData->endTime,rUserData.endTime,TIME_LENGTH);            
+        memcpy(localUserData->endTime,rUserData.endTime,TIME_LENGTH);  
+        memcpy(localUserData->timeStamp,time_to_timestamp(),TIMESTAMP_LEN);
+        log_d("localUserData->timeStamp = %s\r\n",localUserData->timeStamp);         
     }
 
     log_d("localUserData->cardNo = %s\r\n",localUserData->cardNo);

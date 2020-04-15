@@ -503,6 +503,11 @@
               <FileType>1</FileType>
               <FilePath>..\4UserLayer\Apps\LocalData.c</FilePath>
             </File>
+            <File>
+              <FileName>calcDevNO.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\4UserLayer\Apps\calcDevNO.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>

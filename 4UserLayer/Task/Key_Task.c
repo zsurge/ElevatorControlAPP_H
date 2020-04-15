@@ -122,7 +122,7 @@ static void vTaskKey(void *pvParameters)
 //                    bsp_ds1302_mdifytime("2020-03-31 10:18:20");
 
                     log_d("bsp_ds1302_readtime = %s\r\n",bsp_ds1302_readtime());
-
+                    ef_set_env_blob("device_sn","88888888",8); 
                     time_to_timestamp();
                     ef_print_env();
 

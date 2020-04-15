@@ -22,11 +22,13 @@
  *----------------------------------------------*/
 #include "jsonUtils.h"
 #include "version.h"
+#include "calcDevNO.h"
 #include "bsp_rtc.h"
 #include "eth_cfg.h"
 #include "LocalData.h"
 #include "templateprocess.h"
 #include "malloc.h"
+
 
 
 
@@ -496,9 +498,11 @@ uint8_t packetPayload(LOCAL_USER_STRU *localUserData,uint8_t *descJson)
     }
 
     cJSON_AddStringToObject(root, "deviceCode", gMqttDevSn.sn);
+    log_d("deviceCode = %s",gMqttDevSn.sn);
+    
     cJSON_AddItemToObject(root, "data", dataObj);
 
-    if(localUserData->qrType == 4)
+    if(localUserData->qrType == 2 )
     {    
         cJSON_AddStringToObject(root, "commandCode","3007");
         cJSON_AddStringToObject(dataObj, "userId", localUserData->userId);  
@@ -506,9 +510,10 @@ uint8_t packetPayload(LOCAL_USER_STRU *localUserData,uint8_t *descJson)
         cJSON_AddStringToObject(dataObj, "cardNo", localUserData->cardNo);
         cJSON_AddNumberToObject(dataObj, "callType", localUserData->authMode); 
         cJSON_AddNumberToObject(dataObj, "status", ON_LINE);   
-        cJSON_AddNumberToObject(dataObj, "type",CALL_OK);
+        cJSON_AddNumberToObject(dataObj, "callState",CALL_OK);
         cJSON_AddStringToObject(dataObj, "callElevatorTime",(const char*)bsp_ds1302_readtime());        
         cJSON_AddStringToObject(dataObj, "timeStamp",localUserData->timeStamp);
+        cJSON_AddNumberToObject(dataObj, "type",localUserData->qrType);
     }
     else
     {
@@ -791,7 +796,7 @@ ERROR:
 }
 
 
-
+#if 0
 uint8_t parseQrCode(uint8_t *jsonBuff,QRCODE_INFO_STRU *qrCodeInfo)
 {
     cJSON *root ,*devArray,*tagFloorArray,*tmpArray;
@@ -888,7 +893,7 @@ uint8_t parseQrCode(uint8_t *jsonBuff,QRCODE_INFO_STRU *qrCodeInfo)
     strcpy(qrCodeInfo->qrEndtimeStamp,tmpArray->valuestring);
     log_d("qrCodeInfo->qrEndtimeStamp= %s\r\n",qrCodeInfo->qrEndtimeStamp); 
     
-    tmpArray = cJSON_GetObjectItem(root, "qrId");
+    tmpArray = cJSON_GetObjectItem(root, "qI");
     strcpy(qrCodeInfo->qrID,tmpArray->valuestring);
     log_d("qrCodeInfo->qrID= %s\r\n",qrCodeInfo->qrID); 
     
@@ -897,6 +902,189 @@ uint8_t parseQrCode(uint8_t *jsonBuff,QRCODE_INFO_STRU *qrCodeInfo)
     return isFind;
 
 }
+#endif
+
+uint8_t parseQrCode(uint8_t *jsonBuff,QRCODE_INFO_STRU *qrCodeInfo)
+{
+    cJSON *root ,*tmpArray;
+    int localSn = 11111111;
+    uint8_t buf[300] = {0};
+    uint8_t isFind = 0;
+    
+    if(!jsonBuff || !qrCodeInfo)
+    {
+        cJSON_Delete(root);
+        log_d("error json data\r\n");
+        return STR_EMPTY_ERR;
+    }    
+    
+    root = cJSON_Parse((char *)jsonBuff);    //解析数据包
+    if (!root)  
+    {  
+        cJSON_Delete(root);
+        log_d("Error before: [%s]\r\n",cJSON_GetErrorPtr());  
+        return CJSON_PARSE_ERR;
+    } 
+
+
+    tmpArray = cJSON_GetObjectItem(root, "qS");
+    strcpy(qrCodeInfo->startTime,tmpArray->valuestring);
+    log_d("qrCodeInfo->startTime= %s\r\n",qrCodeInfo->startTime); 
+    
+    tmpArray = cJSON_GetObjectItem(root, "qE");
+    strcpy(qrCodeInfo->endTime,tmpArray->valuestring);
+    log_d("qrCodeInfo->endTime= %s\r\n",qrCodeInfo->endTime); 
+    
+    tmpArray = cJSON_GetObjectItem(root, "qI");
+    strcpy(qrCodeInfo->qrID,tmpArray->valuestring);
+    log_d("qrCodeInfo->qrID= %s\r\n",qrCodeInfo->qrID); 
+
+    tmpArray = cJSON_GetObjectItem(root, "t");
+    qrCodeInfo->type = tmpArray->valueint;
+    log_d("qrCodeInfo->type= %d\r\n",qrCodeInfo->type); 
+    
+    tmpArray = cJSON_GetObjectItem(root, "f1");
+    strcpy(qrCodeInfo->accessFloor,parseAccessFloor(tmpArray->valuestring));
+
+    qrCodeInfo->defaultFloor = qrCodeInfo->accessFloor[0];
+    log_d("qrCodeInfo->defaultFloor = %d\r\n",qrCodeInfo->defaultFloor);
+    
+    memset(buf,0x00,sizeof(buf));
+    tmpArray = cJSON_GetObjectItem(root, "d1");
+    strcpy(buf,tmpArray->valuestring);
+    log_d("d1 = %s\r\n",buf);  
+    if(findDev(buf,1) == 1)
+    {
+        isFind =1;
+        goto QR_END;
+    }
+
+    memset(buf,0x00,sizeof(buf));
+    tmpArray = cJSON_GetObjectItem(root, "d2");
+    strcpy(buf,tmpArray->valuestring);
+    log_d("d2 = %s\r\n",buf); 
+    if(findDev(buf,2) == 1)
+    {
+        isFind =1;
+        goto QR_END;
+    }
+    
+    memset(buf,0x00,sizeof(buf));
+    tmpArray = cJSON_GetObjectItem(root, "d3");
+    strcpy(buf,tmpArray->valuestring);
+    log_d("d3= %s\r\n",buf); 
+    if(findDev(buf,3) == 1)
+    {
+        isFind =1;
+        goto QR_END;
+    }
+
+    
+    memset(buf,0x00,sizeof(buf));
+    tmpArray = cJSON_GetObjectItem(root, "d4");
+    strcpy(buf,tmpArray->valuestring);
+    log_d("d4 = %s\r\n",buf);
+    if(findDev(buf,4) == 1)
+    {
+        isFind =1;
+        goto QR_END;
+    }    
+
+
+    memset(buf,0x00,sizeof(buf));
+    tmpArray = cJSON_GetObjectItem(root, "d5");
+    strcpy(buf,tmpArray->valuestring);
+    log_d("d5 = %s\r\n",buf);
+    if(findDev(buf,5) == 1)
+    {
+       isFind =1;
+    }    
+  
+QR_END:    
+    cJSON_Delete(root);
+    
+    return isFind;
+
+}
+
+
+
+
+uint8_t** GetJsonArray ( const uint8_t* jsonBuff,const uint8_t* item,uint8_t *num)
+{
+    uint8_t** result; 
+    cJSON* root,*json_item,*dataObj;
+    cJSON* arrayElement;
+    int tmpArrayNum = 0;
+    int i = 0;
+    
+    root = cJSON_Parse ( ( char* ) jsonBuff );    //解析数据包
+    
+    if ( !root )
+    {
+        log_d ( "Error before: [%s]\r\n",cJSON_GetErrorPtr() );
+        cJSON_Delete(root);
+        return NULL;
+    }
+    else
+    {
+        //根据协议，默认所有的子项是data
+        dataObj = cJSON_GetObjectItem ( root, "data" );  
+        json_item = cJSON_GetObjectItem ( dataObj, item );        
+
+        if( json_item->type == cJSON_Array )
+        {
+            tmpArrayNum = cJSON_GetArraySize(json_item);
+
+            //每个人最多20张卡
+            if(tmpArrayNum > 20)
+            {
+                tmpArrayNum = 20;
+            }
+
+            result = (uint8_t **)my_malloc(tmpArrayNum*sizeof(uint8_t *));
+
+            if(result == NULL)
+            {
+                log_d("create array error\r\n");
+                cJSON_Delete(root);
+                return NULL;                
+            }
+
+            *num = tmpArrayNum;
+            
+            for (i = 0; i < tmpArrayNum; i++)
+            {
+                result[i] = (uint8_t *)my_malloc(8 * sizeof(uint8_t));
+            }            
+
+            for(i=0;i<tmpArrayNum;i++)
+            {
+                arrayElement = cJSON_GetArrayItem(json_item, i);                 
+                strcpy (result[i], arrayElement->valuestring ); 
+                log_d("result :%d = %s\r\n",i,result[i]); 
+            }
+
+        }
+        else
+        {
+            log_d ( "can't parse json buff\r\n" );
+            cJSON_Delete(root);
+            return NULL;
+        }
+
+    }
+
+    for (i = 0; i < tmpArrayNum; i++)
+    {
+        my_free(result[i]);
+    }     
+    my_free(result);        
+    
+    cJSON_Delete(root);
+    return result;
+}
+
 
 
 

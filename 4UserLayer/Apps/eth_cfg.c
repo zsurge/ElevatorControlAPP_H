@@ -45,7 +45,7 @@ void ReadLocalDevSn ( void )
 {
 	char sn_flag[5] = {0};
 	char mac[6+1] = {0};
-	char id[4+1] = {0};
+	char id[8] = {0};
 	char temp[32] = {0};
 	char asc[12+1] = {0};
 	char remote_sn[20+1] = {0};
@@ -63,13 +63,18 @@ void ReadLocalDevSn ( void )
 		ef_get_env_blob("device_sn",id,sizeof ( id ), NULL ); 
 		if ( read_len == 20 )
 		{
+		    strcpy ( gMqttDevSn.deviceSn,id);
+		    
 			log_d ( "sn = %s,len = %d\r\n",remote_sn,read_len );
 			strcpy ( gMqttDevSn.sn,remote_sn );
+			log_d("1 deviceCode = %s\r\n",gMqttDevSn.sn);
 			strcpy ( gMqttDevSn.publish,DEVICE_PUBLISH );
 			strcpy ( gMqttDevSn.subscribe,DEVICE_SUBSCRIBE );
-			strcat ( gMqttDevSn.subscribe,remote_sn );
-			strcpy ( gMqttDevSn.deviceSn,id);
+			strcat ( gMqttDevSn.subscribe,remote_sn );			
 		}
+
+		 log_d("2 deviceCode = %s\r\n",gMqttDevSn.sn);
+		 log_d("gMqttDevSn.deviceSn = %s\r\n",gMqttDevSn.deviceSn);
 	}
 	else
 	{
@@ -85,6 +90,7 @@ void ReadLocalDevSn ( void )
 		strcpy ( gMqttDevSn.publish,DEV_FACTORY_PUBLISH );
 		strcpy ( gMqttDevSn.subscribe,DEV_FACTORY_SUBSCRIBE );
 		strcat ( gMqttDevSn.subscribe,gMqttDevSn.sn );
+		memcpy ( gMqttDevSn.deviceSn,gMqttDevSn.sn,8);
 	}
 
 
