@@ -71,7 +71,6 @@ static void vTaskKey(void *pvParameters)
     
 	uint8_t ucKeyCode;
 	uint8_t pcWriteBuffer[1024];
-    uint16_t index = 0;
 
 
     uint32_t g_memsize;

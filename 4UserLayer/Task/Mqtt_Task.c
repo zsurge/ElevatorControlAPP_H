@@ -20,7 +20,7 @@
  * 包含头文件                                   *
  *----------------------------------------------*/
 #include "Mqtt_Task.h"
-
+#include "mqtt_app.h"
 
 /*----------------------------------------------*
  * 宏定义                                       *
@@ -58,7 +58,6 @@ void CreateMqttTask(void)
 
 static void vTaskMQTT(void *pvParameters)
 {
-    printf("start vLwipComTask\r\n");
     mqtt_thread();
 }
 

@@ -10,6 +10,8 @@
 #include "stm32f4xx.h"
 #include "bsp_rtc.h"
 #include "stdio.h"
+#include "string.h"
+#include "stdlib.h"
 
 /**
   * @brief  设置时间和日期
@@ -289,7 +291,7 @@ uint8_t *GetLocalTime(void)
 {
     static uint8_t localTime[20] = {0};
     
-	uint8_t Rtctmp=0;
+	
 
 	RTC_TimeTypeDef RTC_TimeStructure;
 	RTC_DateTypeDef RTC_DateStructure;
@@ -300,7 +302,7 @@ uint8_t *GetLocalTime(void)
 
 	//液晶显示日期
 	//先把要显示的数据用sprintf函数转换为字符串，然后才能用液晶显示函数显示
-	sprintf ( localTime,"20%0.2d-%0.2d-%0.2d %0.2d:%0.2d:%0.2d",
+	sprintf ((char *)localTime,"20%0.2d-%0.2d-%0.2d %0.2d:%0.2d:%0.2d",
 	          RTC_DateStructure.RTC_Year,
 	          RTC_DateStructure.RTC_Month,
 	          RTC_DateStructure.RTC_Date,

@@ -50,6 +50,10 @@
 #define QUEUE_BUF_LEN   512
 
 
+
+
+
+
 #pragma pack(1)
 typedef struct
 {
@@ -70,8 +74,9 @@ extern uint32_t gCurTick;
 
 
 
+
 //发送消息到服务器
-int PublishData(uint8_t *payload_out,uint16_t payload_out_len); 
+int mqttSendData(uint8_t *payload_out,uint16_t payload_out_len); 
 
 SYSERRORCODE_E exec_proc ( char* cmd_id, uint8_t *msg_buf );
 

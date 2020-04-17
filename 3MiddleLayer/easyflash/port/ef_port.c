@@ -43,6 +43,7 @@ static const ef_env default_env_set[] =
    {"up_status","000000"},
    {"remote_sn","000000"},
    {"sn_flag","0000"},
+   {"DeviceState","0001"},
 };
 
 

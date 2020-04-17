@@ -88,7 +88,6 @@ void calcMac(unsigned char *mac);
 
 void Insertchar(char *src,char*desc,char c);
 
-uint32_t hex2int( char *str);
 
 uint8_t compareArray(uint8_t *array1,uint8_t *array2,int len);
 

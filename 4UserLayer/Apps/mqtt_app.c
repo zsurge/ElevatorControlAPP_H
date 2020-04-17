@@ -29,22 +29,22 @@
 #include "elog.h"
 static void ackUp ( void );
 
-static void showTask ( void );
+//static void showTask ( void );
 
-static void showTask ( void )
-{
-	uint8_t pcWriteBuffer[1024] = {0};
+//static void showTask ( void )
+//{
+//	uint8_t pcWriteBuffer[1024] = {0};
 
-	printf ( "=================================================\r\n" );
-	printf ( "任务名      任务状态 优先级   剩余栈 任务序号\r\n" );
-	vTaskList ( ( char* ) &pcWriteBuffer );
-	printf ( "%s\r\n", pcWriteBuffer );
+//	printf ( "=================================================\r\n" );
+//	printf ( "任务名      任务状态 优先级   剩余栈 任务序号\r\n" );
+//	vTaskList ( ( char* ) &pcWriteBuffer );
+//	printf ( "%s\r\n", pcWriteBuffer );
 
-	printf ( "\r\n任务名       运行计数         使用率\r\n" );
-	vTaskGetRunTimeStats ( ( char* ) &pcWriteBuffer );
-	printf ( "%s\r\n", pcWriteBuffer );
-	log_d ( "当前动态内存剩余大小 = %d字节\r\n", xPortGetFreeHeapSize() );
-}
+//	printf ( "\r\n任务名       运行计数         使用率\r\n" );
+//	vTaskGetRunTimeStats ( ( char* ) &pcWriteBuffer );
+//	printf ( "%s\r\n", pcWriteBuffer );
+//	log_d ( "当前动态内存剩余大小 = %d字节\r\n", xPortGetFreeHeapSize() );
+//}
 
 void mqtt_thread ( void )
 {
@@ -104,6 +104,7 @@ MQTT_START:
     if(gMySock < 0)
     {
         log_d ( "MQTT>>connect server error...\r\n" );  
+        gConnectStatus = 0;
         goto MQTT_reconnect;
     }
 
@@ -137,9 +138,12 @@ MQTT_START:
 
         if(gUpdateDevSn == 1)
         {
-           msgtypes = CONNECT;
-           gUpdateDevSn = 0;
-        }        
+            gUpdateDevSn = 0;
+            msgtypes = CONNECT; 
+			gConnectStatus = 0;
+            goto MQTT_reconnect;            
+        }       
+
 
 		switch ( msgtypes )
 		{
@@ -154,7 +158,7 @@ MQTT_START:
 				else
 				{
 					log_d ( "send CONNECT failed\r\n" );
-					msgtypes = 1; 
+					msgtypes = CONNECT; 
                     goto MQTT_reconnect;
 				}
 				log_d ( "step = %d,MQTT concet to server!\r\n",CONNECT );
@@ -165,7 +169,8 @@ MQTT_START:
 				if ( MQTTDeserialize_connack ( &sessionPresent, &connack_rc, ( unsigned char* ) buf, buflen ) != 1 || connack_rc != 0 )	//收到回执
 				{
 					log_d ( "Unable to connect, return code %d\r\n", connack_rc );		//回执不一致，连接失败
-					msgtypes = 1; 
+					msgtypes = CONNECT; 
+					gConnectStatus = 0;
 		            goto MQTT_reconnect;
 				}
 				else
@@ -256,9 +261,9 @@ MQTT_START:
                     len = MQTTSerialize_ack ((unsigned char*)buf,buflen, PUBREC, dup, msgid );
                     rc = transport_sendPacketBuffer(gMySock, (unsigned char*)buf, len);	
                     if(rc == len)
-                        printf("send PUBREC Successfully\r\n");
+                        log_d("send PUBREC Successfully\r\n");
                     else
-                        printf("send PUBREC failed\r\n");  
+                        log_d("send PUBREC failed\r\n");  
                 }               
 
 				msgtypes = 0;
@@ -290,14 +295,15 @@ MQTT_START:
 
 				if ( rc == len )
 				{
-					printf ( "send PINGREQ Successfully\r\n" );
+					log_d ( "send PINGREQ Successfully\r\n" );
                     msgtypes = 0; 
 				}
 				else
 				{
 					log_d ( "send PINGREQ failed,\r\n");
 
-                    msgtypes = 1; 
+                    msgtypes = CONNECT; 
+                    gConnectStatus = 0;
                     goto MQTT_reconnect;                    
 				}				            
 				break;

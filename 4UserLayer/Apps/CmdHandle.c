@@ -62,6 +62,7 @@ int	gMySock = 0;
 uint8_t gUpdateDevSn = 0; 
 
 uint32_t gCurTick = 0;
+uint8_t gDeviceStateFlag = DEVICE_ENABLE;
 
 
 
@@ -202,7 +203,7 @@ static SYSERRORCODE_E SendToQueue(uint8_t *buf,int len,uint8_t authMode)
 }
 
 
-int PublishData(uint8_t *payload_out,uint16_t payload_out_len)
+int mqttSendData(uint8_t *payload_out,uint16_t payload_out_len)
 {   
 	MQTTString topicString = MQTTString_initializer;
     
@@ -252,34 +253,34 @@ int PublishData(uint8_t *payload_out,uint16_t payload_out_len)
 
 
 //这个是为了方便服务端调试，给写的默认返回的函数
-static SYSERRORCODE_E ReturnDefault ( uint8_t* msgBuf ) //返回默认消息
-{
-        SYSERRORCODE_E result = NO_ERR;
-        uint8_t buf[MQTT_TEMP_LEN] = {0};
-        uint16_t len = 0;
-    
-        if(!msgBuf)
-        {
-            return STR_EMPTY_ERR;
-        }
-    
-        result = modifyJsonItem(packetBaseJson(msgBuf),"status","1",1,buf);      
-        result = modifyJsonItem(packetBaseJson(buf),"UnknownCommand","random return",1,buf);   
-    
-        if(result != NO_ERR)
-        {
-            return result;
-        }
-    
-        len = strlen((const char*)buf);
-    
-        log_d("OpenDoor len = %d,buf = %s\r\n",len,buf);
-    
-        PublishData(buf,len);
-        
-        return result;
+//static SYSERRORCODE_E ReturnDefault ( uint8_t* msgBuf ) //返回默认消息
+//{
+//        SYSERRORCODE_E result = NO_ERR;
+//        uint8_t buf[MQTT_TEMP_LEN] = {0};
+//        uint16_t len = 0;
+//    
+//        if(!msgBuf)
+//        {
+//            return STR_EMPTY_ERR;
+//        }
+//    
+//        result = modifyJsonItem(packetBaseJson(msgBuf),"status","1",1,buf);      
+//        result = modifyJsonItem(packetBaseJson(buf),"UnknownCommand","random return",1,buf);   
+//    
+//        if(result != NO_ERR)
+//        {
+//            return result;
+//        }
+//    
+//        len = strlen((const char*)buf);
+//    
+//        log_d("OpenDoor len = %d,buf = %s\r\n",len,buf);
+//    
+//        mqttSendData(buf,len);
+//        
+//        return result;
 
-}
+//}
 
 
 SYSERRORCODE_E OpenDoor ( uint8_t* msgBuf )
@@ -305,7 +306,7 @@ SYSERRORCODE_E OpenDoor ( uint8_t* msgBuf )
 
     log_d("OpenDoor len = %d,buf = %s\r\n",len,buf);
 
-    PublishData(buf,len);
+    mqttSendData(buf,len);
     
 	return result;
 }
@@ -386,7 +387,7 @@ static SYSERRORCODE_E DelUserId( uint8_t* msgBuf )
 
     len = strlen((const char*)buf);
 
-    PublishData(buf,len);    
+    mqttSendData(buf,len);    
 
     log_d("=================================\r\n");
 
@@ -428,14 +429,14 @@ SYSERRORCODE_E AddCardNo ( uint8_t* msgBuf )
     //1.保存用户ID
     memset(userId,0x00,sizeof(userId));
     strcpy((char *)userId,(const char*)GetJsonItem((const uint8_t *)msgBuf,(const uint8_t *)"userId",1));
-    sprintf(userData.userId,"%08s",userId);
-    log_d("userData.userId = %s,len = %d\r\n",userData.userId,strlen(userData.userId));
+    sprintf((char*)userData.userId,"%08s",userId);
+    log_d("userData.userId = %s,len = %d\r\n",userData.userId,strlen((const char*)userData.userId));
 
     //2.保存卡号
     memset(cardNo,0x00,sizeof(cardNo));
     strcpy((char *)cardNo,(const char *)GetJsonItem((const uint8_t *)msgBuf,(const uint8_t *)"cardNo",1));
 //    sprintf(userData.cardNo,"%08s",cardNo);
-    log_d("cardNo = %s,len = %d\r\n",cardNo,strlen(cardNo));
+    log_d("cardNo = %s,len = %d\r\n",cardNo,strlen((const char*)cardNo));
 
     log_d("=================================\r\n");
     ret  = readUserData(userData.userId,USER_MODE,&userData);
@@ -450,7 +451,7 @@ SYSERRORCODE_E AddCardNo ( uint8_t* msgBuf )
 
     if(ret == 0)
     {
-        sprintf(userData.cardNo,"%08s",cardNo);
+        sprintf((char*)userData.cardNo,"%08s",cardNo);
         userData.head = TABLE_HEAD;
         userData.cardState = CARD_VALID;
         ret = writeUserData(userData,CARD_MODE);  
@@ -477,7 +478,7 @@ SYSERRORCODE_E AddCardNo ( uint8_t* msgBuf )
     
     len = strlen((const char*)buf);
     
-    PublishData(buf,len); 
+    mqttSendData(buf,len); 
 
     ret  = readUserData(userData.cardNo,CARD_MODE,&userData);
     log_d("ret = %d\r\n",ret);    
@@ -565,7 +566,7 @@ SYSERRORCODE_E DelCardNo ( uint8_t* msgBuf )
 
     len = strlen((const char*)buf);
 
-    PublishData(buf,len);    
+    mqttSendData(buf,len);    
 
     log_d("=================================\r\n");  
     
@@ -632,9 +633,9 @@ SYSERRORCODE_E getRemoteTime ( uint8_t* msgBuf )
 
     len = strlen((const char*)buf);
 
-    log_d("OpenDoor len = %d,buf = %s\r\n",len,buf);
+    log_d("getRemoteTime len = %d,buf = %s\r\n",len,buf);
 
-    PublishData(buf,len);
+    mqttSendData(buf,len);
     
 	return result;
 
@@ -661,7 +662,7 @@ SYSERRORCODE_E UpgradeAck ( uint8_t* msgBuf )
 
     log_d("OpenDoor len = %d,buf = %s\r\n",len,buf);
 
-    PublishData(buf,len);
+    mqttSendData(buf,len);
     
 	return result;
 
@@ -684,7 +685,9 @@ SYSERRORCODE_E EnableDev ( uint8_t* msgBuf )
     if(result != NO_ERR)
     {
         return result;
-    }
+    }    
+
+     SaveDevState(DEVICE_ENABLE);
 
     //这里需要发消息到消息队列，启用
     SendToQueue(type,strlen((const char*)type),AUTH_MODE_BIND);
@@ -693,7 +696,7 @@ SYSERRORCODE_E EnableDev ( uint8_t* msgBuf )
 
     log_d("EnableDev len = %d,buf = %s\r\n",len,buf);
 
-    PublishData(buf,len);
+    mqttSendData(buf,len);
 
     return result;
 
@@ -720,6 +723,8 @@ SYSERRORCODE_E DisableDev ( uint8_t* msgBuf )
         return result;
     }
 
+    SaveDevState(DEVICE_DISABLE);
+    
     //这里需要发消息到消息队列，禁用
     SendToQueue(type,strlen((const char*)type),AUTH_MODE_UNBIND);
     
@@ -727,7 +732,7 @@ SYSERRORCODE_E DisableDev ( uint8_t* msgBuf )
 
     log_d("DisableDev len = %d,buf = %s\r\n",len,buf);
 
-    PublishData(buf,len);
+    mqttSendData(buf,len);
 
     return result;
 
@@ -764,7 +769,7 @@ SYSERRORCODE_E GetDevInfo ( uint8_t* msgBuf )
 
     log_d("GetDevInfo len = %d,buf = %s\r\n",len,buf);
 
-    PublishData(buf,len);
+    mqttSendData(buf,len);
     
     my_free(identification);
     
@@ -795,12 +800,12 @@ static SYSERRORCODE_E DelCard( uint8_t* msgBuf )
     //1.获取卡号和用户ID
     memset(tmp,0x00,sizeof(tmp));
     strcpy((char *)tmp,(const char *)GetJsonItem((const uint8_t *)msgBuf,(const uint8_t *)"userId",1));   
-    sprintf(userId,"%08s",tmp); 
+    sprintf((char *)userId,"%08s",tmp); 
     log_d("userId = %s\r\n",userId);
 
     memset(tmp,0x00,sizeof(tmp));
     strcpy((char *)tmp,(const char *)GetJsonItem((const uint8_t *)msgBuf,(const uint8_t *)"cardNo",1));
-    sprintf(cardNo,"%08s",tmp);   
+    sprintf((char *)cardNo,"%08s",tmp);   
     
     log_d("cardNo = %s，userId = %s\r\n",cardNo,userId);
 
@@ -825,7 +830,7 @@ static SYSERRORCODE_E DelCard( uint8_t* msgBuf )
 
     len = strlen((const char*)buf);
 
-    PublishData(buf,len);    
+    mqttSendData(buf,len);    
 
     log_d("=================================\r\n");
 
@@ -870,7 +875,7 @@ SYSERRORCODE_E GetTemplateParam ( uint8_t* msgBuf )
 
     log_d("GetParam len = %d,buf = %s\r\n",len,buf);
 
-    PublishData(buf,len);
+    mqttSendData(buf,len);
 
     //保存模板数据
     saveTemplateParam(msgBuf);
@@ -908,7 +913,7 @@ static SYSERRORCODE_E GetServerIp ( uint8_t* msgBuf )
 
     len = strlen((const char*)buf);
 
-    PublishData(buf,len);
+    mqttSendData(buf,len);
     
 	return result;
 
@@ -939,8 +944,8 @@ static SYSERRORCODE_E GetUserInfo ( uint8_t* msgBuf )
     //1.保存以userID为key的表
     memset(tmp,0x00,sizeof(tmp));
     strcpy((char *)tmp,(const char*)GetJsonItem((const uint8_t *)msgBuf,(const uint8_t *)"userId",1));
-    sprintf(tempUserData.userId,"%08s",tmp);
-    log_d("tempUserData.userId = %s,len = %d\r\n",tempUserData.userId,strlen(tempUserData.userId));
+    sprintf((char *)tempUserData.userId,"%08s",tmp);
+    log_d("tempUserData.userId = %s,len = %d\r\n",tempUserData.userId,strlen((const char *)tempUserData.userId));
     
     //3.保存楼层权限
     strcpy((char *)tempUserData.accessFloor,  (const char*)GetJsonItem((const uint8_t *)msgBuf,(const uint8_t *)"accessLayer",1));
@@ -949,7 +954,7 @@ static SYSERRORCODE_E GetUserInfo ( uint8_t* msgBuf )
     //4.保存默认楼层
     memset(tmp,0x00,sizeof(tmp));
     strcpy((char *)tmp,  (const char*)GetJsonItem((const uint8_t *)msgBuf,(const uint8_t *)"defaultLayer",1));
-    tempUserData.defaultFloor = atoi(tmp);
+    tempUserData.defaultFloor = atoi((const char*)tmp);
     log_d("tempUserData.defaultFloor = %d\r\n",tempUserData.defaultFloor);
 
     //5.保存开始时间
@@ -966,14 +971,14 @@ static SYSERRORCODE_E GetUserInfo ( uint8_t* msgBuf )
 
     if(strlen((const char *)tmp) > CARD_NO_LEN)
     {
-        split(tmp,",",multipleCard,&multipleCardNum); //调用函数进行分割 
+        split((char *)tmp,",",multipleCard,&multipleCardNum); //调用函数进行分割 
         log_d("multipleCardNum = %d\r\n",multipleCardNum);
         log_d("m0 = %s,m1= %s\r\n",multipleCard[0],multipleCard[1]);            
         
     }
     else
     {
-        sprintf(tempUserData.cardNo,"%08s",tmp);
+        sprintf((char *)tempUserData.cardNo,"%08s",tmp);
     }    
 
     if(multipleCardNum > 1)
@@ -1043,7 +1048,7 @@ static SYSERRORCODE_E GetUserInfo ( uint8_t* msgBuf )
 
     len = strlen((const char*)buf);
 
-    PublishData(buf,len);    
+    mqttSendData(buf,len);    
     
 	return result;
 
@@ -1062,7 +1067,7 @@ static SYSERRORCODE_E RemoteOptDev ( uint8_t* msgBuf )
         return STR_EMPTY_ERR;
     }
 
-    if(gTemplateParam.templateCallingWay.isFace)
+    if(gTemplateParam.templateCallingWay.isFace && gDeviceStateFlag == DEVICE_ENABLE)
     {
         strcpy((char *)accessFloor,(const char*)GetJsonItem((const uint8_t *)msgBuf,(const uint8_t *)"accessLayer",1));
 
@@ -1081,7 +1086,7 @@ static SYSERRORCODE_E RemoteOptDev ( uint8_t* msgBuf )
 
         log_d("RemoteOptDev len = %d,buf = %s\r\n",len,buf);
 
-        PublishData(buf,len); 
+        mqttSendData(buf,len); 
     }    
     
     return result;
@@ -1122,7 +1127,7 @@ static SYSERRORCODE_E PCOptDev ( uint8_t* msgBuf )
 
     log_d("RemoteOptDev len = %d,buf = %s\r\n",len,buf);
 
-    PublishData(buf,len); 
+    mqttSendData(buf,len); 
     
 //    userData.head = TABLE_HEAD;
 //    userData.authMode =2;
@@ -1217,7 +1222,7 @@ static SYSERRORCODE_E ClearUserInof ( uint8_t* msgBuf )
         return STR_EMPTY_ERR;
     }
 
-    result = modifyJsonItem((const uint8_t *)msgBuf,(const uint8_t *)"status","1",1,buf);
+    result = modifyJsonItem((const uint8_t *)msgBuf,(const uint8_t *)"status",(const uint8_t *)"1",1,buf);
 
     if(result != NO_ERR)
     {
@@ -1228,7 +1233,7 @@ static SYSERRORCODE_E ClearUserInof ( uint8_t* msgBuf )
 
     log_d("ClearUserInof len = %d,buf = %s\r\n",len,buf);
 
-    PublishData(buf,len);
+    mqttSendData(buf,len);
 
 
     //清空用户信息
@@ -1247,8 +1252,6 @@ static SYSERRORCODE_E AddSingleUser( uint8_t* msgBuf )
     USERDATA_STRU tempUserData = {0};
     uint8_t ret = 1;
     uint8_t tmp[128] = {0};
-    char *multipleCard[20] = {0};
-    int multipleCardNum = 0;
 
     memset(&tempUserData,0x00,sizeof(USERDATA_STRU));
 
@@ -1263,8 +1266,8 @@ static SYSERRORCODE_E AddSingleUser( uint8_t* msgBuf )
     //1.保存以userID为key的表
     memset(tmp,0x00,sizeof(tmp));
     strcpy((char *)tmp,(const char*)GetJsonItem((const uint8_t *)msgBuf,(const uint8_t *)"userId",1));
-    sprintf(tempUserData.userId,"%08s",tmp);
-    log_d("tempUserData.userId = %s,len = %d\r\n",tempUserData.userId,strlen(tempUserData.userId));
+    sprintf((char *)tempUserData.userId,"%08s",tmp);
+    log_d("tempUserData.userId = %s,len = %d\r\n",tempUserData.userId,strlen((const char*)tempUserData.userId));
 
     
     
@@ -1275,7 +1278,7 @@ static SYSERRORCODE_E AddSingleUser( uint8_t* msgBuf )
     //4.保存默认楼层
     memset(tmp,0x00,sizeof(tmp));
     strcpy((char *)tmp,  (const char*)GetJsonItem((const uint8_t *)msgBuf,(const uint8_t *)"defaultLayer",1));
-    tempUserData.defaultFloor = atoi(tmp);
+    tempUserData.defaultFloor = atoi((const char*)tmp);
     log_d("tempUserData.defaultFloor = %d\r\n",tempUserData.defaultFloor);
 
     //5.保存开始时间
@@ -1296,7 +1299,7 @@ static SYSERRORCODE_E AddSingleUser( uint8_t* msgBuf )
     }   
 
     
-    log_d("tempUserData.cardNo = %s,len = %d\r\n",tempUserData.cardNo,strlen(tempUserData.cardNo));    
+    log_d("tempUserData.cardNo = %s,len = %d\r\n",tempUserData.cardNo,strlen((const char*)tempUserData.cardNo));    
 
 
 
@@ -1317,7 +1320,7 @@ static SYSERRORCODE_E AddSingleUser( uint8_t* msgBuf )
 
     len = strlen((const char*)buf);
 
-    PublishData(buf,len);    
+    mqttSendData(buf,len);    
     
 	return result;
 
@@ -1339,7 +1342,7 @@ static SYSERRORCODE_E UnbindDev( uint8_t* msgBuf )
 
     strcpy((char *)type,(const char*)GetJsonItem((const uint8_t *)msgBuf,(const uint8_t *)"type",1));
 
-    result = modifyJsonItem(msgBuf,"status","1",1,buf);
+    result = modifyJsonItem((const uint8_t *)msgBuf,(const uint8_t *)"status",(const uint8_t *)"1",1,buf);
 
     if(result != NO_ERR)
     {
@@ -1350,10 +1353,12 @@ static SYSERRORCODE_E UnbindDev( uint8_t* msgBuf )
 
     if(memcmp(type,"0",1) == 0)
     {
+        SaveDevState(DEVICE_DISABLE);
         SendToQueue(type,strlen((const char*)type),AUTH_MODE_UNBIND);
     }
     else if(memcmp(type,"1",1) == 0)
-    {
+    {    
+        SaveDevState(DEVICE_ENABLE);          
         SendToQueue(type,strlen((const char*)type),AUTH_MODE_BIND);
     } 
     
@@ -1361,7 +1366,7 @@ static SYSERRORCODE_E UnbindDev( uint8_t* msgBuf )
 
     log_d("UnbindDev len = %d,buf = %s\r\n",len,buf);
 
-    PublishData(buf,len);
+    mqttSendData(buf,len);
 
     return result;
 
@@ -1374,9 +1379,7 @@ static SYSERRORCODE_E UnbindDev( uint8_t* msgBuf )
 static SYSERRORCODE_E SetLocalTime( uint8_t* msgBuf )
 {
     SYSERRORCODE_E result = NO_ERR;
-    uint8_t buf[MQTT_TEMP_LEN] = {0};
     uint8_t localTime[32] = {0};
-    uint16_t len = 0;
     
     if(!msgBuf)
     {
@@ -1423,8 +1426,8 @@ static SYSERRORCODE_E SetLocalSn( uint8_t* msgBuf )
 
     //记录SN
     ef_set_env_blob("sn_flag","1111",4);    
-    ef_set_env_blob("remote_sn",deviceCode,strlen(deviceCode));   
-    ef_set_env_blob("device_sn",deviceID,strlen(deviceID)); 
+    ef_set_env_blob("remote_sn",deviceCode,strlen((const char*)deviceCode));   
+    ef_set_env_blob("device_sn",deviceID,strlen((const char*)deviceID)); 
 
     log_d("remote_sn = %s\r\n",deviceCode);
     
@@ -1432,7 +1435,7 @@ static SYSERRORCODE_E SetLocalSn( uint8_t* msgBuf )
 
     log_d("SetLocalSn len = %d,buf = %s\r\n",len,buf);
 
-    PublishData(buf,len);
+    mqttSendData(buf,len);
 
     ReadLocalDevSn();
 

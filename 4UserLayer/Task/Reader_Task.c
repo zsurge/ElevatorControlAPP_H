@@ -24,6 +24,7 @@
 #include "bsp_dipSwitch.h"
 #include "tool.h"
 
+
 #define LOG_TAG    "reader"
 #include "elog.h"
 

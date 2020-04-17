@@ -118,10 +118,9 @@ int findChar(const char acher)
 //转换为10进制
 int myAtoi(const char *str)
 {
-    int total = 0;          //保存转换后的数值
-    int isNegative = 0;     //记录字符串中是否有负号
+    int total = 0;          //保存转换后的数值    
     int length = 0;         //记录字符串的长度
-    char chars[] = {'!','#','$','%','&','(',')','*','+',',','-','.','/','0','1','2','3','4','5','6','7','8','9',':',';','<','=','>','?','@','A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S','T','U','V','W','X','Y','Z','[',']','^','_','`','a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v','w','x','y','z','{','}','~'};
+    //char chars[] = {'!','#','$','%','&','(',')','*','+',',','-','.','/','0','1','2','3','4','5','6','7','8','9',':',';','<','=','>','?','@','A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S','T','U','V','W','X','Y','Z','[',']','^','_','`','a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v','w','x','y','z','{','}','~'};
     const char *p = str;
 
     char temp = '!';
@@ -145,6 +144,7 @@ int myAtoi(const char *str)
     {        
         temp = findChar(*p++);
 
+        //if(total != 0)     //滤除字符串开始的0字符
         if(total != 0||temp != -1)     //滤除字符串开始的0字符
         {
             //temp -= '0';
@@ -158,7 +158,7 @@ int myAtoi(const char *str)
 
 unsigned char findDev(unsigned char *str,unsigned char dataFormat)
 {
-    unsigned char tmpBuff[8] = {0};
+    unsigned char tmpBuff[9] = {0};
     unsigned char isFind = 0;
     int len = strlen((const char*)str);
     int i = 0;
@@ -166,9 +166,11 @@ unsigned char findDev(unsigned char *str,unsigned char dataFormat)
 
     int tmpValue = 0;
 
+    memset(tmpBuff,0x00,sizeof(tmpBuff));
+
     memcpy(tmpBuff,gMqttDevSn.deviceSn,8);
 
-    devSN = atoi(tmpBuff);
+    devSN = atoi((const char*)tmpBuff);
 
     printf("devSN = %d,str len = %d\r\n",devSN,len);
     char buf[6] = {0};

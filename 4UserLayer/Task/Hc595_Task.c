@@ -21,6 +21,8 @@
  * 包含头文件                                   *
  *----------------------------------------------*/
 #include "hc595_task.h"
+#include "bsp_digitaltube.h"
+
 /*----------------------------------------------*
  * 宏定义                                       *
  *----------------------------------------------*/
@@ -57,7 +59,6 @@ void CreateHc595Task(void)
 
 static void vTaskDisplay(void *pvParameters)
 {
-    printf("start vLwipComTask\r\n");
     while(1)
     {
         bsp_HC595Show(1,2,3);

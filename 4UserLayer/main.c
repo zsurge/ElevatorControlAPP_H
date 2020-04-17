@@ -54,18 +54,18 @@ static void AppTaskCreate(void);
 static void AppObjCreate (void);
 static void App_Printf(char *format, ...);
 static void EasyLogInit(void);
-static void DisplayDevInfo (void);
+//static void DisplayDevInfo (void);
 
-static void DisplayDevInfo(void)
-{
-	printf("Softversion :%s\r\n",gDevinfo.SoftwareVersion);
-    printf("HardwareVersion :%s\r\n", gDevinfo.HardwareVersion);
-	printf("Model :%s\r\n", gDevinfo.Model);
-	printf("ProductBatch :%s\r\n", gDevinfo.ProductBatch);	    
-	printf("BulidDate :%s\r\n", gDevinfo.BulidDate);
-	printf("DevSn :%s\r\n", gDevinfo.GetSn());
-    printf("Devip :%s\r\n", gDevinfo.GetIP());
-}
+//static void DisplayDevInfo(void)
+//{
+//	printf("Softversion :%s\r\n",gDevinfo.SoftwareVersion);
+//    printf("HardwareVersion :%s\r\n", gDevinfo.HardwareVersion);
+//	printf("Model :%s\r\n", gDevinfo.Model);
+//	printf("ProductBatch :%s\r\n", gDevinfo.ProductBatch);	    
+//	printf("BulidDate :%s\r\n", gDevinfo.BulidDate);
+//	printf("DevSn :%s\r\n", gDevinfo.GetSn());
+//    printf("Devip :%s\r\n", gDevinfo.GetIP());
+//}
 
 int main(void)
 {   

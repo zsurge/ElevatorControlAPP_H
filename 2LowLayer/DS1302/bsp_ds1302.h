@@ -26,7 +26,7 @@
 
 void bsp_ds1302_init(void);
 void bsp_ds1302_mdifytime(u8 *descTime);
-uint8_t *bsp_ds1302_readtime(void);
+char *bsp_ds1302_readtime(void);
 
 char* time_to_timestamp(void);
 void  timestamp_to_time(unsigned int timestamp);

@@ -1,6 +1,7 @@
 #include "bsp_ds1302.h"
 #include "tool.h"
 #include "time.h"
+#include "string.h"
 
 static uint8_t WeekDay ( unsigned char y, unsigned char m, unsigned char d );
 
@@ -123,32 +124,32 @@ void bsp_ds1302_mdifytime ( uint8_t* descTime ) //初始化1302
 	// 初始化日期
 	memset ( tmp,0x00,sizeof ( tmp ) );
 	memcpy ( tmp,descTime+2,2 );
-	buf[6] = IntToBCD ( atoi ( tmp ) );
+	buf[6] = IntToBCD ( atoi ( (const char*)tmp ) );
     
 	memset ( tmp,0x00,sizeof ( tmp ) );
 	memcpy ( tmp,descTime+5,2 );
-	buf[4] = IntToBCD ( atoi ( tmp ) );
+	buf[4] = IntToBCD ( atoi ( (const char*)tmp ) );
 
 	memset ( tmp,0x00,sizeof ( tmp ) );
 	memcpy ( tmp,descTime+8,2 );
-	buf[3] = IntToBCD ( atoi ( tmp ) );
+	buf[3] = IntToBCD ( atoi ( (const char*)tmp ) );
 
 	//周
 	buf[5] = WeekDay(BCDToInt(buf[6]),BCDToInt(buf[4]),BCDToInt(buf[3]));    
 
 	memset ( tmp,0x00,sizeof ( tmp ) );
 	memcpy ( tmp,descTime+11,2 );
-	buf[2] = IntToBCD ( atoi ( tmp ) );
+	buf[2] = IntToBCD ( atoi ( (const char*)tmp ) );
 
 	memset ( tmp,0x00,sizeof ( tmp ) );
 	memcpy ( tmp,descTime+14,2 );
-	buf[1] = IntToBCD ( atoi ( tmp ) );
+	buf[1] = IntToBCD ( atoi ( (const char*)tmp ) );
 
 	memset ( tmp,0x00,sizeof ( tmp ) );
 	memcpy ( tmp,descTime+17,2 );
-	buf[0] = IntToBCD ( atoi ( tmp ) );
+	buf[0] = IntToBCD ( atoi ( (const char*)tmp ) );
 
-	dbh ( "bsp_ds1302_mdifytime", buf, 8 );
+	dbh ( "bsp_ds1302_mdifytime", (char *)buf, 8 );
 
 	write_1302 ( 0x8e,0x00 ); //去除写保护
 	for ( i=0; i<7; i++ ) //进行对时
@@ -160,9 +161,9 @@ void bsp_ds1302_mdifytime ( uint8_t* descTime ) //初始化1302
 
 }
 
-uint8_t* bsp_ds1302_readtime ( void )
+char* bsp_ds1302_readtime ( void )
 {
-	static uint8_t pBuf[20] = {0};
+	static char pBuf[20] = {0};
     
 	pBuf[0]=read_1302 ( read[0] ); //秒
 	pBuf[1]=read_1302 ( read[1] ); //分

@@ -23,6 +23,8 @@
 #include "Comm_Task.h"
 #include "CmdHandle.h"
 #include "bsp_uart_fifo.h"
+#include "bsp_dipSwitch.h"
+#include "FloorDataProc.h"
 
 
 #define LOG_TAG    "CommTask"
@@ -102,24 +104,24 @@ static void vTaskComm(void *pvParameters)
 //        }
 
         
-        recvLen = RS485_Recv(COM4,buf,5);
-        
-        //判定数据的有效性
-        if(recvLen != 5 || buf[0] != 0X5a || buf[1]<1 || buf[1]>4)
-        {
-            vTaskDelay(500); 
-            continue;
-        }
+//        recvLen = RS485_Recv(COM4,buf,5);
+//        
+//        //判定数据的有效性
+//        if(recvLen != 5 || buf[0] != 0X5a || buf[1]<1 || buf[1]>4)
+//        {
+//            vTaskDelay(500); 
+//            continue;
+//        }
 
-        crc= xorCRC(buf,3);
+//        crc= xorCRC(buf,3);
+//        
+//        if(crc != buf[3])
+//        {
+//            vTaskDelay(500); 
+//            continue;
+//        }
         
-        if(crc != buf[3])
-        {
-            vTaskDelay(500); 
-            continue;
-        }
-        
-        if(buf[1] == readID)
+        //if(buf[1] == readID)
         {
             xReturn = xQueueReceive( xTransQueue,    /* 消息队列的句柄 */
                                      (void *)&ptMsg,  /*这里获取的是结构体的地址 */

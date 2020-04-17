@@ -64,7 +64,7 @@ static void vTaskLed(void *pvParameters)
 {  
     uint8_t i = 0;
     
-    printf("<<<<<start vTaskLed>>>>>\r\n");
+    
     while(1)
     {  
         if(i == 250)

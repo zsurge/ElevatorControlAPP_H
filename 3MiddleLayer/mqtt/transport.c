@@ -238,7 +238,6 @@ int transport_open(char* addr, int port)
 	int* sock = &my_sock;
 	struct hostent *server;
 	struct sockaddr_in serv_addr;
-	static struct  timeval tv;
 	int timeout = 1000;
 
 	*sock = socket(AF_INET, SOCK_STREAM, 0);
@@ -260,8 +259,7 @@ int transport_open(char* addr, int port)
 		log_d("[ERROR] connect failed\r\n");
         return -1;
 	}
-	tv.tv_sec = 10;  /* 1 second Timeout */
-	tv.tv_usec = 0; 
+
 	setsockopt(*sock, SOL_SOCKET, SO_RCVTIMEO, (char*)&timeout,sizeof(timeout));
     
     return *sock;

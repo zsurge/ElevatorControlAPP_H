@@ -263,7 +263,6 @@ static void vTaskBarCode(void *pvParameters)
     uint8_t relieveControl[38] = {0};
 
     int cmpTimeFlag = -1;
-    int cmpDateFlag = -1;
 
     memset(&gReaderMsg,0x00,sizeof(READER_BUFF_STRU));
     READER_BUFF_STRU *ptQR = &gReaderMsg; 
@@ -287,10 +286,8 @@ static void vTaskBarCode(void *pvParameters)
          
         memcpy(sendBuff+offset,recv_buf,len);
         offset += len; 
-
-
         
-        if(offset > 10  && sendBuff[offset-1] == 0x0A && sendBuff[offset-2] == 0x0D)
+        if(offset > 10  && sendBuff[offset-1] == 0x0A && sendBuff[offset-2] == 0x0D && gDeviceStateFlag == DEVICE_ENABLE)
         {
             comClearRxFifo(COM5);
             log_d("sendbuff = %s\r\n",sendBuff);
@@ -313,7 +310,7 @@ static void vTaskBarCode(void *pvParameters)
                 if(gTemplateParam.workMode.isPeakMode || gTemplateParam.workMode.isHolidayMode)
                 {
                     //读取当前时间
-                    strcpy(localTime,bsp_ds1302_readtime());
+                    strcpy((char*)localTime,(const char*)bsp_ds1302_readtime());
                     
                     //判定节假日模板有效期
                     if(compareDate(localTime,gTemplateParam.peakInfo[0].endTime) < 0) //在有效期内
@@ -476,7 +473,7 @@ static int compareTime(uint8_t *currentTime)
 
     int begin1,begin2,begin3,end1,end2,end3;
 
-    if(strlen(gTemplateParam.holidayMode[0].startTime)==0 && strlen(gTemplateParam.holidayMode[1].startTime)==0 && strlen(gTemplateParam.holidayMode[2].startTime)==0)
+    if(strlen((const char*)gTemplateParam.holidayMode[0].startTime)==0 && strlen((const char*)gTemplateParam.holidayMode[1].startTime)==0 && strlen((const char*)gTemplateParam.holidayMode[2].startTime)==0)
     {
         //没有指定时间段
         ret = 0;
@@ -583,7 +580,7 @@ static void getDevData(char *src,int icFlag,int qrFlag,READER_BUFF_STRU *desc)
     {
         //QR
         readerBuff.authMode = AUTH_MODE_QR;   
-        asc2bcd(bcdBuff, src, readerBuff.dataLen, 0);
+        asc2bcd(bcdBuff, (uint8_t *)src, readerBuff.dataLen, 0);
         Des3_2(key, bcdBuff, readerBuff.dataLen/2, readerBuff.data, 1);
     }
     else

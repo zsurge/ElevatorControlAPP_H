@@ -179,14 +179,14 @@ uint8_t writeHeader(uint8_t  * header,uint8_t mode,uint32_t *headIndex)
             *headIndex = tempIndex;
             gDelCardHeaderIndex--;
             memset(headCnt,0x00,sizeof(headCnt));
-            sprintf(headCnt,"%08d",gDelCardHeaderIndex);
+            sprintf((char *)headCnt,"%08d",gDelCardHeaderIndex);
             ef_set_env_blob("DelCardHeaderIndex",headCnt,CARD_USER_LEN);  
         }
         else 
         {
             *headIndex = gCurCardHeaderIndex++;
             memset(headCnt,0x00,sizeof(headCnt));
-            sprintf(headCnt,"%08d",gCurCardHeaderIndex);
+            sprintf((char *)headCnt,"%08d",gCurCardHeaderIndex);
             ef_set_env_blob("CardHeaderIndex",headCnt,CARD_USER_LEN);   
         }
     }
@@ -197,14 +197,14 @@ uint8_t writeHeader(uint8_t  * header,uint8_t mode,uint32_t *headIndex)
             *headIndex = tempIndex;
             gDelUserHeaderIndex--;
             memset(headCnt,0x00,sizeof(headCnt));
-            sprintf(headCnt,"%08d",gDelUserHeaderIndex);
+            sprintf((char *)headCnt,"%08d",gDelUserHeaderIndex);
             ef_set_env_blob("DelUserHeaderIndex",headCnt,CARD_USER_LEN);   
         }
         else
         {
             *headIndex = gCurUserHeaderIndex++;
             memset(headCnt,0x00,sizeof(headCnt));
-            sprintf(headCnt,"%08d",gCurUserHeaderIndex);
+            sprintf((char *)headCnt,"%08d",gCurUserHeaderIndex);
             ef_set_env_blob("UserHeaderIndex",headCnt,CARD_USER_LEN);   
         }
     }
@@ -239,11 +239,10 @@ uint32_t readDelIndexValue(uint8_t mode,uint16_t curIndex)
     
     bsp_sf_ReadBuffer (readBuff, addr, HEAD_lEN);
 
-    dbh("del index", readBuff, HEAD_lEN);
     
     bcd2asc(temp, readBuff,HEAD_lEN*2, 0);    
 
-    value = atoi(temp);
+    value = atoi((const char *)temp);
 
     //log_d("readDelIndexValue = %s,value =%d\r\n",temp,value);
 
@@ -383,21 +382,21 @@ static void eraseUserDataIndex(void)
 {
     uint8_t headCnt[CARD_USER_LEN] = {0};
     gCurCardHeaderIndex = 0;
-    sprintf(headCnt,"%08d",gCurCardHeaderIndex);
+    sprintf((char *)headCnt,"%08d",gCurCardHeaderIndex);
     ef_set_env_blob("CardHeaderIndex",headCnt,CARD_USER_LEN);    
 
     memset(headCnt,0x00,sizeof(headCnt));
     gCurUserHeaderIndex = 0;
-    sprintf(headCnt,"%08d",gCurUserHeaderIndex);
+    sprintf((char *)headCnt,"%08d",gCurUserHeaderIndex);
     ef_set_env_blob("UserHeaderIndex",headCnt,CARD_USER_LEN);      
 
     gDelCardHeaderIndex = 0;
-    sprintf(headCnt,"%08d",gDelCardHeaderIndex);
+    sprintf((char *)headCnt,"%08d",gDelCardHeaderIndex);
     ef_set_env_blob("DelCardHeaderIndex",headCnt,CARD_USER_LEN);    
 
     memset(headCnt,0x00,sizeof(headCnt));
     gDelUserHeaderIndex = 0;
-    sprintf(headCnt,"%08d",gDelUserHeaderIndex);
+    sprintf((char *)headCnt,"%08d",gDelUserHeaderIndex);
     ef_set_env_blob("DelUserHeaderIndex",headCnt,CARD_USER_LEN);          
 
 }
@@ -598,7 +597,7 @@ uint8_t readUserData(uint8_t* header,uint8_t mode,USERDATA_STRU *userData)
     iTime2 = xTaskGetTickCount();	/* 记下结束时间 */
 	log_d("readUserData成功，耗时: %dms\r\n",iTime2 - iTime1);		
 
-    dbh("readUserData", rBuff, sizeof(USERDATA_STRU));
+    dbh("readUserData", (char *)rBuff, sizeof(USERDATA_STRU));
 
 	return 0;
 
@@ -737,7 +736,6 @@ uint8_t delUserData(uint8_t *header,uint8_t mode)
     uint8_t wBuff[255] = {0};
     uint8_t rBuff[255] = {0}; 
     uint8_t isFull = 0;
-    uint8_t crc=0;
     uint8_t ret = 0;
     uint8_t times = 3;
     uint32_t addr = 0;
@@ -808,8 +806,8 @@ uint8_t delUserData(uint8_t *header,uint8_t mode)
 
     //写删除索引
     //删除索引值为原索引的值
-    memset(header,0x00,sizeof(header));
-    sprintf(header,"%08d",index);
+    memset(header,0x00,sizeof((const char *)header));
+    sprintf((char *)header,"%08d",index);
     
     //log_d("need del header value = %s,\r\n",header);
     
@@ -894,7 +892,7 @@ uint8_t writeDelHeader(uint8_t* header,uint8_t mode)
     {
         gDelCardHeaderIndex++;
         memset(headCnt,0x00,sizeof(headCnt));
-        sprintf(headCnt,"%08d",gDelCardHeaderIndex);
+        sprintf((char *)headCnt,"%08d",gDelCardHeaderIndex);
         ef_set_env_blob("DelCardHeaderIndex",headCnt,CARD_USER_LEN);       
                          
     }
@@ -902,7 +900,7 @@ uint8_t writeDelHeader(uint8_t* header,uint8_t mode)
     {
         gDelUserHeaderIndex++;
         memset(headCnt,0x00,sizeof(headCnt));
-        sprintf(headCnt,"%08d",gDelUserHeaderIndex);
+        sprintf((char *)headCnt,"%08d",gDelUserHeaderIndex);
         ef_set_env_blob("DelUserHeaderIndex",headCnt,CARD_USER_LEN);           
     }
 
@@ -918,7 +916,6 @@ static uint8_t delSourceHeader(uint16_t index,uint8_t mode)
     uint8_t times = 3;
     uint8_t readBuff[HEAD_lEN+1] = {0};
     uint8_t ret = 0;
-    uint8_t headCnt[CARD_USER_LEN] = {0};
     uint8_t temp[HEAD_lEN+1] = {0};
     uint32_t addr = 0;
     
@@ -1010,7 +1007,7 @@ void TestFlash(uint8_t mode)
         memset(temp,0x00,sizeof(temp));
         memset(buff,0x00,sizeof(buff));
         bsp_sf_ReadBuffer (temp, addr+i*4, 4);
-        bcd2asc(buff, temp, 8, 0);
+        bcd2asc((uint8_t *)buff, temp, 8, 0);
         printf("the %d header ====================== %s\r\n",i,buff);    
  
     }
@@ -1018,7 +1015,7 @@ void TestFlash(uint8_t mode)
     for(i=0;i<num;i++)
     {
         memset(buff,0x00,sizeof(buff));
-        bsp_sf_ReadBuffer (buff, data_addr+i * (sizeof(USERDATA_STRU)), sizeof(USERDATA_STRU));        
+        bsp_sf_ReadBuffer ((uint8_t *)buff, data_addr+i * (sizeof(USERDATA_STRU)), sizeof(USERDATA_STRU));        
         printf("the %d data ====================== \r\n",i); 
         dbh("data", buff, (sizeof(USERDATA_STRU)));
 

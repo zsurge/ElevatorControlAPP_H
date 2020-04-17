@@ -29,5 +29,10 @@ void RestoreDefaultSetting(void);
 
 void SystemUpdate(void);
 
+void readDevState(void);
+
+void SaveDevState(char state);
+
+void ReadLocalDevSn(void);
 
 #endif

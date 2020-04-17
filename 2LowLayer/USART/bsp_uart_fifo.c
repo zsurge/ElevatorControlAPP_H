@@ -710,10 +710,10 @@ uint8_t RS485_Recv(COM_PORT_E _ucPort,uint8_t *buf, uint8_t len)
 
 uint8_t RS485_RecvAtTime(COM_PORT_E _ucPort,uint8_t *buf, uint8_t len,uint32_t timeout)
 {
-    uint8_t i = 0;   
+    //uint8_t i = 0;   
     uint8_t recvSize = len;
     uint8_t recvLen = 0;
-    uint8_t tmp[1] = {0};
+    //uint8_t tmp[1] = {0};
     UART_T *pUart;
 	pUart = ComToUart(_ucPort);
     
