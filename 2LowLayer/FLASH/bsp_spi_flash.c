@@ -116,9 +116,9 @@ void bsp_spi_flash_init(void)
     RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOB, ENABLE);
 
     /* 配置 SCK, MISO 、 MOSI 为复用功能 */
-    GPIO_PinAFConfig(SPI_FLASH_PORT, FLASH_SCK_PINSource,  GPIO_AF_SPI1);
-    GPIO_PinAFConfig(SPI_FLASH_PORT, FLASH_MISO_PINSource, GPIO_AF_SPI1);
-    GPIO_PinAFConfig(SPI_FLASH_PORT, FLASH_MOSI_PINSource, GPIO_AF_SPI1);
+    GPIO_PinAFConfig(SPI_FLASH_PORT, FLASH_SCK_PINSource,  GPIO_AF_SPI2);
+    GPIO_PinAFConfig(SPI_FLASH_PORT, FLASH_MISO_PINSource, GPIO_AF_SPI2);
+    GPIO_PinAFConfig(SPI_FLASH_PORT, FLASH_MOSI_PINSource, GPIO_AF_SPI2);
 
     GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF;
     GPIO_InitStructure.GPIO_Speed = GPIO_Speed_100MHz;

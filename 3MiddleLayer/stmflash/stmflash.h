@@ -50,7 +50,7 @@
 #define USER_FLASH_SIZE   (USER_FLASH_END_ADDRESS - APPLICATION_ADDRESS + 1)
 
 //APP起始地址    
-#define APPLICATION_ADDRESS   (uint32_t)0x08010000 //User Application's location address (sector 4~11)
+#define APPLICATION_ADDRESS   (uint32_t)0x08030000 //User Application's location address (sector 4~11)
 
 /*----------------------------------------------*
  * 内部函数原型说明                             *

@@ -290,69 +290,136 @@ SYSERRORCODE_E PacketDeviceInfo ( const uint8_t* jsonBuff,const uint8_t* descJso
 SYSERRORCODE_E upgradeDataPacket(uint8_t *descBuf)
 {
     SYSERRORCODE_E result = NO_ERR;
-    cJSON *root ,*dataObj;
-    char *up_status;    
-    char *tmpBuf;
+    char up_status[7] = {0};  
+    uint8_t value[200] = {0};
+    uint8_t tmp[300] = {0};
+    uint8_t send[300] = {0};
     
-    root = cJSON_Parse((const char*)ef_get_env("upData"));    //解析数据包
-    if (!root)  
-    {          
-        log_d("Error before: [%s]\r\n",cJSON_GetErrorPtr());  
-        cJSON_Delete(root);
-        my_free(tmpBuf);
-        return CJSON_PARSE_ERR;
-    } 
+    ef_get_env_blob ( "upData", value, sizeof ( value ), NULL );
+
+    log_d("tmpBuf = %s\r\n",value);
+
+    result = modifyJsonItem((const uint8_t *)value,(const uint8_t *)"commandCode",(const uint8_t *)"1017",0,tmp);    
     
-     strcpy(up_status,(const char*)ef_get_env("up_status"));
 
-     cJSON_AddStringToObject(root,"commandCode","1017");
-
-    //获取dataobject
-    dataObj = cJSON_GetObjectItem( root , "data" );   
+    strcpy(up_status,(const char*)ef_get_env("up_status"));
     
     //升级失败
     if(memcmp(up_status,"101700",6) == 0)
     {
-        cJSON_AddStringToObject(dataObj,"status","2");
+        result = modifyJsonItem((const uint8_t *)tmp,(const uint8_t *)"status",(const uint8_t *)"2",1,send);
+
     }
     else if(memcmp(up_status,"101711",6) == 0) //升级成功
     {
-        cJSON_AddStringToObject(dataObj,"status","1");
+        result = modifyJsonItem((const uint8_t *)tmp,(const uint8_t *)"status",(const uint8_t *)"1",1,send);
+
     }
     else if(memcmp(up_status,"101722",6) == 0) //升级成功
     {
-        cJSON_AddStringToObject(dataObj,"status","1"); 
+        result = modifyJsonItem((const uint8_t *)tmp,(const uint8_t *)"status",(const uint8_t *)"1",1,send);
+
     }
     else if(memcmp(up_status,"101733",6) == 0) //禁止升级
     {
-        cJSON_AddStringToObject(dataObj,"status","3");
+        result = modifyJsonItem((const uint8_t *)tmp,(const uint8_t *)"status",(const uint8_t *)"3",1,send);
+
     }
     else
     {
         //无升级动作
+    }    
+ 
+    strcpy((char *)descBuf,send);
+
+
+    return result;
+
+}
+
+SYSERRORCODE_E saveUpgradeData(uint8_t *jsonBuff)
+{
+    SYSERRORCODE_E result = NO_ERR;
+    
+    cJSON* root,*newroot,*tmpdataObj,*dataObj,*json_devCode,*productionModel,*id;
+    cJSON* version,*softwareFirmware,*versionType;
+    char *tmpBuf;
+    
+    root = cJSON_Parse ( ( char* ) jsonBuff );    //解析数据包
+    if ( !root )
+    {
+        log_d ( "Error before: [%s]\r\n",cJSON_GetErrorPtr() );        
+        cJSON_Delete(root);
+        cJSON_Delete(newroot);
+        my_free(tmpBuf);
+        return CJSON_PARSE_ERR;
     }
 
-    tmpBuf = cJSON_PrintUnformatted(root); 
+    newroot = cJSON_CreateObject();
+    dataObj = cJSON_CreateObject();
+    if(!newroot && !dataObj)
+    {
+        log_d ( "Error before: [%s]\r\n",cJSON_GetErrorPtr() );
+        cJSON_Delete(root);
+        cJSON_Delete(newroot);
+        my_free(tmpBuf);            
+        return CJSON_PARSE_ERR;
+    }  
+    
+    json_devCode = cJSON_GetObjectItem ( root, "deviceCode" );
+    
+    tmpdataObj = cJSON_GetObjectItem ( root, "data" );        
+    productionModel = cJSON_GetObjectItem ( tmpdataObj, "productionModel" );
+    id = cJSON_GetObjectItem ( tmpdataObj, "id" );
 
-    if(tmpBuf == NULL)
+    version = cJSON_GetObjectItem ( tmpdataObj, "version" );
+    softwareFirmware = cJSON_GetObjectItem ( tmpdataObj, "softwareFirmware" );
+    versionType = cJSON_GetObjectItem ( tmpdataObj, "versionType" ); 
+
+    if(json_devCode)
+        cJSON_AddStringToObject(newroot, "deviceCode", json_devCode->valuestring);
+
+
+    cJSON_AddItemToObject(newroot, "data", dataObj);
+    
+    if(productionModel)
+        cJSON_AddStringToObject(dataObj, "productionModel", productionModel->valuestring);
+
+    if(id)
+        cJSON_AddNumberToObject(dataObj, "id", id->valueint);
+
+    if(version)
+        cJSON_AddStringToObject(dataObj, "version", id->valuestring);
+
+    if(softwareFirmware)
+        cJSON_AddNumberToObject(dataObj, "softwareFirmware", softwareFirmware->valueint);
+        
+    if(versionType)
+        cJSON_AddNumberToObject(dataObj, "versionType", versionType->valueint);  
+            
+    tmpBuf = cJSON_PrintUnformatted(newroot); 
+
+    if(!tmpBuf)
     {
         log_d("cJSON_PrintUnformatted error \r\n");
+
+        cJSON_Delete(root);
+        cJSON_Delete(newroot);      
         my_free(tmpBuf);
-        cJSON_Delete(root);        
-        return CJSON_FORMAT_ERR;
-    }    
+        return CJSON_PARSE_ERR;
+    }
 
-    strcpy((char *)descBuf,tmpBuf);
-
-
-    log_d("send json data = %s\r\n",tmpBuf);
+    ef_set_env_blob("upData",(const char*)tmpBuf,strlen ((const char*)tmpBuf));
 
     cJSON_Delete(root);
 
-    my_free(tmpBuf);
+    cJSON_Delete(newroot);
 
-    return result;
+    my_free(tmpBuf);
+    
+    return result;    
 }
+
 
 SYSERRORCODE_E getTimePacket(uint8_t *descBuf)
 {
@@ -502,19 +569,27 @@ uint8_t packetPayload(LOCAL_USER_STRU *localUserData,uint8_t *descJson)
     
     cJSON_AddItemToObject(root, "data", dataObj);
 
-    if(localUserData->qrType == 2 )
+    if(localUserData->qrType == 4 )
     {    
         cJSON_AddStringToObject(root, "commandCode","3007");
         cJSON_AddStringToObject(dataObj, "userId", (const char*)localUserData->userId);  
         cJSON_AddStringToObject(dataObj, "qrID", (const char*)localUserData->qrID); 
         cJSON_AddStringToObject(dataObj, "cardNo", (const char*)localUserData->cardNo);
         cJSON_AddNumberToObject(dataObj, "callType",localUserData->authMode); 
-        cJSON_AddNumberToObject(dataObj, "status", ON_LINE);   
-        cJSON_AddNumberToObject(dataObj, "callState",CALL_OK);
+        cJSON_AddNumberToObject(dataObj, "status", ON_LINE); 
         strcpy(tmpTime,(const char*)bsp_ds1302_readtime());  
         cJSON_AddStringToObject(dataObj, "callElevatorTime",tmpTime);        
         cJSON_AddStringToObject(dataObj, "timeStamp",(const char*)localUserData->timeStamp);
-        cJSON_AddNumberToObject(dataObj, "type",localUserData->qrType);
+        
+        if(localUserData->authMode == 7)
+        {
+            cJSON_AddNumberToObject(dataObj, "type",localUserData->qrType);
+            cJSON_AddNumberToObject(dataObj, "callState",CALL_OK);
+        }
+        else
+        {
+            cJSON_AddNumberToObject(dataObj, "type",CALL_OK);
+        }
     }
     else
     {
@@ -948,7 +1023,7 @@ uint8_t parseQrCode(uint8_t *jsonBuff,QRCODE_INFO_STRU *qrCodeInfo)
     tmpArray = cJSON_GetObjectItem(root, "f1");
     memcpy(qrCodeInfo->accessFloor,parseAccessFloor((uint8_t *)tmpArray->valuestring),FLOOR_ARRAY_LENGTH);
 
-    dbh("qrCodeInfo->accessFloor",qrCodeInfo->accessFloor,64);
+    dbh("qrCodeInfo->accessFloor",(char *)qrCodeInfo->accessFloor,64);
 
     qrCodeInfo->defaultFloor = qrCodeInfo->accessFloor[0];
     log_d("qrCodeInfo->defaultFloor = %d\r\n",qrCodeInfo->defaultFloor);

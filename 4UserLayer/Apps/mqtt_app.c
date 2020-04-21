@@ -206,7 +206,7 @@ MQTT_START:
 					}
 					break;
 				}
-				log_d ( "step = %d,client subscribe:[%s]\r\n",SUBSCRIBE,topicString.cstring );
+//				log_d ( "step = %d,client subscribe:[%s]\r\n",SUBSCRIBE,topicString.cstring );
 				msgtypes = 0;
 
 				if ( upack_flag )
@@ -219,13 +219,13 @@ MQTT_START:
 			//订阅确认 订阅请求报文确认
 			case SUBACK://9
 				rc = MQTTDeserialize_suback ( &submsgid, 1, &subcount, &granted_qos, ( unsigned char* ) buf, buflen );	//有回执  QoS
-				log_d ( "step = %d,granted qos is %d\r\n",SUBACK, granted_qos );         								//打印 Qos
+//				log_d ( "step = %d,granted qos is %d\r\n",SUBACK, granted_qos );         								//打印 Qos
 				msgtypes = 0;
 				break;
 			//发布消息
 			case PUBLISH://3
 				rc = MQTTDeserialize_publish ( &dup, &qos, &retained, &msgid, &receivedTopic,&payload_in, &payloadlen_in, ( unsigned char* ) buf, buflen );	//读取服务器推送信息
-				log_d ( "step = %d,message arrived : %s,len= %d\r\n",PUBLISH,payload_in,strlen ( ( const char* ) payload_in ) );
+//				log_d ( "step = %d,message arrived : %s,len= %d\r\n",PUBLISH,payload_in,strlen ( ( const char* ) payload_in ) );
 
                 //消息质量不同，处理不同
                 if(qos == 0)
@@ -241,12 +241,19 @@ MQTT_START:
                 {
                     printf("publish qos is 1,send PUBACK \r\n");							//Qos为1，进行回执 响应
                     memset(buf,0,buflen);
-                    len = MQTTSerialize_ack((unsigned char*)buf,buflen,PUBACK,dup,msgid);   					//publish ack                       
+                    len = MQTTSerialize_ack((unsigned char*)buf,buflen,PUBACK,dup,msgid);   
+    				if ( len == 0 )
+    				{
+                        msgtypes = CONNECT; 
+                        gConnectStatus = 0;
+                        goto MQTT_reconnect;
+    				}                    
+                    //publish ack                       
                     rc = transport_sendPacketBuffer(gMySock, (unsigned char*)buf, len);			//
                     if(rc == len)
-                        printf("send PUBACK Successfully\r\n");
+                        log_d("send PUBACK Successfully\r\n");
                     else
-                        printf("send PUBACK failed\r\n");   
+                        log_d("send PUBACK failed\r\n");   
 
                     //这里是马上执行？还是发送到消息队列中，在读消息队列中执行？
                     //个人感觉在消息队列中会好点
@@ -259,6 +266,12 @@ MQTT_START:
                 {
                     printf("publish qos is 2,send PUBREC \r\n");
                     len = MQTTSerialize_ack ((unsigned char*)buf,buflen, PUBREC, dup, msgid );
+    				if ( len == 0 )
+    				{
+                        msgtypes = CONNECT; 
+                        gConnectStatus = 0;
+                        goto MQTT_reconnect;
+    				}                     
                     rc = transport_sendPacketBuffer(gMySock, (unsigned char*)buf, len);	
                     if(rc == len)
                         log_d("send PUBREC Successfully\r\n");
@@ -290,18 +303,17 @@ MQTT_START:
 				break;
 			//心跳请求
 			case PINGREQ://12
-				len = MQTTSerialize_pingreq ( ( unsigned char* ) buf, buflen );							//心跳
+				len = MQTTSerialize_pingreq ( ( unsigned char* ) buf, buflen );		
+				//心跳
 				rc = transport_sendPacketBuffer ( gMySock, ( unsigned char* ) buf, len );
-
 				if ( rc == len )
 				{
-					log_d ( "send PINGREQ Successfully\r\n" );
+//					log_d ( "send PINGREQ Successfully\r\n" );
                     msgtypes = 0; 
 				}
 				else
 				{
 					log_d ( "send PINGREQ failed,\r\n");
-
                     msgtypes = CONNECT; 
                     gConnectStatus = 0;
                     goto MQTT_reconnect;                    
@@ -309,7 +321,7 @@ MQTT_START:
 				break;
 			//心跳响应
 			case PINGRESP://13
-//				log_d ( "step = %d,mqtt server Pong\r\n",PINGRESP );  			//心跳回执，服务有响应
+				log_d ( "step = %d,mqtt server Pong\r\n",PINGRESP );  			//心跳回执，服务有响应
 				msgtypes = 0;
 				break;
             case UNSUBSCRIBE:
@@ -366,7 +378,7 @@ static void ackUp ( void )
 	if ( memcmp ( up_status,"101711",6 ) == 0 )
 	{
 		ef_set_env_blob ( "up_status", "101722",6 );
-        exec_proc("1017","");
+        exec_proc("1017"," ");
 	}
     exec_proc("30131","");
 	

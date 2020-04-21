@@ -48,7 +48,7 @@ static void my_mem_init(void)
 
  void bsp_Init(void)
 {
-    NVIC_SetVectorTable(NVIC_VectTab_FLASH,0x00000);
+    NVIC_SetVectorTable(NVIC_VectTab_FLASH,0x30000);
 	NVIC_PriorityGroupConfig(NVIC_PriorityGroup_4);//设置系统中断优先级分组4
 	delay_init(168);            //初始化延时函数
 
@@ -60,7 +60,7 @@ static void my_mem_init(void)
 //    AT24CXX_Init();
     bsp_ds1302_init(); //DS1302_GPIO_Init();             //时钟芯片初始化
     
-    bsp_rtc_init();             //初始化RTC，只能放在UART后面
+//    bsp_rtc_init();             //初始化RTC，只能放在UART后面
 
 	bsp_key_Init();             //按键初始化
 
@@ -75,7 +75,7 @@ static void my_mem_init(void)
 
     bsp_beep_init();            //蜂鸣器初始化        
 
-    bsp_WiegandInit();          //韦根读卡器初始化
+//    bsp_WiegandInit();          //韦根读卡器初始化
 
     my_mem_init();                  //对内存进行初始化
 

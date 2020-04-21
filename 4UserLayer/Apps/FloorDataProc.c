@@ -277,7 +277,7 @@ SYSERRORCODE_E authReader(READER_BUFF_STRU *pQueue,LOCAL_USER_STRU *localUserDat
             return NO_AUTHARITY_ERR;
         } 
         
-        localUserData->qrType = 2;
+        localUserData->qrType = 4;
         localUserData->authMode = pQueue->authMode; 
         localUserData->defaultFloor = rUserData.defaultFloor;
         memcpy(localUserData->userId,rUserData.userId,CARD_USER_LEN);        

@@ -93,7 +93,7 @@ static SYSERRORCODE_E DelCard( uint8_t* msgBuf ); //删除卡号
 static SYSERRORCODE_E DelUserId( uint8_t* msgBuf ); //删除用户
 static SYSERRORCODE_E getRemoteTime ( uint8_t* msgBuf );//获取远程服务器时间
 
-static SYSERRORCODE_E ReturnDefault ( uint8_t* msgBuf ); //返回默认消息
+//static SYSERRORCODE_E ReturnDefault ( uint8_t* msgBuf ); //返回默认消息
 
 
 typedef SYSERRORCODE_E ( *cmd_fun ) ( uint8_t *msgBuf ); 
@@ -597,6 +597,9 @@ SYSERRORCODE_E UpgradeDev ( uint8_t* msgBuf )
         return STR_EMPTY_ERR;
     }
 
+    //3.保存整个JSON数据
+    saveUpgradeData(msgBuf);
+
     //1.保存URL
     strcpy((char *)tmpUrl,(const char*)GetJsonItem((const uint8_t *)msgBuf,(const uint8_t *)"softwareUrl",1));
     log_d("tmpUrl = %s\r\n",tmpUrl);
@@ -604,10 +607,7 @@ SYSERRORCODE_E UpgradeDev ( uint8_t* msgBuf )
     ef_set_env("url", (const char*)GetJsonItem((const uint8_t *)tmpUrl,(const uint8_t *)"picUrl",0)); 
 
     //2.设置升级状态为待升级状态
-    ef_set_env("up_status", "101700");
-    
-    //3.保存整个JSON数据
-    ef_set_env("upData", (const char*)msgBuf);
+    ef_set_env("up_status", "101700"); 
     
     //4.设置标志位并重启
     SystemUpdate();
@@ -660,7 +660,7 @@ SYSERRORCODE_E UpgradeAck ( uint8_t* msgBuf )
 
     len = strlen((const char*)buf);
 
-    log_d("OpenDoor len = %d,buf = %s\r\n",len,buf);
+    log_d("UpgradeAck len = %d,buf = %s\r\n",len,buf);
 
     mqttSendData(buf,len);
     

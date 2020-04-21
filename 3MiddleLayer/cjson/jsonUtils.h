@@ -117,6 +117,9 @@ SYSERRORCODE_E PacketDeviceInfo ( const uint8_t* jsonBuff,const uint8_t* descJso
 
 //打包APP升级后需上送的数据
 SYSERRORCODE_E upgradeDataPacket(uint8_t *descBuf);
+//存储APP升级后需上送的数据
+SYSERRORCODE_E saveUpgradeData(uint8_t *jsonBuff);
+
 
 SYSERRORCODE_E getTimePacket(uint8_t *descBuf);
 
@@ -134,8 +137,6 @@ uint8_t parseQrCode(uint8_t *jsonBuff,QRCODE_INFO_STRU *qrCodeInfo);
 
 //获取JSON数组
 uint8_t** GetJsonArray ( const uint8_t* jsonBuff,const uint8_t* item,uint8_t *num);
-
-
 
 
 
