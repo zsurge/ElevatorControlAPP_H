@@ -184,7 +184,7 @@ uint8_t* GetJsonItem ( const uint8_t* jsonBuff,const uint8_t* item,uint8_t isSub
 		else if ( json_item->type == cJSON_Number )
 		{
 			sprintf ( (char*)value,"%d",json_item->valueint );
-//			log_d ( "json_item =  %s\r\n",value);
+			log_d ( "json_item =  %s\r\n",value);
 		}
 		else if( json_item->type == cJSON_Array )
 		{
@@ -389,7 +389,7 @@ SYSERRORCODE_E saveUpgradeData(uint8_t *jsonBuff)
         cJSON_AddNumberToObject(dataObj, "id", id->valueint);
 
     if(version)
-        cJSON_AddStringToObject(dataObj, "version", id->valuestring);
+        cJSON_AddStringToObject(dataObj, "version", version->valuestring);
 
     if(softwareFirmware)
         cJSON_AddNumberToObject(dataObj, "softwareFirmware", softwareFirmware->valueint);
@@ -573,7 +573,6 @@ uint8_t packetPayload(LOCAL_USER_STRU *localUserData,uint8_t *descJson)
     {    
         cJSON_AddStringToObject(root, "commandCode","3007");
         cJSON_AddStringToObject(dataObj, "userId", (const char*)localUserData->userId);  
-        cJSON_AddStringToObject(dataObj, "qrID", (const char*)localUserData->qrID); 
         cJSON_AddStringToObject(dataObj, "cardNo", (const char*)localUserData->cardNo);
         cJSON_AddNumberToObject(dataObj, "callType",localUserData->authMode); 
         cJSON_AddNumberToObject(dataObj, "status", ON_LINE); 
@@ -585,6 +584,7 @@ uint8_t packetPayload(LOCAL_USER_STRU *localUserData,uint8_t *descJson)
         {
             cJSON_AddNumberToObject(dataObj, "type",localUserData->qrType);
             cJSON_AddNumberToObject(dataObj, "callState",CALL_OK);
+            cJSON_AddStringToObject(dataObj, "qrId", (const char*)localUserData->qrID);
         }
         else
         {

@@ -280,7 +280,7 @@ static void vTaskBarCode(void *pvParameters)
         memset(recv_buf,0x00,sizeof(recv_buf));           
         len = RS485_RecvAtTime(COM5,recv_buf,sizeof(recv_buf),800);
 
-//        log_d("RS485_RecvAtTime = %d\r\n",len);
+//        log_d("RS485_RecvAtTime = %d,gDeviceStateFlag = %d,recv_buf = %s\r\n",len,gDeviceStateFlag,recv_buf);
         if(len>255)
             len = 255;
          

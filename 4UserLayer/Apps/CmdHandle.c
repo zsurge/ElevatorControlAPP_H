@@ -1404,7 +1404,7 @@ static SYSERRORCODE_E SetLocalSn( uint8_t* msgBuf )
     SYSERRORCODE_E result = NO_ERR;
     uint8_t buf[MQTT_TEMP_LEN] = {0};
     uint8_t deviceCode[32] = {0};
-    uint8_t deviceID[4] = {0};
+    uint8_t deviceID[5] = {0};
     uint16_t len = 0;
 //    char *tmpBuf[6] = {0}; //存放分割后的子字符串 
 //    int num = 0;
@@ -1426,7 +1426,9 @@ static SYSERRORCODE_E SetLocalSn( uint8_t* msgBuf )
 
     //记录SN
     ef_set_env_blob("sn_flag","1111",4);    
+    vTaskDelay (20);
     ef_set_env_blob("remote_sn",deviceCode,strlen((const char*)deviceCode));   
+    vTaskDelay (20);
     ef_set_env_blob("device_sn",deviceID,strlen((const char*)deviceID)); 
 
     log_d("remote_sn = %s\r\n",deviceCode);

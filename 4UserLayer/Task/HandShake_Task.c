@@ -87,9 +87,9 @@ static void vTaskHandShake(void *pvParameters)
     readTemplateData();
     readDevState();
     readCardAndUserIdIndex();
-
     ReadLocalDevSn();
 
+    
     vTaskDelay(500);
     vTaskDelete( NULL ); //É¾³ý×Ô¼º
 }

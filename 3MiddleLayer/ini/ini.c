@@ -266,22 +266,22 @@ void readCardAndUserIdIndex(void)
 
 void SaveDevState(char state)
 {
-    uint8_t devState[4] = {0};
+    uint8_t devState[5] = {0};
     
     gDeviceStateFlag = state;        
     memset(devState,0x00,sizeof(devState));
-    sprintf((char *)devState,"%04d",gDeviceStateFlag);
+    sprintf((char *)devState,"%04d",state);
     ef_set_env_blob("DeviceState",devState,4);  
 
 }
 
 void readDevState(void)
 {
-    uint8_t devState[4] = {0};
-    
+    uint8_t devState[4] = {0};   
          
     memset(devState,0x00,sizeof(devState));
-    ef_get_env_blob("DeviceState",devState,sizeof(devState) , NULL);  
+    ef_get_env_blob("DeviceState",devState,sizeof(devState) , NULL); 
+    log_d("DeviceState = %s\r\n",devState);
     gDeviceStateFlag = atoi((const char*)devState); 
  
     log_d("gDeviceStateFlag = %d\r\n",gDeviceStateFlag);        
