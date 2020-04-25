@@ -97,16 +97,18 @@ void HardFault_Handler(void)
  	printf("DFSR:%8X\r\n",temp);	//显示错误值
    	temp=SCB->AFSR;					//辅助fault状态寄存器
  	printf("AFSR:%8X\r\n",temp);	//显示错误值
+
+ 	NVIC_SystemReset();
  	while(1)
  	{
-	 	while(t<6)
-		{
-			t++;
-			BEEP=!BEEP;
-			for(i=0;i<0X1FF;i++);
-	 	}
- 	
-	  	t = 0;
+//	 	while(t<6)
+//		{
+//			t++;
+//			BEEP=!BEEP;
+//			for(i=0;i<0X1FF;i++);
+//	 	}
+// 	
+//	  	t = 0;
 	}
 }
 

@@ -116,103 +116,12 @@ void packetSendBuf(READER_BUFF_STRU *pQueue,uint8_t *buf)
             //直接发送启动设置指令
             log_d("send AUTH_MODE_BIND floor\r\n");
             break;
-
         default:
             log_d("invalid authMode\r\n");
             break;    
    }
 
 }
-#if 0
-SYSERRORCODE_E authReader(READER_BUFF_STRU *pQueue,LOCAL_USER_STRU *localUserData)
-{
-    SYSERRORCODE_E result = NO_ERR;
-    char value[128] = {0};
-    int val_len = 0;
-    char *buf[6] = {0}; //存放分割后的子字符串 
-    int num = 0;
-    uint8_t key[8+1] = {0};    
-    uint8_t timeStamp[16] = {0};
-
-    memset(key,0x00,sizeof(key));
-
-    if(pQueue->authMode == AUTH_MODE_QR) 
-    {
-        //二维码
-        log_d("pQueue->data = %s\r\n",pQueue->data);
-        strcpy((char *)key,(const char *)GetJsonItem((const uint8_t *)pQueue->data,(const uint8_t *)"ownerId",0));
-        strcpy((char *)timeStamp,(const char *)GetJsonItem((const uint8_t *)pQueue->data,(const uint8_t *)"datetime",0));
-    }
-    else
-    {
-        //读卡，-2 是减掉0D 0A
-        memcpy(key,pQueue->data+pQueue->dataLen-2-CARD_NO_LEN,CARD_NO_LEN);
-    }
-
-   
-    log_d("key = %s\r\n",key);
-    
-    memset(value,0x00,sizeof(value));
-
-    val_len = ef_get_env_blob(key, value, sizeof(value) , NULL);
-   
-
-    log_d("get env = %s,val_len = %d\r\n",value,val_len);
-
-    if(val_len <= 0)
-    {
-        //未找到记录，无权限
-        log_d("not find record\r\n");
-        return NO_AUTHARITY_ERR;
-    }
-
-    split(value,";",buf,&num); //调用函数进行分割 
-    log_d("num = %d\r\n",num);
-
-    if(num != 5)
-    {
-        log_d("read record error\r\n");
-        return READ_RECORD_ERR;       
-    }
-
-    localUserData->authMode = pQueue->authMode;    
-    
-    if(AUTH_MODE_QR == pQueue->authMode)
-    {
-        strcpy(localUserData->userId,key);
-        
-        strcpy(localUserData->cardNo,buf[0]);      
-        strcpy(localUserData->timeStamp,timeStamp);   
-    }
-    else
-    {
-        memcpy(localUserData->cardNo,key,CARD_NO_LEN);
-
-        log_d("buf[0] = %s\r\n",buf[0]);
-        strcpy(localUserData->userId,buf[0]);        
-    }   
-
-    //3867;0;0;2019-12-29;2029-12-31
-    
-    
-    strcpy(localUserData->accessFloor,buf[1]);
-    localUserData->defaultFloor = atoi(buf[2]);
-    strcpy(localUserData->startTime,buf[3]);
-    strcpy(localUserData->endTime,buf[4]);    
-
-
-    log_d("localUserData->cardNo = %s\r\n",localUserData->cardNo);
-    log_d("localUserData->userId = %s\r\n",localUserData->userId);
-    log_d("localUserData->accessLayer = %s\r\n",localUserData->accessFloor);
-    log_d("localUserData->defaultLayer = %d\r\n",localUserData->defaultFloor);    
-    log_d("localUserData->startTime = %s\r\n",localUserData->startTime);        
-    log_d("localUserData->endTime = %s\r\n",localUserData->endTime);        
-    log_d("localUserData->authMode = %d\r\n",localUserData->authMode);
-    log_d("localUserData->timeStamp = %s\r\n",localUserData->timeStamp);
-
-    return result;
-}
-#endif
 
 SYSERRORCODE_E authReader(READER_BUFF_STRU *pQueue,LOCAL_USER_STRU *localUserData)
 {

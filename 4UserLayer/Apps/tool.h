@@ -34,6 +34,11 @@
 #define DEBUG_PRINT
 
 
+#define _myAssert(char,int) printf("Error:%s,%d\r\n",char,int)
+#define MyAssert(x) if((x)==0) _myASSERT(__FILE__,__LINE__)
+
+
+
 #define SETBIT(x,y) x|=(1<<y)         //将X的第Y位置1    
 #define CLRBIT(x,y) x&=~(1<<y)        //将X的第Y位清0
 

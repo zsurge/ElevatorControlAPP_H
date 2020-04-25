@@ -184,7 +184,7 @@ uint8_t* GetJsonItem ( const uint8_t* jsonBuff,const uint8_t* item,uint8_t isSub
 		else if ( json_item->type == cJSON_Number )
 		{
 			sprintf ( (char*)value,"%d",json_item->valueint );
-			log_d ( "json_item =  %s\r\n",value);
+//			log_d ( "json_item =  %s\r\n",value);
 		}
 		else if( json_item->type == cJSON_Array )
 		{
@@ -572,7 +572,6 @@ uint8_t packetPayload(LOCAL_USER_STRU *localUserData,uint8_t *descJson)
     if(localUserData->qrType == 4 )
     {    
         cJSON_AddStringToObject(root, "commandCode","3007");
-        cJSON_AddStringToObject(dataObj, "userId", (const char*)localUserData->userId);  
         cJSON_AddStringToObject(dataObj, "cardNo", (const char*)localUserData->cardNo);
         cJSON_AddNumberToObject(dataObj, "callType",localUserData->authMode); 
         cJSON_AddNumberToObject(dataObj, "status", ON_LINE); 
@@ -584,11 +583,14 @@ uint8_t packetPayload(LOCAL_USER_STRU *localUserData,uint8_t *descJson)
         {
             cJSON_AddNumberToObject(dataObj, "type",localUserData->qrType);
             cJSON_AddNumberToObject(dataObj, "callState",CALL_OK);
-            cJSON_AddStringToObject(dataObj, "qrId", (const char*)localUserData->qrID);
+//            cJSON_AddStringToObject(dataObj, "qrId", (const char*)localUserData->qrID);
+            cJSON_AddStringToObject(dataObj, "userId", (const char*)localUserData->qrID);              
         }
         else
         {
             cJSON_AddNumberToObject(dataObj, "type",CALL_OK);
+            cJSON_AddStringToObject(dataObj, "userId", (const char*)localUserData->userId);              
+            
         }
     }
     else
@@ -1023,7 +1025,7 @@ uint8_t parseQrCode(uint8_t *jsonBuff,QRCODE_INFO_STRU *qrCodeInfo)
     tmpArray = cJSON_GetObjectItem(root, "f1");
     memcpy(qrCodeInfo->accessFloor,parseAccessFloor((uint8_t *)tmpArray->valuestring),FLOOR_ARRAY_LENGTH);
 
-    dbh("qrCodeInfo->accessFloor",(char *)qrCodeInfo->accessFloor,64);
+    dbh("qrCodeInfo->accessFloor",(char *)qrCodeInfo->accessFloor,FLOOR_ARRAY_LENGTH);
 
     qrCodeInfo->defaultFloor = qrCodeInfo->accessFloor[0];
     log_d("qrCodeInfo->defaultFloor = %d\r\n",qrCodeInfo->defaultFloor);

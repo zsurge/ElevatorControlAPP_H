@@ -93,33 +93,23 @@ static void vTaskComm(void *pvParameters)
     log_d("start vTaskComm\r\n");   
     
     while (1)
-    {       
-//        recvLen = RS485_Recv(COM4,buf,MAX_CMD_LEN);
+    {  
+//        recvLen = RS485_Recv(COM4,buf,5);
 //        
 //        //判定数据的有效性
-//        if(recvLen != MAX_CMD_LEN || buf[0] != CMD_STX || buf[1]<1 || buf[1]>4)
+//        if(recvLen != 5 || buf[0] != 0X5a || buf[1]<1 || buf[1]>4)
 //        {
 //            vTaskDelay(500); 
 //            continue;
 //        }
 
+//        crc= xorCRC(buf,3);
 //        
-        recvLen = RS485_Recv(COM4,buf,5);
-        
-        //判定数据的有效性
-        if(recvLen != 5 || buf[0] != 0X5a || buf[1]<1 || buf[1]>4)
-        {
-            vTaskDelay(500); 
-            continue;
-        }
-
-        crc= xorCRC(buf,3);
-        
-        if(crc != buf[3])
-        {
-            vTaskDelay(500); 
-            continue;
-        }
+//        if(crc != buf[3])
+//        {
+//            vTaskDelay(500); 
+//            continue;
+//        }
         
         //if(buf[1] == readID)
         {
@@ -141,7 +131,6 @@ static void vTaskComm(void *pvParameters)
             }
 
             RS485_SendBuf(COM4,sendBuf,MAX_RS485_LEN);
-
         }
 
 
