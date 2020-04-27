@@ -44,6 +44,7 @@ static TaskHandle_t xHandleTaskAppCreate = NULL;
 SemaphoreHandle_t gxMutex = NULL;
 EventGroupHandle_t xCreatedEventGroup = NULL;
 QueueHandle_t xTransQueue = NULL; 
+SemaphoreHandle_t CountSem_Handle = NULL;
 
 
 
@@ -181,6 +182,10 @@ static void AppObjCreate (void)
         App_Printf("create queue success!\r\n");
     }
 
+    /*  创建 CountSem */
+    CountSem_Handle = xSemaphoreCreateCounting(2,2);
+    if (NULL != CountSem_Handle)
+        App_Printf("CountSem_Handle  计数信号量创建成功!\r\n");
 
 }
 

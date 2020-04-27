@@ -277,7 +277,7 @@ void SaveDevState(char state)
 
 void readDevState(void)
 {
-    uint8_t devState[4] = {0};   
+    uint8_t devState[5] = {0};   
          
     memset(devState,0x00,sizeof(devState));
     ef_get_env_blob("DeviceState",devState,sizeof(devState) , NULL); 

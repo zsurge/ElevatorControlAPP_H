@@ -32,7 +32,7 @@
 /*----------------------------------------------*
  * 宏定义                                       *
  *----------------------------------------------*/
-#define  QUEUE_LEN    10     /* 队列的长度，最大可包含多少个消息 */
+#define  QUEUE_LEN    5     /* 队列的长度，最大可包含多少个消息 */
     
     
 //事件标志
@@ -62,6 +62,7 @@ extern EventGroupHandle_t xCreatedEventGroup;
 extern SemaphoreHandle_t gxMutex;
 extern QueueHandle_t xTransQueue; 
 
+extern SemaphoreHandle_t CountSem_Handle;
 
 
 

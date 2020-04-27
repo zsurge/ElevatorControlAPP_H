@@ -672,7 +672,7 @@ SYSERRORCODE_E EnableDev ( uint8_t* msgBuf )
 {
     SYSERRORCODE_E result = NO_ERR;
     uint8_t buf[MQTT_TEMP_LEN] = {0};
-    uint8_t type[4] = {0};
+    uint8_t type[4] = {"1"};
     uint16_t len = 0;
 
     if(!msgBuf)
@@ -687,7 +687,7 @@ SYSERRORCODE_E EnableDev ( uint8_t* msgBuf )
         return result;
     }    
 
-     SaveDevState(DEVICE_ENABLE);
+    SaveDevState(DEVICE_ENABLE);
 
     //这里需要发消息到消息队列，启用
     SendToQueue(type,strlen((const char*)type),AUTH_MODE_BIND);
@@ -707,7 +707,7 @@ SYSERRORCODE_E DisableDev ( uint8_t* msgBuf )
 {
     SYSERRORCODE_E result = NO_ERR;
     uint8_t buf[MQTT_TEMP_LEN] = {0};
-    uint8_t type[4] = {"1"};
+    uint8_t type[4] = {"0"};
     uint16_t len = 0;
 
     if(!msgBuf)
@@ -1332,7 +1332,7 @@ static SYSERRORCODE_E UnbindDev( uint8_t* msgBuf )
 {
     SYSERRORCODE_E result = NO_ERR;
     uint8_t buf[MQTT_TEMP_LEN] = {0};
-    uint8_t type[4] = {0};
+    uint8_t type[2] = {0};
     uint16_t len = 0;
 
     if(!msgBuf)
