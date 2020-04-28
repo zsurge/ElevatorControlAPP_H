@@ -308,8 +308,19 @@ MQTT_START:
 				rc = transport_sendPacketBuffer ( gMySock, ( unsigned char* ) buf, len );
 				if ( rc == len )
 				{
-//					log_d ( "send PINGREQ Successfully\r\n" );
-                    msgtypes = 0; 
+//					log_d ( "send PINGREQ Successfully\r\n" );                                      
+
+                    rc = MQTTPacket_read ( ( unsigned char* ) buf, buflen, transport_getdata ); //轮询，读MQTT返回数据，
+                    if ( rc != PINGRESP ) //服务器无响应
+                    {
+                        log_d ( "lost mqtt server connect!\r\n");
+                        msgtypes = CONNECT; 
+                        gConnectStatus = 0;
+                        goto MQTT_reconnect;
+                    }
+                    log_d ( "step = %d,mqtt server Pong\r\n",PINGRESP );            //心跳回执，服务有响应
+
+                    msgtypes = 0;
 				}
 				else
 				{
@@ -321,7 +332,7 @@ MQTT_START:
 				break;
 			//心跳响应
 			case PINGRESP://13
-				log_d ( "step = %d,mqtt server Pong\r\n",PINGRESP );  			//心跳回执，服务有响应
+				log_d ( "step = %d,111 mqtt server Pong\r\n",PINGRESP );  			//心跳回执，服务有响应
 				msgtypes = 0;
 				break;
             case UNSUBSCRIBE:

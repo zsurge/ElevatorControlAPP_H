@@ -689,6 +689,10 @@ SYSERRORCODE_E EnableDev ( uint8_t* msgBuf )
 
     SaveDevState(DEVICE_ENABLE);
 
+
+    //add 2020.04.27
+    xQueueReset(xTransQueue); 
+        
     //这里需要发消息到消息队列，启用
     SendToQueue(type,strlen((const char*)type),AUTH_MODE_BIND);
 
@@ -1357,7 +1361,10 @@ static SYSERRORCODE_E UnbindDev( uint8_t* msgBuf )
         SendToQueue(type,strlen((const char*)type),AUTH_MODE_UNBIND);
     }
     else if(memcmp(type,"1",1) == 0)
-    {    
+    {  
+        //add 2020.04.27
+        xQueueReset(xTransQueue); 
+
         SaveDevState(DEVICE_ENABLE);          
         SendToQueue(type,strlen((const char*)type),AUTH_MODE_BIND);
     } 

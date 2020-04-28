@@ -116,7 +116,7 @@ static void vTaskKey(void *pvParameters)
 					break;
 				case KEY_LL_PRES:   
                     log_i("KEY_DOWN_K3\r\n");
-                    ef_env_set_default();
+//                    ef_env_set_default();
 //                    calcRunTime();       
 //                    bsp_ds1302_mdifytime("2020-03-31 10:18:20");
 
@@ -132,9 +132,9 @@ static void vTaskKey(void *pvParameters)
 				case KEY_OK_PRES:    
 //                    test_env();
                     log_w("KEY_DOWN_K4\r\n");
-                    ef_set_env_blob("sn_flag","1111",4); 
+                    ef_set_env_blob("sn_flag","0000",4); 
 //                    ef_set_env_blob("remote_sn","7A13DCC67054F72CC07F",20);
-                ef_set_env_blob("remote_sn","823545AE9B2345B08FD8",20);
+//                ef_set_env_blob("remote_sn","823545AE9B2345B08FD8",20);
                     
 					break;                
 				
