@@ -59,6 +59,10 @@
 #define RS485_U5_RX_EN()	    GPIOD->BSRRH = GPIO_Pin_7
 #define RS485_U5_TX_EN()	    GPIOD->BSRRL = GPIO_Pin_7
 
+#define RS485_U6_RX_EN()	    GPIOA->BSRRH = GPIO_Pin_8
+#define RS485_U6_TX_EN()	    GPIOA->BSRRL = GPIO_Pin_8
+
+
 
 /* 定义端口号 */
 typedef enum
@@ -91,7 +95,7 @@ typedef enum
 #endif
 
 #if UART4_FIFO_EN == 1
-	#define UART4_BAUD			9600
+	#define UART4_BAUD			38400
 	#define UART4_TX_BUF_SIZE	1*512
 	#define UART4_RX_BUF_SIZE	1*512
 #endif
@@ -104,8 +108,8 @@ typedef enum
 
 #if UART6_FIFO_EN == 1
 	#define UART6_BAUD			38400
-	#define UART6_TX_BUF_SIZE	1*1024
-	#define UART6_RX_BUF_SIZE	1*1024
+	#define UART6_TX_BUF_SIZE	1*512
+	#define UART6_RX_BUF_SIZE	1*512
 #endif
 
 /* 串口设备结构体 */

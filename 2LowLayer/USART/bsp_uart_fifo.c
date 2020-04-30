@@ -600,7 +600,7 @@ void RS485_SendBefor(void)
     #endif
 
     #if UART6_RS485_EN == 1
-
+    RS485_U6_TX_EN();
     #endif        
 }
 
@@ -635,7 +635,7 @@ void RS485_SendOver(void)
     #endif
 
     #if UART6_RS485_EN == 1
-
+    RS485_U6_RX_EN();
     #endif   
 }
 
@@ -853,9 +853,9 @@ static void UartVarInit(void)
 	g_tUart6.usRxRead = 0;						/* 接收FIFO读索引 */
 	g_tUart6.usRxCount = 0;						/* 接收到的新数据个数 */
 	g_tUart6.usTxCount = 0;						/* 待发送的数据个数 */
-	g_tUart6.SendBefor = 0;						/* 发送数据前的回调函数 */
-	g_tUart6.SendOver = 0;						/* 发送完毕后的回调函数 */
-	g_tUart6.ReciveNew = 0;						/* 接收到新数据后的回调函数 */
+	g_tUart6.SendBefor = RS485_SendBefor;						/* 发送数据前的回调函数 */
+	g_tUart6.SendOver = RS485_SendOver;						/* 发送完毕后的回调函数 */
+	g_tUart6.ReciveNew = RS485_ReciveNew;						/* 接收到新数据后的回调函数 */
 #endif
 }
 
@@ -1216,46 +1216,32 @@ static void InitHardUart(void)
 	/* 第1步： 配置GPIO */
 
 	/* 打开 GPIO 时钟 */
-	RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOC |RCC_AHB1Periph_GPIOG, ENABLE);
+	RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOC, ENABLE);
 
 	/* 打开 UART 时钟 */
 	RCC_APB2PeriphClockCmd(RCC_APB2Periph_USART6, ENABLE);
 
-	/* 将 PG14 映射为 USART6_TX */
-	GPIO_PinAFConfig(GPIOG, GPIO_PinSource14, GPIO_AF_USART6);
+	/* 将 PC6 映射为 USART6_TX */
+	GPIO_PinAFConfig(GPIOC, GPIO_PinSource6, GPIO_AF_USART6);
 
 	/* 将 PC7 映射为 USART6_RX */
 	GPIO_PinAFConfig(GPIOC, GPIO_PinSource7, GPIO_AF_USART6);
 
-	/* 将 PG8 映射为 USART6_RTS */
-	GPIO_PinAFConfig(GPIOG, GPIO_PinSource8, GPIO_AF_USART6);
-
-	/* 将 PG15 映射为 USART6_CTS */
-	GPIO_PinAFConfig(GPIOG, GPIO_PinSource15, GPIO_AF_USART6);
 
 	/* 配置 PG14/USART6_TX 为复用功能 */
 	GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;	/* 输出类型为推挽 */
 	GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_UP;	/* 内部上拉电阻使能 */
 	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF;	/* 复用模式 */
 
-	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_14;
+	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_6;
 	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
-	GPIO_Init(GPIOG, &GPIO_InitStructure);
+	GPIO_Init(GPIOC, &GPIO_InitStructure);
 
 	/* 配置 PC7/USART6_RX 为复用功能 */
 	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF;
 	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_7;
 	GPIO_Init(GPIOC, &GPIO_InitStructure);
 
-	/* 配置 PG8/USART6_RTS 为复用功能 */
-	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF;
-	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_8;
-	GPIO_Init(GPIOG, &GPIO_InitStructure);
-
-	/* 配置 PG15/USART6_CTS 为复用功能 */
-	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF;
-	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_15;
-	GPIO_Init(GPIOG, &GPIO_InitStructure);
 
 	/* 第2步： 配置串口硬件参数 */
 	USART_InitStructure.USART_BaudRate = UART6_BAUD;	/* 波特率 */

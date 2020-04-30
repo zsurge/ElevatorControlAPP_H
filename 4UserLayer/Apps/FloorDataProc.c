@@ -107,6 +107,10 @@ void packetSendBuf(READER_BUFF_STRU *pQueue,uint8_t *buf)
         case AUTH_MODE_REMOTE:
             //直接发送目标楼层
             log_d("send desc floor\r\n");
+            
+            //需把楼层取出来发给电梯的数据
+            //packetToElevator(&localUserData,buf);
+                    
             break;
         case AUTH_MODE_UNBIND:
             //直接发送停用设备指令
@@ -156,9 +160,7 @@ SYSERRORCODE_E authReader(READER_BUFF_STRU *pQueue,LOCAL_USER_STRU *localUserDat
             //未找到记录，无权限
             log_d("not find record\r\n");
             return NO_AUTHARITY_ERR;
-        }        
-
-
+        } 
         
         localUserData->authMode = pQueue->authMode; 
         //localUserData->defaultFloor = qrCodeInfo.tagFloor;   
@@ -166,7 +168,7 @@ SYSERRORCODE_E authReader(READER_BUFF_STRU *pQueue,LOCAL_USER_STRU *localUserDat
         memcpy(localUserData->qrID,qrCodeInfo.qrID,QRID_LEN); 
         memcpy(localUserData->startTime,qrCodeInfo.startTime,TIME_LEN);
         memcpy(localUserData->endTime,qrCodeInfo.endTime,TIME_LEN); 
-        memcpy(localUserData->timeStamp,time_to_timestamp(),TIMESTAMP_LEN); 
+        memcpy(localUserData->timeStamp,qrCodeInfo.startTime,TIME_LEN); 
         memcpy(localUserData->accessFloor,qrCodeInfo.accessFloor,FLOOR_ARRAY_LEN); 
     }
     else

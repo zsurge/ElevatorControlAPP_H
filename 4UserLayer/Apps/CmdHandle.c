@@ -580,9 +580,6 @@ SYSERRORCODE_E DelCardNo ( uint8_t* msgBuf )
     log_d("userData.accessFloor = %s\r\n",userData.accessFloor);
     log_d("userData.defaultFloor = %d\r\n",userData.defaultFloor);
     log_d("userData.startTime = %s\r\n",userData.startTime);
-
-
-
     
     return result;
 }

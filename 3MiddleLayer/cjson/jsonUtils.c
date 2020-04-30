@@ -631,7 +631,7 @@ SYSERRORCODE_E saveTemplateParam(uint8_t *jsonBuff)
     cJSON* root,*data,*templateData,*templateMap,*holidayTimeMap,*peakTimeMap;   
     cJSON* tmpArray,*arrayElement;
 
-     memset(&gTemplateParam,0x00,sizeof(gTemplateParam));
+    memset(&gTemplateParam,0x00,sizeof(TEMPLATE_PARAM_STRU));
     TEMPLATE_PARAM_STRU *templateParam = &gTemplateParam; 
 
     //TEMPLATE_PARAM_STRU *templateParam = my_malloc(sizeof(TEMPLATE_PARAM_STRU)); 
