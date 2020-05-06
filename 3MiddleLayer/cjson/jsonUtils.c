@@ -733,7 +733,7 @@ SYSERRORCODE_E saveTemplateParam(uint8_t *jsonBuff)
     templateParam->offlineProcessing = json_item->valueint;
     memset(tmpbuf,0x00,sizeof(tmpbuf));
     sprintf(tmpbuf,"%8d",templateParam->offlineProcessing);
-    ef_set_env_blob("templateStatus",tmpbuf,8);     
+    ef_set_env_blob("offlineStatus",tmpbuf,8);     
     log_d("templateParam->offlineProcessing = %d\r\n",templateParam->offlineProcessing);     
 
 

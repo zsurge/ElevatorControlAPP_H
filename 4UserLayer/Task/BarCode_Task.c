@@ -311,7 +311,7 @@ static void vTaskBarCode(void *pvParameters)
                 log_d("2 semavalue = %d,xReturn = %d\r\n",semavalue,xReturn);
                 
                 //添加模版是否启用的判定
-                if(gTemplateParam.templateStatus == 0)
+                if(gTemplateParam.templateStatus == 0 || gTemplateParam.offlineProcessing == 1 || gDeviceStateFlag == DEVICE_DISABLE)
                 {
                     //2020-03-18 这里应该发送电梯不接受控制的指令，而不是不用continue,
                     //在授权方式那里，添加控制类型，并定义控制指令，发给电梯
@@ -321,6 +321,18 @@ static void vTaskBarCode(void *pvParameters)
                         ptQR->dataLen = sizeof(relieveControl);
                         memcpy(ptQR->data,relieveControl,ptQR->dataLen);   
                         log_d("the template is disable\r\n");
+
+                        
+                        xReturn = xSemaphoreGive(CountSem_Handle);// 给出计数信号量
+                        
+                        semavalue=uxSemaphoreGetCount(CountSem_Handle); //获取计数型信号量值
+                        
+
+                        comClearRxFifo(COM5);
+                        memset(recv_buf,0x00,sizeof(recv_buf));
+                        memset(sendBuff,0x00,sizeof(sendBuff));
+                        offset = 0;
+                        len = 0;                         
                 }
                 else
                 {
@@ -364,16 +376,16 @@ static void vTaskBarCode(void *pvParameters)
                             //判定模板的呼梯方式
                             log_d("outside peak mode the valid date \r\n");
 
+                            getDevData((char *)sendBuff,gTemplateParam.templateCallingWay.isIcCard,gTemplateParam.templateCallingWay.isQrCode,ptQR);
+
+                        }
+
+                    } 
+                     else
+                     {
+                        //判定模板的呼梯方式
+                        log_d("Now it's normal operation mode \r\n");
                         getDevData((char *)sendBuff,gTemplateParam.templateCallingWay.isIcCard,gTemplateParam.templateCallingWay.isQrCode,ptQR);
-
-                    }
-
-                 } 
-                 else
-                 {
-                    //判定模板的呼梯方式
-                    log_d("Now it's normal operation mode \r\n");
-                    getDevData((char *)sendBuff,gTemplateParam.templateCallingWay.isIcCard,gTemplateParam.templateCallingWay.isQrCode,ptQR);
 
                      }  
 
@@ -401,18 +413,37 @@ static void vTaskBarCode(void *pvParameters)
                         }
                         
                     }
+                    else
+                    {
+                        xReturn = xSemaphoreGive(CountSem_Handle);// 给出计数信号量                        
+                        semavalue=uxSemaphoreGetCount(CountSem_Handle); //获取计数型信号量值 
+                        comClearRxFifo(COM5);
+                        memset(recv_buf,0x00,sizeof(recv_buf));
+                        memset(sendBuff,0x00,sizeof(sendBuff));
+                        offset = 0;
+                        len = 0;  
+                    }
                 }
 
+                comClearRxFifo(COM5);
                 memset(sendBuff,0x00,sizeof(sendBuff));
                 offset = 0;
             }
             else
             {
+                comClearRxFifo(COM5);
                 memset(sendBuff,0x00,sizeof(sendBuff));
                 offset = 0;
             }
         }
-        
+        else
+        {
+            comClearRxFifo(COM5);
+            memset(recv_buf,0x00,sizeof(recv_buf));
+            memset(sendBuff,0x00,sizeof(sendBuff));
+            offset = 0;
+            len = 0; 
+        }       
        
 
 

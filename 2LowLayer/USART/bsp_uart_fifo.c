@@ -552,6 +552,13 @@ void RS485_InitTXE(void)
     #endif
 
     #if UART6_RS485_EN == 1
+	RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOA, ENABLE);	/* 打开GPIO时钟 */
+	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_OUT;		/* 设为输出口 */
+	GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;		/* 设为推挽 */
+	GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_UP;	/* 无上拉电阻 */
+	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_100MHz;	/* IO口最大速度 */
+	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_8;
+	GPIO_Init(GPIOA, &GPIO_InitStructure);       
 
     #endif    
 }

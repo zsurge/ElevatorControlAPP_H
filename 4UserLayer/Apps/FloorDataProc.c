@@ -59,7 +59,8 @@ void packetDefaultSendBuf(uint8_t *buf)
     uint8_t sendBuf[64] = {0};
 
     sendBuf[0] = CMD_STX;
-    sendBuf[1] = bsp_dipswitch_read();
+    sendBuf[1] = 0x01;//bsp_dipswitch_read();
+    sendBuf[2] = 0x01;//bsp_dipswitch_read();
     sendBuf[MAX_SEND_LEN-1] = xorCRC(sendBuf,MAX_SEND_LEN-2);
 
     memcpy(buf,sendBuf,MAX_SEND_LEN);
@@ -114,10 +115,12 @@ void packetSendBuf(READER_BUFF_STRU *pQueue,uint8_t *buf)
             break;
         case AUTH_MODE_UNBIND:
             //直接发送停用设备指令
+            xQueueReset(xTransQueue); 
             log_d("send AUTH_MODE_UNBIND floor\r\n");
             break;
         case AUTH_MODE_BIND:
             //直接发送启动设置指令
+            xQueueReset(xTransQueue); 
             log_d("send AUTH_MODE_BIND floor\r\n");
             break;
         default:

@@ -123,7 +123,7 @@ static void vTaskKey(void *pvParameters)
                     log_d("bsp_ds1302_readtime = %s\r\n",bsp_ds1302_readtime());
 //                    ef_set_env_blob("device_sn","88888888",8); 
                     time_to_timestamp();
-                    ef_print_env();
+//                    ef_print_env();
 
 //                    searchHeaderIndex("00012926",USER_MODE,&index);
 

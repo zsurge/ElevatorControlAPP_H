@@ -84,7 +84,7 @@ void readTemplateData(void)
     char *callingWay[4] = {0}; //存放分割后的子字符串 
     int callingWayNum = 0;
 
-    memset(&gTemplateParam,0x00,sizeof(gTemplateParam));
+    memset(&gTemplateParam,0x00,sizeof(TEMPLATE_PARAM_STRU));
     TEMPLATE_PARAM_STRU *templateParam = &gTemplateParam; 
 
 
@@ -92,6 +92,11 @@ void readTemplateData(void)
     memset(tempBuff,0x00,sizeof(tempBuff));
     valueLen = ef_get_env_blob("templateStatus", tempBuff, sizeof(tempBuff) , NULL);
     templateParam->templateStatus = atoi(tempBuff);
+
+    //读取模板是否支持离线状态
+    memset(tempBuff,0x00,sizeof(tempBuff));
+    valueLen = ef_get_env_blob("offlineStatus", tempBuff, sizeof(tempBuff) , NULL);
+    templateParam->offlineProcessing = atoi(tempBuff);    
     
     //读取工作模式，是否开节假日模式
     valueLen = ef_get_env_blob("modeType", templateParam->modeType, sizeof(templateParam->modeType) , NULL);
@@ -228,7 +233,8 @@ void readTemplateData(void)
     log_d("gTemplateParam->peakCallingWay = %d\r\n",gTemplateParam.peakCallingWay.isIcCard);      
     
 
-    log_d("gTemplateParam->templateStatus = %d\r\n",gTemplateParam.templateStatus);      
+    log_d("gTemplateParam->templateStatus = %d\r\n",gTemplateParam.templateStatus);     
+    log_d("gTemplateParam->offlineProcessing = %d\r\n",gTemplateParam.offlineProcessing);
     log_d("gTemplateParam->modeType = %s\r\n",gTemplateParam.modeType);
     log_d("gTemplateParam->callingWay = %s\r\n",gTemplateParam.callingWay);    
     log_d("gTemplateParam->peakInfo[0].callingWay = %s\r\n",gTemplateParam.peakInfo[0].callingWay);

@@ -731,7 +731,7 @@ SYSERRORCODE_E DisableDev ( uint8_t* msgBuf )
     
     len = strlen((const char*)buf);
 
-    log_d("DisableDev len = %d,buf = %s\r\n",len,buf);
+    log_d("DisableDev len = %d,buf = %s,status = %d\r\n",len,buf,gDeviceStateFlag);
 
     mqttSendData(buf,len);
 

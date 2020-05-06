@@ -41,18 +41,18 @@
 #define	UART1_FIFO_EN	0
 #define	UART2_FIFO_EN	1
 #define	UART3_FIFO_EN	0
-#define	UART4_FIFO_EN	1
+#define	UART4_FIFO_EN	0
 #define	UART5_FIFO_EN	1
-#define	UART6_FIFO_EN	0
+#define	UART6_FIFO_EN	1
 
 
 /* 定义使能的485接口, 0 表示不使能（不增加代码大小）， 1表示使能 */
 #define UART1_RS485_EN	0
 #define	UART2_RS485_EN	0
 #define	UART3_RS485_EN	0
-#define	UART4_RS485_EN	1
+#define	UART4_RS485_EN	0
 #define	UART5_RS485_EN	1
-#define	UART6_RS485_EN	0
+#define	UART6_RS485_EN	1
 
 
 /* RS485芯片发送使能GPIOD, PD7 */
