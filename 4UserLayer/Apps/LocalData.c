@@ -439,8 +439,7 @@ uint8_t writeUserData(USERDATA_STRU userData,uint8_t mode)
     
     int32_t iTime1, iTime2;
     
-    iTime1 = xTaskGetTickCount();	/* 记下开始时间 */
- 
+    iTime1 = xTaskGetTickCount();	/* 记下开始时间 */ 
 	
     //检查存储空间是否已满；
     isFull = checkFlashSpace(mode);
@@ -484,11 +483,15 @@ uint8_t writeUserData(USERDATA_STRU userData,uint8_t mode)
     
     //log_d("writeHeader success! index = %d,addr = %d\r\n",index,addr);
     
+    
     //packet write buff
     memset(wBuff,0x00,sizeof(wBuff));  
 
     //copy to buff
     memcpy(wBuff, &userData, sizeof(USERDATA_STRU)-1);
+
+
+    //这里应该打印一下WBUFF，看数据是否正确
 
     //calc crc
     crc = xorCRC(wBuff, sizeof(USERDATA_STRU)-1);
@@ -505,8 +508,7 @@ uint8_t writeUserData(USERDATA_STRU userData,uint8_t mode)
 
 		//再读出来，对比是否一致
 		memset(rBuff,0x00,sizeof(rBuff));
-		bsp_sf_ReadBuffer (rBuff, addr, sizeof(USERDATA_STRU));
-
+		bsp_sf_ReadBuffer (rBuff, addr, sizeof(USERDATA_STRU));		
 		ret = compareArray(wBuff,rBuff,sizeof(USERDATA_STRU));
 		
 		if(ret == 0)
@@ -597,7 +599,7 @@ uint8_t readUserData(uint8_t* header,uint8_t mode,USERDATA_STRU *userData)
     iTime2 = xTaskGetTickCount();	/* 记下结束时间 */
 	log_d("readUserData成功，耗时: %dms\r\n",iTime2 - iTime1);		
 
-    dbh("readUserData", (char *)rBuff, sizeof(USERDATA_STRU));
+    //dbh("readUserData", (char *)rBuff, sizeof(USERDATA_STRU));
 
 	return 0;
 

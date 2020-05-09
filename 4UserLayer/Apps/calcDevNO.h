@@ -46,7 +46,7 @@ extern int myAtoi(const char *str);
 
 unsigned char findDev(unsigned char *str,unsigned char dataFormat );
 
-unsigned char *parseAccessFloor(unsigned char *str);
+char *parseAccessFloor(char *str);
 
 
 

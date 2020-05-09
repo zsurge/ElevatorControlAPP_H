@@ -185,7 +185,7 @@ static void vLwipDHCPTask( void *pvParameters )
 		}
     
 		/* wait 250 ms */
-		vTaskDelay(250 / portTICK_RATE_MS);
+		vTaskDelay(500 / portTICK_RATE_MS);
 	}   
 }
 

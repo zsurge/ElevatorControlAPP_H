@@ -21,8 +21,8 @@
  * 包含头文件                                   *
  *----------------------------------------------*/
 #include "led_task.h"
-#include "bsp_tim_pwm.h"
-
+//#include "bsp_tim_pwm.h"
+#include "bsp_led.h"
 
 /*----------------------------------------------*
  * 宏定义                                       *
@@ -67,16 +67,16 @@ static void vTaskLed(void *pvParameters)
     
     while(1)
     {  
-        if(i == 250)
-        {
-            i = 100;
-        }
-        i+=20;
-        bsp_SetTIMOutPWM(GPIOG, GPIO_Pin_8, TIM1, 1, 100, ((i) * 10000) /255);
-        
+//        if(i == 250)
+//        {
+//            i = 100;
+//        }
+//        i+=20;
+//        bsp_SetTIMOutPWM(GPIOG, GPIO_Pin_8, TIM1, 1, 100, ((i) * 10000) /255);
+        LEDERROR = !LEDERROR;
 		/* 发送事件标志，表示任务正常运行 */        
 		xEventGroupSetBits(xCreatedEventGroup, TASK_BIT_0);  
-        vTaskDelay(100); 
+        vTaskDelay(500); 
     }
 } 
 

@@ -32,12 +32,14 @@
 /*----------------------------------------------*
  * 宏定义                                       *
  *----------------------------------------------*/
-#define   HOST_NAME       "192.168.110.109"     //服务器IP地址 线下 
+//#define   HOST_NAME       "192.168.110.109"     //服务器IP地址 线下 
+#define   HOST_NAME         "mqtt.bsgoal.net.cn"
+//#define   HOST_NAME         "120.78.247.221"
+
 #define   HOST_PORT     1883    //由于是TCP连接，端口必须是1883
 
 #define DEVICE_PUBLISH		"/smartCloud/server/msg/device"	
 #define DEVICE_SUBSCRIBE	"/smartCloud/terminal/msg/"   
-#define DEVICE_SN           "3E51E8848A4C00863617"
 
 
 

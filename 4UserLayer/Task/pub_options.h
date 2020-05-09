@@ -42,12 +42,11 @@
 #define TASK_BIT_3	 (1 << 3)
 #define TASK_BIT_4	 (1 << 4)
 #define TASK_BIT_5	 (1 << 5)
-#define TASK_BIT_6	 (1 << 6)
-#define TASK_BIT_7	 (1 << 7)
-#define TASK_BIT_8	 (1 << 8)
+
+
     
     
-#define TASK_BIT_ALL ( TASK_BIT_0 | TASK_BIT_1 | TASK_BIT_2 |TASK_BIT_3|TASK_BIT_4|TASK_BIT_5|TASK_BIT_6)
+#define TASK_BIT_ALL ( TASK_BIT_0 | TASK_BIT_1 | TASK_BIT_2 |TASK_BIT_3|TASK_BIT_4|TASK_BIT_5)
     
 
 /*----------------------------------------------*

@@ -1023,9 +1023,9 @@ uint8_t parseQrCode(uint8_t *jsonBuff,QRCODE_INFO_STRU *qrCodeInfo)
     log_d("qrCodeInfo->type= %d\r\n",qrCodeInfo->type); 
     
     tmpArray = cJSON_GetObjectItem(root, "f1");
-    memcpy(qrCodeInfo->accessFloor,parseAccessFloor((uint8_t *)tmpArray->valuestring),FLOOR_ARRAY_LENGTH);
+    memcpy(qrCodeInfo->accessFloor,parseAccessFloor(tmpArray->valuestring),FLOOR_ARRAY_LENGTH);
 
-    dbh("qrCodeInfo->accessFloor",(char *)qrCodeInfo->accessFloor,FLOOR_ARRAY_LENGTH);
+//    dbh("qrCodeInfo->accessFloor",(char *)qrCodeInfo->accessFloor,FLOOR_ARRAY_LENGTH);
 
     qrCodeInfo->defaultFloor = qrCodeInfo->accessFloor[0];
     log_d("qrCodeInfo->defaultFloor = %d\r\n",qrCodeInfo->defaultFloor);

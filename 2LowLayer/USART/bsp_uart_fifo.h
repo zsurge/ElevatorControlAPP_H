@@ -101,7 +101,7 @@ typedef enum
 #endif
 
 #if UART5_FIFO_EN == 1
-	#define UART5_BAUD			9600
+	#define UART5_BAUD			38400
 	#define UART5_TX_BUF_SIZE	1*1024
 	#define UART5_RX_BUF_SIZE	1*1024
 #endif
@@ -151,8 +151,8 @@ void RS485_SendBuf(COM_PORT_E _ucPort,uint8_t *_ucaBuf, uint16_t _usLen);
 void RS485_SendStr(COM_PORT_E _ucPort,char *_pBuf);
 void RS485_SetBaud(COM_PORT_E _ucPort,uint32_t _baud);
 
-uint8_t RS485_Recv(COM_PORT_E _ucPort,uint8_t *buf, uint8_t len);
-uint8_t RS485_RecvAtTime(COM_PORT_E _ucPort,uint8_t *buf, uint8_t len,uint32_t timeout);
+uint16_t RS485_Recv(COM_PORT_E _ucPort,uint8_t *buf, uint16_t len);
+uint16_t RS485_RecvAtTime(COM_PORT_E _ucPort,uint8_t *buf, uint16_t len,uint32_t timeout);
 
 
 

@@ -52,6 +52,7 @@
 static SYSERRORCODE_E packetToElevator(LOCAL_USER_STRU *localUserData,uint8_t *buff);
 static void calcFloor(uint8_t layer,uint8_t regMode,uint8_t *src,uint8_t *outFloor);
 static SYSERRORCODE_E authReader(READER_BUFF_STRU *pQueue,LOCAL_USER_STRU *localUserData);
+static SYSERRORCODE_E packetRemoteRequestToElevator(uint8_t tagFloor,uint8_t *buff);
 
 
 void packetDefaultSendBuf(uint8_t *buf)
@@ -73,6 +74,7 @@ void packetSendBuf(READER_BUFF_STRU *pQueue,uint8_t *buf)
     uint8_t sendBuf[64] = {0};
     uint16_t len = 0;
     uint16_t ret = 0;
+    int tagFloor = 0;
     LOCAL_USER_STRU localUserData= {0};
     memset(&localUserData,0x00,sizeof(LOCAL_USER_STRU));
     
@@ -95,7 +97,12 @@ void packetSendBuf(READER_BUFF_STRU *pQueue,uint8_t *buf)
             }
 
             //1.发给电梯的数据
-            packetToElevator(&localUserData,buf);
+            ret = packetToElevator(&localUserData,buf);
+            if(ret != NO_ERR)
+            {
+                log_d("invalid floor\r\n");
+                return ;  //无权限   
+            }
 
             //2.发给服务器
             packetPayload(&localUserData,jsonBuf); 
@@ -107,10 +114,22 @@ void packetSendBuf(READER_BUFF_STRU *pQueue,uint8_t *buf)
             break;
         case AUTH_MODE_REMOTE:
             //直接发送目标楼层
-            log_d("send desc floor\r\n");
+            log_d("send desc floor = %s,%d\r\n",pQueue->data,pQueue->dataLen);
+            tagFloor = atoi(pQueue->data);
+
+            //最大64层，不能等于0或者是大于64层
+            if(tagFloor == 0 || tagFloor > 64)
+            {
+                log_d("invalid floor tagFloor = %d\r\n",tagFloor);
+                return ;  //无权限   
+            }
             
-            //需把楼层取出来发给电梯的数据
-            //packetToElevator(&localUserData,buf);
+            ret = packetRemoteRequestToElevator(tagFloor,buf);
+            if(ret != NO_ERR)
+            {
+                log_d("invalid floor\r\n");
+                return ;  //无权限   
+            }
                     
             break;
         case AUTH_MODE_UNBIND:
@@ -166,7 +185,6 @@ SYSERRORCODE_E authReader(READER_BUFF_STRU *pQueue,LOCAL_USER_STRU *localUserDat
         } 
         
         localUserData->authMode = pQueue->authMode; 
-        //localUserData->defaultFloor = qrCodeInfo.tagFloor;   
         localUserData->qrType = qrCodeInfo.type;   
         memcpy(localUserData->qrID,qrCodeInfo.qrID,QRID_LEN); 
         memcpy(localUserData->startTime,qrCodeInfo.startTime,TIME_LEN);
@@ -178,7 +196,8 @@ SYSERRORCODE_E authReader(READER_BUFF_STRU *pQueue,LOCAL_USER_STRU *localUserDat
     {
         //读卡 CARD 230000000089E1E35D,23       
     
-        memcpy(key,pQueue->data+pQueue->dataLen-CARD_NO_LEN,CARD_NO_LEN);
+        //memcpy(key,pQueue->data+pQueue->dataLen-CARD_NO_LEN,CARD_NO_LEN);
+        memcpy(key,pQueue->data,CARD_NO_LEN);
         log_d("key = %s\r\n",key);
         isFind = readUserData(key,CARD_MODE,&rUserData);   
 
@@ -187,7 +206,7 @@ SYSERRORCODE_E authReader(READER_BUFF_STRU *pQueue,LOCAL_USER_STRU *localUserDat
         if(rUserData.cardState != CARD_VALID || isFind != 0)
         {
             //未找到记录，无权限
-            log_d("not find record\r\n");
+            log_e("not find record\r\n");
             return NO_AUTHARITY_ERR;
         } 
         
@@ -240,7 +259,7 @@ SYSERRORCODE_E authRemote(READER_BUFF_STRU *pQueue,LOCAL_USER_STRU *localUserDat
     if(val_len <= 0)
     {
         //未找到记录，无权限
-        log_d("not find record\r\n");
+        log_e("not find record\r\n");
         return NO_AUTHARITY_ERR;
     }
 
@@ -249,7 +268,7 @@ SYSERRORCODE_E authRemote(READER_BUFF_STRU *pQueue,LOCAL_USER_STRU *localUserDat
 
     if(num != 5)
     {
-        log_d("read record error\r\n");
+        log_e("read record error\r\n");
         return READ_RECORD_ERR;       
     }
 
@@ -301,8 +320,8 @@ static SYSERRORCODE_E packetToElevator(LOCAL_USER_STRU *localUserData,uint8_t *b
 
     uint8_t floor = 0;
 
-    uint8_t div = 0;
-    uint8_t remainder = 0;
+//    uint8_t div = 0;
+//    uint8_t remainder = 0;
     uint8_t i = 0;
 
     
@@ -318,26 +337,65 @@ static SYSERRORCODE_E packetToElevator(LOCAL_USER_STRU *localUserData,uint8_t *b
 
     memcpy(authLayer,localUserData->accessFloor,FLOOR_ARRAY_LEN);
     num = strlen((const char*)authLayer);
-
-    dbh("accessfloor",authLayer, 64);
-
     memset(sendBuf,0x00,sizeof(sendBuf));
     
     if(num > 1)//多层权限
     {
         for(i=0;i<num;i++)
         {
+            log_d("current floor = %d\r\n",authLayer[i]);
             calcFloor(authLayer[i],MANUAL_REG,sendBuf,tmpBuf);
             memcpy(sendBuf,tmpBuf,MAX_SEND_LEN);
         }        
     }
     else    //单层权限，直接呼默认权限楼层
     {
-        floor = authLayer[0];      
-
-        calcFloor(floor,AUTO_REG,sendBuf,tmpBuf);
-        dbh("tmpBuf", tmpBuf, MAX_SEND_LEN);        
+        if(localUserData->defaultFloor != authLayer[0])
+        {
+            localUserData->defaultFloor = authLayer[0];
+            log_e("defaultFloor != authLayer,%d,%d\r\n",localUserData->defaultFloor,authLayer[0]);
+        }
+        floor = localUserData->defaultFloor;//authLayer[0];   
+        
+	    if(floor == 0)
+	    {
+	        return INVALID_FLOOR;//无效的楼层
+	    }
+		
+        calcFloor(floor,AUTO_REG,sendBuf,tmpBuf);            
     }   
+
+    memset(sendBuf,0x00,sizeof(sendBuf));
+    
+    sendBuf[0] = CMD_STX;
+    sendBuf[1] = bsp_dipswitch_read();
+    memcpy(sendBuf+2,tmpBuf,MAX_SEND_LEN-5);        
+    sendBuf[MAX_SEND_LEN-1] = xorCRC(sendBuf,MAX_SEND_LEN-2);        
+    memcpy(buff,sendBuf,MAX_SEND_LEN);  
+
+    dbh("sendBuf", (char *)sendBuf, MAX_SEND_LEN);
+    
+    return result;
+}
+
+
+static SYSERRORCODE_E packetRemoteRequestToElevator(uint8_t tagFloor,uint8_t *buff)
+{
+    SYSERRORCODE_E result = NO_ERR;
+    uint8_t tmpBuf[MAX_SEND_LEN+1] = {0}; 
+    uint8_t sendBuf[MAX_SEND_LEN+1] = {0};
+
+    memset(sendBuf,0x00,sizeof(sendBuf));   
+    memset(tmpBuf,0x00,sizeof(tmpBuf)); 
+
+    if(tagFloor == 0)
+    {
+        return INVALID_FLOOR;//无效的楼层
+    }
+	
+    calcFloor(tagFloor,AUTO_REG,sendBuf,tmpBuf);
+    
+    dbh("tmpBuf", tmpBuf, MAX_SEND_LEN); 
 
     memset(sendBuf,0x00,sizeof(sendBuf));
     
@@ -358,7 +416,7 @@ static void calcFloor(uint8_t layer,uint8_t regMode,uint8_t *src,uint8_t *outFlo
 {
     uint8_t div = 0;
     uint8_t remainder = 0;
-    uint8_t floor = layer;
+    uint8_t floor = layer + 3; //这里是因为有地下三层
     uint8_t sendBuf[MAX_SEND_LEN+1] = {0};
     uint8_t tmpFloor = 0;
     uint8_t index = 0;

@@ -115,7 +115,7 @@ int findChar(const char acher)
     return -1;
 }
 
-//转换为10进制
+//90进制转换为10进制
 int myAtoi(const char *str)
 {
     int total = 0;          //保存转换后的数值    
@@ -218,9 +218,9 @@ unsigned char findDev(unsigned char *str,unsigned char dataFormat)
 //}
 
 
-unsigned char *parseAccessFloor(unsigned char *str)
+char *parseAccessFloor(char *str)
 {
-    static unsigned char result[64] = {0};;
+    static char result[64] = {0};;
     char buf[1] = {0};
     int len = strlen((const char*)str);
     int i = 0;

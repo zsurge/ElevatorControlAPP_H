@@ -66,16 +66,16 @@ static void vTaskDisplay(void *pvParameters)
         bsp_HC595Show(4,5,6);
         vTaskDelay(300);
         bsp_HC595Show(7,8,9);
-        vTaskDelay(300);
-        bsp_HC595Show('a','b','c');
-        vTaskDelay(300);
-        bsp_HC595Show('d','e','f');     
-        vTaskDelay(300);
-        bsp_HC595Show('a',0,1);
-        vTaskDelay(300);
-        bsp_HC595Show('d',3,4);   
-        vTaskDelay(300);
-        bsp_HC595Show(1,0,1);  
+//        vTaskDelay(300);
+//        bsp_HC595Show('a','b','c');
+//        vTaskDelay(300);
+//        bsp_HC595Show('d','e','f');     
+//        vTaskDelay(300);
+//        bsp_HC595Show('a',0,1);
+//        vTaskDelay(300);
+//        bsp_HC595Show('d',3,4);   
+//        vTaskDelay(300);
+//        bsp_HC595Show(1,0,1);  
         
         /* 发送事件标志，表示任务正常运行 */
 		xEventGroupSetBits(xCreatedEventGroup, TASK_BIT_3);     

@@ -60,7 +60,7 @@ typedef struct
     uint8_t state;                       //=0 DISABLE 禁止发送; = 1 ENABLE 允许发送
     uint8_t authMode;                    //鉴权模式,刷卡=2；QR=7
     uint16_t dataLen;                     //数据长度   
-    uint8_t data[QUEUE_BUF_LEN];         //需要发送给服务器的数据 
+    char data[QUEUE_BUF_LEN];         //需要发送给服务器的数据 
 }READER_BUFF_STRU;
 #pragma pack()
 

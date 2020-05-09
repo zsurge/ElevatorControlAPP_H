@@ -219,7 +219,7 @@ char* time_to_timestamp(void)
     stm.tm_sec = BCDToInt(read_1302 ( read[0] ));  
     
     sprintf(ret,"%d",mktime(&stm));
-    printf("time_to_timestamp = %s\r\n",ret);
+//    printf("time_to_timestamp = %s\r\n",ret);
     return ret;
 }
 
@@ -229,13 +229,13 @@ void timestamp_to_time(unsigned int timestamp)
     char buf[32] = {0};
     time_t seconds = timestamp;
 
-	printf("timestamp = %d\r\n",timestamp);
+//	printf("timestamp = %d\r\n",timestamp);
 	stm = localtime(&seconds);
 	
 	sprintf(buf,"%04d-%02d-%02d  %02d:%02d:%02d",\
 	stm->tm_year+1900,stm->tm_mon+1,stm->tm_mday,\
 	stm->tm_hour+8,stm->tm_min,stm->tm_sec);
 
-    printf("timestamp_to_time = %s\r\n",buf);
+//    printf("timestamp_to_time = %s\r\n",buf);
 }
 

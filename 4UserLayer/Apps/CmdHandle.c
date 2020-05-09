@@ -438,6 +438,8 @@ SYSERRORCODE_E AddCardNo ( uint8_t* msgBuf )
 //    sprintf(userData.cardNo,"%08s",cardNo);
     log_d("cardNo = %s,len = %d\r\n",cardNo,strlen((const char*)cardNo));
 
+
+
     log_d("=================================\r\n");
     ret  = readUserData(userData.userId,USER_MODE,&userData);
     log_d("ret = %d\r\n",ret);    
@@ -445,10 +447,39 @@ SYSERRORCODE_E AddCardNo ( uint8_t* msgBuf )
     log_d("userData.userState = %d\r\n",userData.userState);
     log_d("userData.cardNo = %s\r\n",userData.cardNo);
     log_d("userData.userId = %s\r\n",userData.userId);
-    log_d("userData.accessFloor = %s\r\n",userData.accessFloor);
+//    dbh("userData.accessFloor", userData.accessFloor, sizeof(userData.accessFloor));
     log_d("userData.defaultFloor = %d\r\n",userData.defaultFloor);
     log_d("userData.startTime = %s\r\n",userData.startTime);
 
+      userData.accessFloor[0] = 26;
+      userData.accessFloor[1] = 25;
+      userData.accessFloor[2] = 24;
+      userData.accessFloor[3] = 23;
+      userData.accessFloor[4] = 22;
+      userData.accessFloor[5] = 21;
+      userData.accessFloor[6] = 20;
+      userData.accessFloor[7] = 19;
+      userData.accessFloor[8] = 18;
+      userData.accessFloor[9] = 17;
+      userData.accessFloor[10] = 16;
+      userData.accessFloor[11] = 15;
+      userData.accessFloor[12] = 14;
+      userData.accessFloor[13] = 13;
+      userData.accessFloor[14] = 12;
+      userData.accessFloor[15] = 11;
+      userData.accessFloor[16] = 10;
+      userData.accessFloor[17] = 9;
+      userData.accessFloor[18] = 7;
+      userData.accessFloor[19] = 6;
+      userData.accessFloor[20] = 5;
+      userData.accessFloor[21] = 4;
+      userData.accessFloor[22] = 3;
+      userData.accessFloor[23] = 2;
+      userData.accessFloor[24] = 1;
+      userData.accessFloor[25] = 8;
+  
+ 
+    
     if(ret == 0)
     {
         sprintf((char*)userData.cardNo,"%08s",cardNo);
@@ -931,6 +962,8 @@ static SYSERRORCODE_E GetUserInfo ( uint8_t* msgBuf )
     uint8_t tmp[128] = {0};
     char *multipleCard[20] = {0};
     int multipleCardNum = 0;
+    char *multipleFloor[64] = {0};
+    int multipleFloorNum = 0;
 
     
     memset(&tempUserData,0x00,sizeof(USERDATA_STRU));
@@ -949,8 +982,22 @@ static SYSERRORCODE_E GetUserInfo ( uint8_t* msgBuf )
     log_d("tempUserData.userId = %s,len = %d\r\n",tempUserData.userId,strlen((const char *)tempUserData.userId));
     
     //3.保存楼层权限
-    strcpy((char *)tempUserData.accessFloor,  (const char*)GetJsonItem((const uint8_t *)msgBuf,(const uint8_t *)"accessLayer",1));
-    log_d("tempUserData.accessFloor = %s\r\n",tempUserData.accessFloor);
+    memset(tmp,0x00,sizeof(tmp));
+    strcpy((char *)tmp,  (const char*)GetJsonItem((const uint8_t *)msgBuf,(const uint8_t *)"accessLayer",1));
+    split((char *)tmp,",",multipleFloor,&multipleFloorNum); //调用函数进行分割 
+
+    if(multipleFloorNum >= 1)
+    {
+        for(len=0;len<multipleFloorNum;len++)
+        {
+            tempUserData.accessFloor[len] = atoi(multipleFloor[len]);
+        }
+    }
+    else
+    {          
+        log_d("tempUserData.accessFloor error!!!!!!!!!!!!!!!\r\n");
+    }
+
 
     //4.保存默认楼层
     memset(tmp,0x00,sizeof(tmp));
@@ -1142,45 +1189,45 @@ static SYSERRORCODE_E PCOptDev ( uint8_t* msgBuf )
 //    
 //    writeUserData(userData,CARD_MODE);
 //    
-    log_d("===============TEST==================\r\n");
-    len = readUserData("12345688",CARD_MODE,&userData);
+//    log_d("===============TEST==================\r\n");
+//    len = readUserData("12345688",CARD_MODE,&userData);
 
-    log_d("ret = %d\r\n",len);    
-    log_d("userData.userState = %d\r\n",userData.cardState);
-    log_d("userData.cardNo = %s\r\n",userData.cardNo);
-    log_d("userData.userId = %s\r\n",userData.userId);
-    log_d("userData.accessFloor = %s\r\n",userData.accessFloor);
-    log_d("userData.defaultFloor = %d\r\n",userData.defaultFloor);
-    log_d("userData.startTime = %s\r\n",userData.startTime);
+//    log_d("ret = %d\r\n",len);    
+//    log_d("userData.userState = %d\r\n",userData.cardState);
+//    log_d("userData.cardNo = %s\r\n",userData.cardNo);
+//    log_d("userData.userId = %s\r\n",userData.userId);
+//    log_d("userData.accessFloor = %s\r\n",userData.accessFloor);
+//    log_d("userData.defaultFloor = %d\r\n",userData.defaultFloor);
+//    log_d("userData.startTime = %s\r\n",userData.startTime);
 
-    log_d("===============TEST==================\r\n");
-    memset(&userData,0x00,sizeof(USERDATA_STRU));
-    len = readUserData("00020419",USER_MODE,&userData);
-    
-    log_d("ret = %d\r\n",len);    
-    log_d("userData.userState = %d\r\n",userData.cardState);
-    log_d("userData.cardNo = %s\r\n",userData.cardNo);
-    log_d("userData.userId = %s\r\n",userData.userId);
-    log_d("userData.accessFloor = %s\r\n",userData.accessFloor);
-    log_d("userData.defaultFloor = %d\r\n",userData.defaultFloor);
-    log_d("userData.startTime = %s\r\n",userData.startTime);
-
-
-
-log_d("===============CARD_MODE==================\r\n");
-TestFlash(CARD_MODE);
+//    log_d("===============TEST==================\r\n");
+//    memset(&userData,0x00,sizeof(USERDATA_STRU));
+//    len = readUserData("00020419",USER_MODE,&userData);
+//    
+//    log_d("ret = %d\r\n",len);    
+//    log_d("userData.userState = %d\r\n",userData.cardState);
+//    log_d("userData.cardNo = %s\r\n",userData.cardNo);
+//    log_d("userData.userId = %s\r\n",userData.userId);
+//    log_d("userData.accessFloor = %s\r\n",userData.accessFloor);
+//    log_d("userData.defaultFloor = %d\r\n",userData.defaultFloor);
+//    log_d("userData.startTime = %s\r\n",userData.startTime);
 
 
-log_d("===============USER_MODE==================\r\n");
-TestFlash(USER_MODE);
+
+//log_d("===============CARD_MODE==================\r\n");
+//TestFlash(CARD_MODE);
 
 
-log_d("===============CARD_DEL_MODE==================\r\n");
-TestFlash(CARD_DEL_MODE);
+//log_d("===============USER_MODE==================\r\n");
+//TestFlash(USER_MODE);
 
 
-log_d("===============USER_DEL_MODE==================\r\n");
-TestFlash(USER_DEL_MODE);
+//log_d("===============CARD_DEL_MODE==================\r\n");
+//TestFlash(CARD_DEL_MODE);
+
+
+//log_d("===============USER_DEL_MODE==================\r\n");
+//TestFlash(USER_DEL_MODE);
 
 
 
@@ -1253,7 +1300,8 @@ static SYSERRORCODE_E AddSingleUser( uint8_t* msgBuf )
     USERDATA_STRU tempUserData = {0};
     uint8_t ret = 1;
     uint8_t tmp[128] = {0};
-
+    char *multipleFloor[64] = {0};
+    int multipleFloorNum = 0;
     memset(&tempUserData,0x00,sizeof(USERDATA_STRU));
 
     if(!msgBuf)
@@ -1273,8 +1321,24 @@ static SYSERRORCODE_E AddSingleUser( uint8_t* msgBuf )
     
     
     //3.保存楼层权限
-    strcpy((char *)tempUserData.accessFloor,  (const char*)GetJsonItem((const uint8_t *)msgBuf,(const uint8_t *)"accessLayer",1));
-    log_d("tempUserData.accessFloor = %s\r\n",tempUserData.accessFloor);
+    memset(tmp,0x00,sizeof(tmp));
+    strcpy((char *)tmp,  (const char*)GetJsonItem((const uint8_t *)msgBuf,(const uint8_t *)"accessLayer",1));
+    split((char *)tmp,",",multipleFloor,&multipleFloorNum); //调用函数进行分割 
+
+    if(multipleFloorNum >= 1)
+    {
+        for(len=0;len<multipleFloorNum;len++)
+        {
+            tempUserData.accessFloor[len] = atoi(multipleFloor[len]);
+        }
+    }
+    else
+    {          
+        log_d("tempUserData.accessFloor error!!!!!!!!!!!!!!!\r\n");
+    }
+    
+//    dbh("tempUserData.accessFloor", tempUserData.accessFloor,multipleFloorNum );
+    
 
     //4.保存默认楼层
     memset(tmp,0x00,sizeof(tmp));

@@ -83,8 +83,7 @@
   #define CHECKSUM_CHECK_TCP              1
 #endif
 
-
-
+#define LWIP_DNS                        1
 #define LWIP_NETCONN                    1 	//LWIP_NETCONN==1:使能NETCON函数(要求使用api_lib.c)
 #define LWIP_SOCKET                     1	//LWIP_SOCKET==1:使能Sicket API(要求使用sockets.c)
 #define LWIP_COMPAT_MUTEX               1

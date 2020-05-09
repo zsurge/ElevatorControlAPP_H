@@ -140,7 +140,7 @@ typedef struct USERDATA
     uint8_t userState;                              //用户状态 有效/已删除
     uint8_t userId[CARD_USER_LEN+1];                  //用户ID
     uint8_t cardNo[CARD_USER_LEN+1];                  //卡号
-    uint8_t accessFloor[FLOOR_ARRAY_LENGTH+1];        //楼层权限
+    char accessFloor[FLOOR_ARRAY_LENGTH+1];        //楼层权限
     uint8_t startTime[TIME_LENGTH+1];                 //账户有效时间
     uint8_t endTime[TIME_LENGTH+1];                   //账户结束时间    
     uint8_t timeStamp[TIME_LENGTH+1];                 //二维码时间戳

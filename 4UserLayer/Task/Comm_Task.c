@@ -69,15 +69,15 @@ void CreateCommTask(void)
 #if 1
 static void vTaskComm(void *pvParameters)
 {
-    uint8_t recvLen = 0;
+    uint16_t recvLen = 0;
     uint8_t buf[128] = {0};
     uint8_t crc = 0;    
     uint8_t sendBuf[64] = {0};
-
+    uint8_t defaultBuff[MAX_RS485_LEN] = { 0x5A,0x01,0x01,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x5A };
     
     READER_BUFF_STRU *ptMsg  = &gReaderMsg;
     BaseType_t xReturn = pdTRUE;/* 定义一个创建信息返回值，默认为pdPASS */
-    const TickType_t xMaxBlockTime = pdMS_TO_TICKS(1000); /* 设置最大等待时间为200ms */  
+    const TickType_t xMaxBlockTime = pdMS_TO_TICKS(20); /* 设置最大等待时间为200ms */  
     
     //获取当前设备的ID
     uint16_t readID = bsp_dipswitch_read();    
@@ -87,66 +87,64 @@ static void vTaskComm(void *pvParameters)
     /* 清零 */
     ptMsg->authMode = 0; //默认为刷卡
     ptMsg->dataLen = 0;
-    memset(ptMsg->data,0x00,sizeof(ptMsg->data));  
-
-
-    log_d("current dev addr =%d\r\n",readID);
-
-    log_d("start vTaskComm\r\n");   
+    memset(ptMsg->data,0x00,sizeof(ptMsg->data));
     
     while (1)
     {  
 
         memset(buf,0x00,sizeof(buf));
-        recvLen = RS485_Recv(COM6,buf,sizeof(buf));
-//        
-        dbh("read buf", buf, sizeof(buf));
-//        
-//        //判定数据的有效性
-//        if(recvLen != 5 || buf[0] != 0X5a || buf[1]<1 || buf[1]>4)
-//        {
-//            vTaskDelay(500); 
-//            continue;
-//        }
-
-//        crc= xorCRC(buf,3);
-//        
-//        if(crc != buf[3])
-//        {
-//            vTaskDelay(500); 
-//            continue;
-//        }
+        recvLen = RS485_Recv(COM6,buf,5);
         
-        //if(buf[1] == readID)
-        {
+//      	dbh("read buf", buf, 5);  
+
+   
+          if(buf[1] == readID)
+          {
+        	comClearRxFifo(COM6);
+	        //判定数据的有效性
+	        if(recvLen != 5 || buf[0] != 0x5A || buf[1]<1 || buf[1]>4)
+	        {
+	            continue;
+	        }
+
+
+	        crc= xorCRC(buf,4);
+	        
+	        if(crc != buf[4])
+	        {
+	            continue;
+	        }
+
             xReturn = xQueueReceive( xTransQueue,    /* 消息队列的句柄 */
                                      (void *)&ptMsg,  /*这里获取的是结构体的地址 */
                                      xMaxBlockTime); /* 设置阻塞时间 */
             if(pdTRUE == xReturn)
             {
-                log_d("receve queue data\r\n");  
-                log_d("<<<<<<<<<<<pQueue->authMode>>>>>>>>>>>>:%d\r\n",ptMsg->authMode);
-                log_d("%s,%d\r\n",ptMsg->data,ptMsg->dataLen);
+//                log_d("receve queue data\r\n");  
+//                log_d("<<<<<<<<<<<pQueue->authMode>>>>>>>>>>>>:%d\r\n",ptMsg->authMode);
+//                log_d("%s,%d\r\n",ptMsg->data,ptMsg->dataLen);
                 //消息接收成功，发送接收到的消息
                 packetSendBuf(ptMsg,sendBuf);     
             }
             else
             {
                 //发送默认数据包
-                packetDefaultSendBuf(sendBuf); //打包  
+                //packetDefaultSendBuf(sendBuf); //打包  
+                memcpy(sendBuf,defaultBuff,MAX_RS485_LEN);
             }
-         
-//            RS485_SendBuf(COM6,sendBuf,MAX_RS485_LEN);
-              memset(sendBuf,0x00,sizeof(sendBuf));
-              packetDefaultSendBuf111(sendBuf);
-              RS485_SendBuf(COM6,sendBuf,5);
+
+			
+//			dbh("send buf", sendBuf, MAX_RS485_LEN);	  
+            RS485_SendBuf(COM6,sendBuf,MAX_RS485_LEN);
+
+              
         }
 
 
 
 		/* 发送事件标志，表示任务正常运行 */        
 		xEventGroupSetBits(xCreatedEventGroup, TASK_BIT_1);  
-        vTaskDelay(500);
+        vTaskDelay(5);
     }
 
 }

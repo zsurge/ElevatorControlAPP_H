@@ -254,10 +254,8 @@ static void vTaskBarCode(void *pvParameters)
 
 static void vTaskBarCode(void *pvParameters)
 { 
-    uint8_t recv_buf[255] = {0};
     uint8_t sendBuff[512] = {0};
     uint16_t len = 0; 
-    uint16_t offset = 0; 
     uint8_t localTime[20] = {0};
 
     uint8_t relieveControl[38] = {0};
@@ -282,21 +280,17 @@ static void vTaskBarCode(void *pvParameters)
         ptQR->state = ENABLE;
         memset(ptQR->data,0x00,sizeof(ptQR->data)); 
 
-        memset(recv_buf,0x00,sizeof(recv_buf));           
-        len = RS485_RecvAtTime(COM5,recv_buf,sizeof(recv_buf),800);
+        memset(sendBuff,0x00,sizeof(sendBuff));    
+        len = RS485_RecvAtTime(COM5,sendBuff,sizeof(sendBuff),800);  
         
-        if(len>255)
-            len = 255;
-
-        if(offset > 512)
+        if(len > 512)
         {
-            offset = 512;
+            len = 512;
         }
-         
-        memcpy(sendBuff+offset,recv_buf,len);
-        offset += len; 
+
+//        dbh("card", sendBuff, len);
         
-        if(offset > 10  && sendBuff[offset-1] == 0x0A && sendBuff[offset-2] == 0x0D && gDeviceStateFlag == DEVICE_ENABLE)
+        if(len > 10  && sendBuff[len-1] == 0x0A && sendBuff[len-2] == 0x0D && gDeviceStateFlag == DEVICE_ENABLE)
         {       
             comClearRxFifo(COM5);
             log_d("sendbuff = %s\r\n",sendBuff);
@@ -329,10 +323,8 @@ static void vTaskBarCode(void *pvParameters)
                         
 
                         comClearRxFifo(COM5);
-                        memset(recv_buf,0x00,sizeof(recv_buf));
                         memset(sendBuff,0x00,sizeof(sendBuff));
-                        offset = 0;
-                        len = 0;                         
+                        len = 0;
                 }
                 else
                 {
@@ -403,52 +395,41 @@ static void vTaskBarCode(void *pvParameters)
                         } 
                         else
                         {
-                            log_d("xQueueSend ok\r\n");
-
-                            xReturn = xSemaphoreGive(CountSem_Handle);// 给出计数信号量
-
-                            semavalue=uxSemaphoreGetCount(CountSem_Handle);	//获取计数型信号量值
-
-                            log_d("semavalue = %d\r\n",semavalue);                                 
+                            log_d("xQueueSend ok\r\n");     
+                            log_e("ptQR = %s,len = %d,state = %d\r\n",ptQR->data,ptQR->dataLen,ptQR->state);
                         }
                         
                     }
-                    else
-                    {
-                        xReturn = xSemaphoreGive(CountSem_Handle);// 给出计数信号量                        
-                        semavalue=uxSemaphoreGetCount(CountSem_Handle); //获取计数型信号量值 
-                        comClearRxFifo(COM5);
-                        memset(recv_buf,0x00,sizeof(recv_buf));
-                        memset(sendBuff,0x00,sizeof(sendBuff));
-                        offset = 0;
-                        len = 0;  
-                    }
+
+                    xReturn = xSemaphoreGive(CountSem_Handle);// 给出计数信号量                        
+                    semavalue=uxSemaphoreGetCount(CountSem_Handle); //获取计数型信号量值 
+                    comClearRxFifo(COM5);
+                    memset(sendBuff,0x00,sizeof(sendBuff));
+                    len = 0;
                 }
 
                 comClearRxFifo(COM5);
                 memset(sendBuff,0x00,sizeof(sendBuff));
-                offset = 0;
+                len = 0;
             }
             else
             {
                 comClearRxFifo(COM5);
                 memset(sendBuff,0x00,sizeof(sendBuff));
-                offset = 0;
+                len = 0;
             }
         }
         else
         {
             comClearRxFifo(COM5);
-            memset(recv_buf,0x00,sizeof(recv_buf));
             memset(sendBuff,0x00,sizeof(sendBuff));
-            offset = 0;
-            len = 0; 
+            len = 0;
         }       
        
 
 
     	/* 发送事件标志，表示任务正常运行 */        
-    	xEventGroupSetBits(xCreatedEventGroup, TASK_BIT_5);  
+    	xEventGroupSetBits(xCreatedEventGroup, TASK_BIT_4);  
         vTaskDelay(300);        
     }
 
@@ -649,11 +630,12 @@ static void getDevData(char *src,int icFlag,int qrFlag,READER_BUFF_STRU *desc)
     }
     else
     {
+        readerBuff.dataLen = 8;//卡号长度为8
         readerBuff.authMode = AUTH_MODE_CARD;        
-        memcpy(readerBuff.data,src,readerBuff.dataLen);
+        memcpy(readerBuff.data,src+9,readerBuff.dataLen);
     }
 
-    log_d("readerBuff.data = %s\r\n",readerBuff.data);
+    log_d("readerBuff.data = %s,len = %d\r\n",readerBuff.data, readerBuff.dataLen);
     
     if(icFlag == 0)
     {
