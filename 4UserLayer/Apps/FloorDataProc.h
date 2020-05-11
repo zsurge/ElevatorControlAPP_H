@@ -24,6 +24,7 @@
  * 包含头文件                                   *
  *----------------------------------------------*/
 #include "errorcode.h"
+#include "LocalData.h"
 #include "bsp_uart_fifo.h"
 #include "tool.h"
 #include "bsp_dipSwitch.h"
@@ -32,6 +33,10 @@
 #include "MQTTPacket.h"
 #include "transport.h"
 #include "jsonUtils.h"
+#include "bsp_ds1302.h"
+#include "ini.h"
+
+
 
 /*----------------------------------------------*
  * 宏定义                                       *
@@ -58,7 +63,7 @@ void packetDefaultSendBuf(uint8_t *buf);
 void packetSendBuf(READER_BUFF_STRU *pQueue,uint8_t *buf);
 
 
-SYSERRORCODE_E authRemote(READER_BUFF_STRU *pQueue,LOCAL_USER_STRU *localUserData);
+SYSERRORCODE_E authRemote(READER_BUFF_STRU *pQueue,USERDATA_STRU *localUserData);
 
 
 

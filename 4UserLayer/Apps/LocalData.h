@@ -77,7 +77,7 @@ FLASH操作思路：
 #define FLOOR_ARRAY_LENGTH         (64) //每个普通用户最多64层权限
 #define TIME_LENGTH                (10)
 #define TIMESTAMP_LENGTH           (10)
-#define RESERVE_LENGTH             (5) //预留空间 为了对齐，补足一个扇区可以整除的字节数
+#define RESERVE_LENGTH             (4) //预留空间 为了对齐，补足一个扇区可以整除的字节数
 
 #define CARD_MODE                   1 //卡模式
 #define USER_MODE                   2 //用户ID模式
@@ -138,6 +138,7 @@ typedef struct USERDATA
     uint8_t defaultFloor;                           //默认楼层  
     uint8_t cardState;                              //卡状态 有效/已删除/黑名单/临时卡    
     uint8_t userState;                              //用户状态 有效/已删除
+    uint8_t platformType;                           //平台类型，第三方平台、博思高平台等
     uint8_t userId[CARD_USER_LEN+1];                  //用户ID
     uint8_t cardNo[CARD_USER_LEN+1];                  //卡号
     char accessFloor[FLOOR_ARRAY_LENGTH+1];        //楼层权限
@@ -149,7 +150,7 @@ typedef struct USERDATA
 }USERDATA_STRU;
 #pragma pack()
 
-
+extern USERDATA_STRU gUserDataStru;
 
 /*
 typedef struct USERSTATE

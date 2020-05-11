@@ -42,19 +42,9 @@
 #define QRID_LEN                (10)
 #define TIMESTAMP_LEN           (10)
 
-//设备在线状态
-#define ON_LINE                 1
-#define OFF_LINE                (-1)
 
-//呼梯状态：1、成功 0/2失败，3 QR设备已禁用  
-#define CALL_OK                 1
-#define CALL_NG                 2
-#define CALL_ERR                0
-#define QR_DISABLE              3
 
-//进出方向 1、进 2、出
-#define DIRECTION_IN            1
-#define DIRECTION_OUT           2
+
 
 
 /*----------------------------------------------*
@@ -64,33 +54,33 @@
 /*----------------------------------------------*
  * 模块级变量                                   *
  *----------------------------------------------*/
-#pragma pack(1)
-typedef struct
-{
-    uint8_t authMode;                               //鉴权模式,刷卡=2；QR=7
-    uint8_t defaultFloor;                           //默认楼层
-    uint8_t qrType;                                 //QR类型 1 2 3 4
-    uint8_t qrID[QRID_LEN+1];                         //QRID
-    uint8_t userId[USER_ID_LEN+1];                  //用户ID
-    uint8_t cardNo[CARD_NO_LEN+1];                  //卡号
-    char accessFloor[FLOOR_ARRAY_LEN+1];           //权限楼层
-    uint8_t startTime[TIME_LEN+1];                    //开始有效时间
-    uint8_t endTime[TIME_LEN+1];                      //结束时间    
-    uint8_t qrStarttimeStamp[TIMESTAMP_LEN+1];             //二维码开始时间戳  
-    uint8_t qrEndtimeStamp[TIMESTAMP_LEN+1];               //二维码结束时间戳
-    uint8_t timeStamp[TIMESTAMP_LEN+1];                    //二维码时间戳
-}LOCAL_USER_STRU;
+//#pragma pack(1)
+//typedef struct
+//{
+//    uint8_t authMode;                               //鉴权模式,刷卡=2；QR=7
+//    uint8_t defaultFloor;                           //默认楼层
+//    uint8_t qrType;                                 //QR类型 1 2 3 4
+//    uint8_t qrID[QRID_LEN+1];                         //QRID
+//    uint8_t userId[USER_ID_LEN+1];                  //用户ID
+//    uint8_t cardNo[CARD_NO_LEN+1];                  //卡号
+//    char accessFloor[FLOOR_ARRAY_LEN+1];           //权限楼层
+//    uint8_t startTime[TIME_LEN+1];                    //开始有效时间
+//    uint8_t endTime[TIME_LEN+1];                      //结束时间    
+//    uint8_t qrStarttimeStamp[TIMESTAMP_LEN+1];             //二维码开始时间戳  
+//    uint8_t qrEndtimeStamp[TIMESTAMP_LEN+1];               //二维码结束时间戳
+//    uint8_t timeStamp[TIMESTAMP_LEN+1];                    //二维码时间戳
+//}LOCAL_USER_STRU;
 
 
-typedef struct 
-{    
-    uint8_t type;                                   //二维码类型
-    uint8_t defaultFloor;                           //默认楼层    
-    uint8_t qrID[QRID_LEN+1];                         //QRID
-    uint8_t startTime[TIME_LEN+1];                    //开始有效时间
-    uint8_t endTime[TIME_LEN+1];                      //结束时间 
-    char accessFloor[FLOOR_ARRAY_LEN+1];           //权限楼层
-}QRCODE_INFO_STRU;
+//typedef struct 
+//{    
+//    uint8_t type;                                   //二维码类型
+//    uint8_t defaultFloor;                           //默认楼层    
+//    uint8_t qrID[QRID_LEN+1];                         //QRID
+//    uint8_t startTime[TIME_LEN+1];                    //开始有效时间
+//    uint8_t endTime[TIME_LEN+1];                      //结束时间 
+//    char accessFloor[FLOOR_ARRAY_LEN+1];           //权限楼层
+//}QRCODE_INFO_STRU;
 
 #pragma pack()
 
@@ -124,15 +114,11 @@ SYSERRORCODE_E saveUpgradeData(uint8_t *jsonBuff);
 SYSERRORCODE_E getTimePacket(uint8_t *descBuf);
 
 
-uint8_t packetPayload(LOCAL_USER_STRU *localUserData,uint8_t *descJson);
-
-
 
 //保存模板信息
 SYSERRORCODE_E saveTemplateParam(uint8_t *jsonBuff);
 
-//解析QRCODE数据
-uint8_t parseQrCode(uint8_t *jsonBuff,QRCODE_INFO_STRU *qrCodeInfo);
+
 
 
 //获取JSON数组

@@ -35,7 +35,7 @@
 /*----------------------------------------------*
  * 宏定义                                       *
  *----------------------------------------------*/
-#define BARCODE_TASK_PRIO		(tskIDLE_PRIORITY + 1)
+#define BARCODE_TASK_PRIO		(tskIDLE_PRIORITY + 5)
 #define BARCODE_STK_SIZE 		(configMINIMAL_STACK_SIZE*10)
 
 /*----------------------------------------------*
@@ -266,22 +266,19 @@ static void vTaskBarCode(void *pvParameters)
 
     int cmpTimeFlag = -1;
 
-    memset(&gReaderMsg,0x00,sizeof(READER_BUFF_STRU));
+//    memset(&gReaderMsg,0x00,sizeof(READER_BUFF_STRU));
     READER_BUFF_STRU *ptQR = &gReaderMsg; 
 
-
-    log_d("start vTaskBarCode\r\n");
-    while(1)
-    {   
+    /* 清零 */
+    ptQR->authMode = 0; 
+    ptQR->dataLen = 0;
+    ptQR->state = ENABLE;
+    memset(ptQR->data,0x00,sizeof(ptQR->data));     
     
-        /* 清零 */
-        ptQR->authMode = 0; 
-        ptQR->dataLen = 0;
-        ptQR->state = ENABLE;
-        memset(ptQR->data,0x00,sizeof(ptQR->data)); 
-
+    while(1)
+    { 
         memset(sendBuff,0x00,sizeof(sendBuff));    
-        len = RS485_RecvAtTime(COM5,sendBuff,sizeof(sendBuff),800);  
+        len = RS485_RecvAtTime(COM5,sendBuff,sizeof(sendBuff),500);  
         
         if(len > 512)
         {
@@ -298,11 +295,11 @@ static void vTaskBarCode(void *pvParameters)
             // 获取任务通知 , 没获取到则不等待
             xReturn = xSemaphoreTake(CountSem_Handle,0); /*  等待时间：0 */
             semavalue=uxSemaphoreGetCount(CountSem_Handle);	//获取计数型信号量值
-            log_d("1 semavalue = %d,xReturn = %d\r\n",semavalue,xReturn);
+//            log_d("1 semavalue = %d,xReturn = %d\r\n",semavalue,xReturn);
 
             if(semavalue == 1) 
             {
-                log_d("2 semavalue = %d,xReturn = %d\r\n",semavalue,xReturn);
+//                log_d("2 semavalue = %d,xReturn = %d\r\n",semavalue,xReturn);
                 
                 //添加模版是否启用的判定
                 if(gTemplateParam.templateStatus == 0 || gTemplateParam.offlineProcessing == 1 || gDeviceStateFlag == DEVICE_DISABLE)
@@ -328,7 +325,7 @@ static void vTaskBarCode(void *pvParameters)
                 }
                 else
                 {
-                    log_d("the template is enable\r\n");
+//                    log_d("the template is enable\r\n");
                     //判定高峰节假日模式是否开启
                     if(gTemplateParam.workMode.isPeakMode || gTemplateParam.workMode.isHolidayMode)
                     {
@@ -376,7 +373,7 @@ static void vTaskBarCode(void *pvParameters)
                      else
                      {
                         //判定模板的呼梯方式
-                        log_d("Now it's normal operation mode \r\n");
+//                        log_d("Now it's normal operation mode \r\n");
                         getDevData((char *)sendBuff,gTemplateParam.templateCallingWay.isIcCard,gTemplateParam.templateCallingWay.isQrCode,ptQR);
 
                      }  
@@ -430,7 +427,7 @@ static void vTaskBarCode(void *pvParameters)
 
     	/* 发送事件标志，表示任务正常运行 */        
     	xEventGroupSetBits(xCreatedEventGroup, TASK_BIT_4);  
-        vTaskDelay(300);        
+        vTaskDelay(100);        
     }
 
 }
@@ -605,7 +602,9 @@ static void getDevData(char *src,int icFlag,int qrFlag,READER_BUFF_STRU *desc)
     READER_BUFF_STRU readerBuff = {0}; 
     uint8_t key[16] ={ 0x82,0x5d,0x82,0xd8,0xd5,0x2f,0xdf,0x85,0x28,0xa2,0xb5,0xd8,0x88,0x88,0x88,0x88 }; 
     uint8_t bcdBuff[512] = {0};
-    memset(&readerBuff,0x00,sizeof(READER_BUFF_STRU));   
+    memset(&readerBuff,0x00,sizeof(READER_BUFF_STRU));  
+
+    uint8_t offset = 0;
 
     //默认是支持上送的
     readerBuff.state = ENABLE;
@@ -618,6 +617,7 @@ static void getDevData(char *src,int icFlag,int qrFlag,READER_BUFF_STRU *desc)
     else
     {
         readerBuff.dataLen = strlen(src)-2;
+        offset = readerBuff.dataLen;
     }
     
     //判定是刷卡还是QR
@@ -631,8 +631,9 @@ static void getDevData(char *src,int icFlag,int qrFlag,READER_BUFF_STRU *desc)
     else
     {
         readerBuff.dataLen = 8;//卡号长度为8
-        readerBuff.authMode = AUTH_MODE_CARD;        
-        memcpy(readerBuff.data,src+9,readerBuff.dataLen);
+        readerBuff.authMode = AUTH_MODE_CARD;  
+        offset -= 16;
+        memcpy(readerBuff.data,src + offset,readerBuff.dataLen);
     }
 
     log_d("readerBuff.data = %s,len = %d\r\n",readerBuff.data, readerBuff.dataLen);

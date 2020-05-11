@@ -21,11 +21,6 @@
  * 包含头文件                                   *
  *----------------------------------------------*/
 #include "FloorDataProc.h"
-#include "jsonUtils.h"
-#include "LocalData.h"
-#include "bsp_ds1302.h"
-
-
 
 #define LOG_TAG    "FloorData"
 #include "elog.h"
@@ -49,9 +44,9 @@
 /*----------------------------------------------*
  * 内部函数原型说明                             *
  *----------------------------------------------*/
-static SYSERRORCODE_E packetToElevator(LOCAL_USER_STRU *localUserData,uint8_t *buff);
+static SYSERRORCODE_E packetToElevator(USERDATA_STRU *localUserData,uint8_t *buff);
 static void calcFloor(uint8_t layer,uint8_t regMode,uint8_t *src,uint8_t *outFloor);
-static SYSERRORCODE_E authReader(READER_BUFF_STRU *pQueue,LOCAL_USER_STRU *localUserData);
+static SYSERRORCODE_E authReader(READER_BUFF_STRU *pQueue,USERDATA_STRU *localUserData);
 static SYSERRORCODE_E packetRemoteRequestToElevator(uint8_t tagFloor,uint8_t *buff);
 
 
@@ -75,8 +70,8 @@ void packetSendBuf(READER_BUFF_STRU *pQueue,uint8_t *buf)
     uint16_t len = 0;
     uint16_t ret = 0;
     int tagFloor = 0;
-    LOCAL_USER_STRU localUserData= {0};
-    memset(&localUserData,0x00,sizeof(LOCAL_USER_STRU));
+    USERDATA_STRU *localUserData = &gUserDataStru;
+    memset(localUserData,0x00,sizeof(USERDATA_STRU));
     
     sendBuf[0] = CMD_STX;
     sendBuf[1] = bsp_dipswitch_read();
@@ -88,7 +83,7 @@ void packetSendBuf(READER_BUFF_STRU *pQueue,uint8_t *buf)
         case AUTH_MODE_CARD:
         case AUTH_MODE_QR:
             log_d("card or QR auth,pQueue->authMode = %d\r\n",pQueue->authMode);
-            ret = authReader(pQueue,&localUserData);    
+            ret = authReader(pQueue,localUserData);    
 
             if(ret != NO_ERR)
             {
@@ -97,7 +92,7 @@ void packetSendBuf(READER_BUFF_STRU *pQueue,uint8_t *buf)
             }
 
             //1.发给电梯的数据
-            ret = packetToElevator(&localUserData,buf);
+            ret = packetToElevator(localUserData,buf);
             if(ret != NO_ERR)
             {
                 log_d("invalid floor\r\n");
@@ -105,7 +100,7 @@ void packetSendBuf(READER_BUFF_STRU *pQueue,uint8_t *buf)
             }
 
             //2.发给服务器
-            packetPayload(&localUserData,jsonBuf); 
+            packetPayload(localUserData,jsonBuf); 
 
             len = strlen((const char*)jsonBuf);
 
@@ -149,31 +144,24 @@ void packetSendBuf(READER_BUFF_STRU *pQueue,uint8_t *buf)
 
 }
 
-SYSERRORCODE_E authReader(READER_BUFF_STRU *pQueue,LOCAL_USER_STRU *localUserData)
+SYSERRORCODE_E authReader(READER_BUFF_STRU *pQueue,USERDATA_STRU *localUserData)
 {
     SYSERRORCODE_E result = NO_ERR;
-    uint8_t key[16] = {0};  
-    uint8_t isFind = 0;
+    uint8_t key[CARD_NO_LEN+1] = {0};  
+    uint8_t isFind = 0;  
     
-    USERDATA_STRU rUserData = {0};
-    QRCODE_INFO_STRU qrCodeInfo = {0};
-
-    memset(key,0x00,sizeof(key));
-    memset(&rUserData,0x00,sizeof(USERDATA_STRU));        
-    memset(&qrCodeInfo,0x00,sizeof(QRCODE_INFO_STRU));
-
-    
-    log_d("card or QR data = %s\r\n",pQueue->data);
+    memset(key,0x00,sizeof(key)); 
+    log_d("card or QR data = %s,mode = %d\r\n",pQueue->data,pQueue->authMode);
     
     if(pQueue->authMode == AUTH_MODE_QR) 
     {
         //二维码
         log_d("pQueue->data = %s\r\n",pQueue->data);
         
-        isFind = parseQrCode(pQueue->data,&qrCodeInfo);
+        isFind = parseQrCode(pQueue->data,localUserData);
 
-        log_d("qrCodeInfo->startTime= %s\r\n",qrCodeInfo.startTime); 
-        log_d("qrCodeInfo->endTime= %s\r\n",qrCodeInfo.endTime);         
+        log_d("qrCodeInfo->startTime= %s\r\n",localUserData->startTime); 
+        log_d("qrCodeInfo->endTime= %s\r\n",localUserData->endTime);         
 
         log_d("isfind = %d\r\n",isFind);      
 
@@ -185,52 +173,39 @@ SYSERRORCODE_E authReader(READER_BUFF_STRU *pQueue,LOCAL_USER_STRU *localUserDat
         } 
         
         localUserData->authMode = pQueue->authMode; 
-        localUserData->qrType = qrCodeInfo.type;   
-        memcpy(localUserData->qrID,qrCodeInfo.qrID,QRID_LEN); 
-        memcpy(localUserData->startTime,qrCodeInfo.startTime,TIME_LEN);
-        memcpy(localUserData->endTime,qrCodeInfo.endTime,TIME_LEN); 
-        memcpy(localUserData->timeStamp,qrCodeInfo.startTime,TIME_LEN); 
-        memcpy(localUserData->accessFloor,qrCodeInfo.accessFloor,FLOOR_ARRAY_LEN); 
     }
     else
     {
-        //读卡 CARD 230000000089E1E35D,23       
-    
-        //memcpy(key,pQueue->data+pQueue->dataLen-CARD_NO_LEN,CARD_NO_LEN);
+        //读卡 CARD 230000000089E1E35D,23         
         memcpy(key,pQueue->data,CARD_NO_LEN);
-        log_d("key = %s\r\n",key);
-        isFind = readUserData(key,CARD_MODE,&rUserData);   
+        log_d("key = %s\r\n",key);     
+        
+        isFind = readUserData(key,CARD_MODE,localUserData);   
 
-        log_d("isFind = %d,rUserData.cardState = %d\r\n",isFind,rUserData.cardState);
+        log_d("isFind = %d,rUserData.cardState = %d\r\n",isFind,localUserData->cardState);
 
-        if(rUserData.cardState != CARD_VALID || isFind != 0)
+        if(localUserData->cardState != CARD_VALID || isFind != 0)
         {
             //未找到记录，无权限
             log_e("not find record\r\n");
             return NO_AUTHARITY_ERR;
         } 
         
-        localUserData->qrType = 4;
+        localUserData->platformType = 4;
         localUserData->authMode = pQueue->authMode; 
-        localUserData->defaultFloor = rUserData.defaultFloor;
-        memcpy(localUserData->userId,rUserData.userId,CARD_USER_LEN);        
-        memcpy(localUserData->cardNo,rUserData.cardNo,CARD_USER_LEN); 
-        memcpy(localUserData->accessFloor,rUserData.accessFloor,FLOOR_ARRAY_LENGTH);    
-        memcpy(localUserData->startTime,rUserData.startTime,TIME_LENGTH);
-        memcpy(localUserData->endTime,rUserData.endTime,TIME_LENGTH);  
         memcpy(localUserData->timeStamp,time_to_timestamp(),TIMESTAMP_LEN);
         log_d("localUserData->timeStamp = %s\r\n",localUserData->timeStamp);         
     }
 
     log_d("localUserData->cardNo = %s\r\n",localUserData->cardNo);
     log_d("localUserData->userId = %s\r\n",localUserData->userId);
-    log_d("localUserData->accessLayer = %s\r\n",localUserData->accessFloor);
+    dbh("localUserData->accessLayer",localUserData->accessFloor,sizeof(localUserData->accessFloor));
     log_d("localUserData->defaultLayer = %d\r\n",localUserData->defaultFloor);    
     log_d("localUserData->startTime = %s\r\n",localUserData->startTime);        
     log_d("localUserData->endTime = %s\r\n",localUserData->endTime);        
     log_d("localUserData->authMode = %d\r\n",localUserData->authMode);
     log_d("localUserData->timeStamp = %s\r\n",localUserData->timeStamp);
-    log_d("localUserData->qrID = %s\r\n",localUserData->qrID);
+    log_d("localUserData->platformType = %s\r\n",localUserData->platformType);
 
     return result;
 }
@@ -238,7 +213,7 @@ SYSERRORCODE_E authReader(READER_BUFF_STRU *pQueue,LOCAL_USER_STRU *localUserDat
 
 
 
-SYSERRORCODE_E authRemote(READER_BUFF_STRU *pQueue,LOCAL_USER_STRU *localUserData)
+SYSERRORCODE_E authRemote(READER_BUFF_STRU *pQueue,USERDATA_STRU *localUserData)
 {
     SYSERRORCODE_E result = NO_ERR;
     char value[128] = {0};
@@ -300,7 +275,7 @@ SYSERRORCODE_E authRemote(READER_BUFF_STRU *pQueue,LOCAL_USER_STRU *localUserDat
 
     log_d("localUserData->cardNo = %s\r\n",localUserData->cardNo);
     log_d("localUserData->userId = %s\r\n",localUserData->userId);
-    log_d("localUserData->accessLayer = %s\r\n",localUserData->accessFloor);
+    dbh("localUserData->accessLayer",localUserData->accessFloor,sizeof(localUserData->accessFloor));
     log_d("localUserData->defaultLayer = %d\r\n",localUserData->defaultFloor);    
     log_d("localUserData->startTime = %s\r\n",localUserData->startTime);        
     log_d("localUserData->endTime = %s\r\n",localUserData->endTime);        
@@ -310,13 +285,15 @@ SYSERRORCODE_E authRemote(READER_BUFF_STRU *pQueue,LOCAL_USER_STRU *localUserDat
 
 }
 
-static SYSERRORCODE_E packetToElevator(LOCAL_USER_STRU *localUserData,uint8_t *buff)
+static SYSERRORCODE_E packetToElevator(USERDATA_STRU *localUserData,uint8_t *buff)
 {
     SYSERRORCODE_E result = NO_ERR;
     uint8_t tmpBuf[MAX_SEND_LEN+1] = {0};
     char authLayer[64] = {0}; //权限楼层，最多64层
     int num = 0;    
     uint8_t sendBuf[MAX_SEND_LEN+1] = {0};
+	
+    uint8_t allBuff[MAX_SEND_LEN] = { 0x5A,0x01,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x5B };
 
     uint8_t floor = 0;
 
@@ -327,7 +304,7 @@ static SYSERRORCODE_E packetToElevator(LOCAL_USER_STRU *localUserData,uint8_t *b
     
     log_d("localUserData->cardNo = %s\r\n",localUserData->cardNo);
     log_d("localUserData->userId = %s\r\n",localUserData->userId);
-    log_d("localUserData->accessLayer = %s\r\n",localUserData->accessFloor);
+    dbh("localUserData->accessLayer",localUserData->accessFloor,sizeof(localUserData->accessFloor));
     log_d("localUserData->defaultLayer = %d\r\n",localUserData->defaultFloor);    
     log_d("localUserData->startTime = %s\r\n",localUserData->startTime);        
     log_d("localUserData->endTime = %s\r\n",localUserData->endTime);        
@@ -337,7 +314,17 @@ static SYSERRORCODE_E packetToElevator(LOCAL_USER_STRU *localUserData,uint8_t *b
 
     memcpy(authLayer,localUserData->accessFloor,FLOOR_ARRAY_LEN);
     num = strlen((const char*)authLayer);
+
+    log_d("localUserData->accessFloor num = %d\r\n",num);
+    
     memset(sendBuf,0x00,sizeof(sendBuf));
+
+	if(num >= 25)
+	{
+		memcpy(buff,allBuff,MAX_SEND_LEN);
+		dbh("sendBuf", (char *)buff, MAX_SEND_LEN);
+		return result;
+	}
     
     if(num > 1)//多层权限
     {

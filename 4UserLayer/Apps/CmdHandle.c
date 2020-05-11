@@ -173,7 +173,7 @@ static SYSERRORCODE_E SendToQueue(uint8_t *buf,int len,uint8_t authMode)
 {
     SYSERRORCODE_E result = NO_ERR;
 
-    memset(&gReaderMsg,0x00,sizeof(READER_BUFF_STRU));
+//    memset(&gReaderMsg,0x00,sizeof(READER_BUFF_STRU));
     READER_BUFF_STRU *ptQR = &gReaderMsg;
     
 	/* «Â¡„ */
@@ -194,7 +194,7 @@ static SYSERRORCODE_E SendToQueue(uint8_t *buf,int len,uint8_t authMode)
     } 
     else
     {
-        dbh("SendToQueue",(char *)buf,len);
+        //dbh("SendToQueue",(char *)buf,len);
         log_d("SendToQueue buf = %s,len = %d\r\n",buf,len);
     } 
 
@@ -451,32 +451,32 @@ SYSERRORCODE_E AddCardNo ( uint8_t* msgBuf )
     log_d("userData.defaultFloor = %d\r\n",userData.defaultFloor);
     log_d("userData.startTime = %s\r\n",userData.startTime);
 
-      userData.accessFloor[0] = 26;
-      userData.accessFloor[1] = 25;
-      userData.accessFloor[2] = 24;
-      userData.accessFloor[3] = 23;
-      userData.accessFloor[4] = 22;
-      userData.accessFloor[5] = 21;
-      userData.accessFloor[6] = 20;
-      userData.accessFloor[7] = 19;
-      userData.accessFloor[8] = 18;
-      userData.accessFloor[9] = 17;
-      userData.accessFloor[10] = 16;
-      userData.accessFloor[11] = 15;
-      userData.accessFloor[12] = 14;
-      userData.accessFloor[13] = 13;
-      userData.accessFloor[14] = 12;
-      userData.accessFloor[15] = 11;
-      userData.accessFloor[16] = 10;
-      userData.accessFloor[17] = 9;
-      userData.accessFloor[18] = 7;
-      userData.accessFloor[19] = 6;
-      userData.accessFloor[20] = 5;
-      userData.accessFloor[21] = 4;
-      userData.accessFloor[22] = 3;
-      userData.accessFloor[23] = 2;
-      userData.accessFloor[24] = 1;
-      userData.accessFloor[25] = 8;
+ 
+      userData.accessFloor[0] = 25;
+      userData.accessFloor[1] = 24;
+      userData.accessFloor[2] = 23;
+      userData.accessFloor[3] = 22;
+      userData.accessFloor[4] = 21;
+      userData.accessFloor[5] = 20;
+      userData.accessFloor[6] = 19;
+      userData.accessFloor[7] = 18;
+      userData.accessFloor[8] = 17;
+      userData.accessFloor[9] = 16;
+      userData.accessFloor[10] = 15;
+      userData.accessFloor[11] = 14;
+      userData.accessFloor[12] = 13;
+      userData.accessFloor[13] = 12;
+      userData.accessFloor[14] = 11;
+      userData.accessFloor[15] = 10;
+      userData.accessFloor[16] = 9;
+      userData.accessFloor[17] = 7;
+      userData.accessFloor[18] = 6;
+      userData.accessFloor[19] = 5;
+      userData.accessFloor[20] = 4;
+      userData.accessFloor[21] = 3;
+      userData.accessFloor[22] = 2;
+      userData.accessFloor[23] = 1;
+      userData.accessFloor[24] = 8;
   
  
     
@@ -518,6 +518,7 @@ SYSERRORCODE_E AddCardNo ( uint8_t* msgBuf )
     log_d("userData.cardNo = %s\r\n",userData.cardNo);
     log_d("userData.userId = %s\r\n",userData.userId);
     log_d("userData.accessFloor = %s\r\n",userData.accessFloor);
+	dbh("userData.accessFloor", userData.accessFloor, sizeof(userData.accessFloor));
     log_d("userData.defaultFloor = %d\r\n",userData.defaultFloor);
     log_d("userData.startTime = %s\r\n",userData.startTime);    
   
@@ -1214,20 +1215,20 @@ static SYSERRORCODE_E PCOptDev ( uint8_t* msgBuf )
 
 
 
-//log_d("===============CARD_MODE==================\r\n");
-//TestFlash(CARD_MODE);
+log_d("===============CARD_MODE==================\r\n");
+TestFlash(CARD_MODE);
 
 
-//log_d("===============USER_MODE==================\r\n");
-//TestFlash(USER_MODE);
+log_d("===============USER_MODE==================\r\n");
+TestFlash(USER_MODE);
 
 
-//log_d("===============CARD_DEL_MODE==================\r\n");
-//TestFlash(CARD_DEL_MODE);
+log_d("===============CARD_DEL_MODE==================\r\n");
+TestFlash(CARD_DEL_MODE);
 
 
-//log_d("===============USER_DEL_MODE==================\r\n");
-//TestFlash(USER_DEL_MODE);
+log_d("===============USER_DEL_MODE==================\r\n");
+TestFlash(USER_DEL_MODE);
 
 
 

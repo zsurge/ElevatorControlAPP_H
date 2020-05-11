@@ -59,7 +59,7 @@
 /***************************************************************************************************************/
 /*                                        FreeRTOS基础配置配置选项                                              */
 /***************************************************************************************************************/
-#define configUSE_PREEMPTION			1   		//1使用抢占式内核，0使用协程
+#define configUSE_PREEMPTION			1                           //1使用抢占式内核，0使用协程
 #define configCPU_CLOCK_HZ				( SystemCoreClock ) 		//CPU频率
 #define configTICK_RATE_HZ				( ( TickType_t ) 1000 ) 		//时钟节拍频率，这里设置为1000，周期就是1ms
 #define configMAX_PRIORITIES			( 10 )		//可使用的最大优先级

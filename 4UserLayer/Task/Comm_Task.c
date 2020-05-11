@@ -82,8 +82,8 @@ static void vTaskComm(void *pvParameters)
     //获取当前设备的ID
     uint16_t readID = bsp_dipswitch_read();    
 
-    memset(&gReaderMsg,0x00,sizeof(gReaderMsg));
-    
+    memset(&gReaderMsg,0x00,sizeof(READER_BUFF_STRU));    
+
     /* 清零 */
     ptMsg->authMode = 0; //默认为刷卡
     ptMsg->dataLen = 0;
@@ -93,27 +93,23 @@ static void vTaskComm(void *pvParameters)
     {  
 
         memset(buf,0x00,sizeof(buf));
-        recvLen = RS485_Recv(COM6,buf,5);
-        
-//      	dbh("read buf", buf, 5);  
-
-   
-          if(buf[1] == readID)
+        recvLen = RS485_Recv(COM6,buf,5); 
+//          if(buf[1] == readID)
           {
         	comClearRxFifo(COM6);
 	        //判定数据的有效性
-	        if(recvLen != 5 || buf[0] != 0x5A || buf[1]<1 || buf[1]>4)
-	        {
-	            continue;
-	        }
+//	        if(recvLen != 5 || buf[0] != 0x5A || buf[1]<1 || buf[1]>4)
+//	        {
+//	            continue;
+//	        }
 
 
-	        crc= xorCRC(buf,4);
-	        
-	        if(crc != buf[4])
-	        {
-	            continue;
-	        }
+//	        crc= xorCRC(buf,4);
+//	        
+//	        if(crc != buf[4])
+//	        {
+//	            continue;
+//	        }
 
             xReturn = xQueueReceive( xTransQueue,    /* 消息队列的句柄 */
                                      (void *)&ptMsg,  /*这里获取的是结构体的地址 */
@@ -144,7 +140,7 @@ static void vTaskComm(void *pvParameters)
 
 		/* 发送事件标志，表示任务正常运行 */        
 		xEventGroupSetBits(xCreatedEventGroup, TASK_BIT_1);  
-        vTaskDelay(5);
+        vTaskDelay(20);
     }
 
 }

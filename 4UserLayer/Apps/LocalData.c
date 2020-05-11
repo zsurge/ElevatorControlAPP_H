@@ -28,6 +28,8 @@
 #include "tool.h"
 #include "malloc.h"
 
+
+
 #define LOG_TAG    "localData"
 #include "elog.h"
 
@@ -48,6 +50,8 @@ uint16_t gCurUserHeaderIndex = 0;
 uint16_t gCurRecordIndex = 0;
 uint16_t gDelCardHeaderIndex = 0;    //已删除卡号索引
 uint16_t gDelUserHeaderIndex = 0;    //已删除用户ID索引
+
+USERDATA_STRU gUserDataStru = {0};
 
 
 /*----------------------------------------------*
