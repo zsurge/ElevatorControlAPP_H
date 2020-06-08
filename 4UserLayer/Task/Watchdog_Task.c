@@ -25,7 +25,7 @@
 /*----------------------------------------------*
  * 宏定义                                       *
  *----------------------------------------------*/
-#define WATCHDOG_TASK_PRIO		(tskIDLE_PRIORITY + 5)
+#define WATCHDOG_TASK_PRIO		(tskIDLE_PRIORITY + 9)
 #define WATCHDOG_STK_SIZE 		(configMINIMAL_STACK_SIZE*4)
 
 /*----------------------------------------------*
@@ -79,8 +79,11 @@ static void vTaskWatchDog(void *pvParameters)
 	bsp_InitIwdg(4095);
 	
 	/* 打印系统开机状态，方便查看系统是否复位 */
+	printf("=====================================================\r\n");
+	printf("=系统开机执行\r\n");
+	printf("=====================================================\r\n");
+
 	
-    printf("start vTaskWatchDog\r\n");
 	
     while(1)
     {   

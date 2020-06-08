@@ -25,7 +25,7 @@
 /*----------------------------------------------*
  * ∫Í∂®“Â                                       *
  *----------------------------------------------*/
-#define MQTT_TASK_PRIO	    (tskIDLE_PRIORITY + 3)
+#define MQTT_TASK_PRIO	    (tskIDLE_PRIORITY + 5)
 #define MQTT_STK_SIZE 		(configMINIMAL_STACK_SIZE*16)
 
 /*----------------------------------------------*

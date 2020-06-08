@@ -241,8 +241,11 @@ void readTemplateData(void)
 
 void readCardAndUserIdIndex(void)
 {
-    uint8_t tempBuff[8] = {0};
-    
+    uint8_t tempBuff[8+1] = {0};
+
+
+	//ef_print_env();
+	
     ef_get_env_blob("CardHeaderIndex", tempBuff, sizeof(tempBuff) , NULL);
     gCurCardHeaderIndex = atoi((const char*)tempBuff);
     log_d("gCurCardHeaderIndex = %d\r\n",gCurCardHeaderIndex);

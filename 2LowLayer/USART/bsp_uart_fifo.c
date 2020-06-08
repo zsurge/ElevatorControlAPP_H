@@ -22,6 +22,10 @@
 
 #include "bsp_uart_fifo.h"
 #include "bsp_time.h"
+#include "sys.h"
+
+
+
 
 #if 1
 #pragma import(__use_no_semihosting)             
@@ -422,6 +426,22 @@ void comClearRxFifo(COM_PORT_E _ucPort)
 	pUart->usRxRead = 0;
 	pUart->usRxCount = 0;
 }
+
+uint16_t getRxCnt(COM_PORT_E _ucPort)
+{
+	UART_T *pUart;
+
+	pUart = ComToUart(_ucPort);
+	if (pUart == 0)
+	{
+		return 0;
+	}
+	//printf("read = %d,cnt = %d\r\n",pUart->usRxRead,pUart->usRxCount);
+
+	return pUart->usRxCount;
+}
+
+
 
 /*
 *********************************************************************************************************
@@ -1293,7 +1313,7 @@ static void ConfigUartNVIC(void)
 	/* 使能串口1中断 */
 	NVIC_InitStructure.NVIC_IRQChannel = USART1_IRQn;
 	NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 1;
-	NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0;
+	NVIC_InitStructure.NVIC_IRQChannelSubPriority = 4;
 	NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
 	NVIC_Init(&NVIC_InitStructure);
 #endif
@@ -1301,7 +1321,7 @@ static void ConfigUartNVIC(void)
 #if UART2_FIFO_EN == 1
 	/* 使能串口2中断 */
 	NVIC_InitStructure.NVIC_IRQChannel = USART2_IRQn;
-	NVIC_InitStructure.NVIC_IRQChannelSubPriority = 1;
+	NVIC_InitStructure.NVIC_IRQChannelSubPriority = 5;
 	NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
 	NVIC_Init(&NVIC_InitStructure);
 #endif
@@ -1309,7 +1329,7 @@ static void ConfigUartNVIC(void)
 #if UART3_FIFO_EN == 1
 	/* 使能串口3中断t */
 	NVIC_InitStructure.NVIC_IRQChannel = USART3_IRQn;
-	NVIC_InitStructure.NVIC_IRQChannelSubPriority = 2;
+	NVIC_InitStructure.NVIC_IRQChannelSubPriority = 1;
 	NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
 	NVIC_Init(&NVIC_InitStructure);
 #endif
@@ -1317,7 +1337,7 @@ static void ConfigUartNVIC(void)
 #if UART4_FIFO_EN == 1
 	/* 使能串口4中断t */
 	NVIC_InitStructure.NVIC_IRQChannel = UART4_IRQn;
-	NVIC_InitStructure.NVIC_IRQChannelSubPriority = 3;
+	NVIC_InitStructure.NVIC_IRQChannelSubPriority = 2;
 	NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
 	NVIC_Init(&NVIC_InitStructure);
 #endif
@@ -1325,7 +1345,7 @@ static void ConfigUartNVIC(void)
 #if UART5_FIFO_EN == 1
 	/* 使能串口5中断t */
 	NVIC_InitStructure.NVIC_IRQChannel = UART5_IRQn;
-	NVIC_InitStructure.NVIC_IRQChannelSubPriority = 4;
+	NVIC_InitStructure.NVIC_IRQChannelSubPriority = 3;
 	NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
 	NVIC_Init(&NVIC_InitStructure);
 #endif
@@ -1333,7 +1353,7 @@ static void ConfigUartNVIC(void)
 #if UART6_FIFO_EN == 1
 	/* 使能串口6中断t */
 	NVIC_InitStructure.NVIC_IRQChannel = USART6_IRQn;
-	NVIC_InitStructure.NVIC_IRQChannelSubPriority = 5;
+	NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0;
 	NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
 	NVIC_Init(&NVIC_InitStructure);
 #endif
@@ -1407,9 +1427,9 @@ static uint8_t UartGetChar(UART_T *_pUart, uint8_t *_pByte)
 	uint16_t usCount;
 
 	/* usRxWrite 变量在中断函数中被改写，主程序读取该变量时，必须进行临界区保护 */
-	DISABLE_INT();
+//	DISABLE_INT();
 	usCount = _pUart->usRxCount;
-	ENABLE_INT();
+//	ENABLE_INT();
 
 	/* 如果读和写索引相同，则返回0 */
 	//if (_pUart->usRxRead == usRxWrite)
@@ -1422,13 +1442,13 @@ static uint8_t UartGetChar(UART_T *_pUart, uint8_t *_pByte)
 		*_pByte = _pUart->pRxBuf[_pUart->usRxRead];		/* 从串口接收FIFO取1个数据 */
 
 		/* 改写FIFO读索引 */
-		DISABLE_INT();
+//		DISABLE_INT();
 		if (++_pUart->usRxRead >= _pUart->usRxBufSize)
 		{
 			_pUart->usRxRead = 0;
 		}
 		_pUart->usRxCount--;
-		ENABLE_INT();
+//		ENABLE_INT();
 		return 1;
 	}
 }
@@ -1498,6 +1518,11 @@ uint16_t comGetBuff(COM_PORT_E _ucPort,uint8_t *Buff, uint16_t RecvSize,uint16_t
 */
 static void UartIRQ(UART_T *_pUart)
 {
+//    uint32_t ulReturn;
+    /* 进入临界段，临界段可以嵌套 */
+//    ulReturn = taskENTER_CRITICAL_FROM_ISR();
+    
+
 	/* 处理接收中断  */
 	if (USART_GetITStatus(_pUart->uart, USART_IT_RXNE) != RESET)
 	{
@@ -1579,6 +1604,9 @@ static void UartIRQ(UART_T *_pUart)
 			_pUart->usTxCount--;
 		}
 	}
+
+  /* 退出临界段 */
+//  taskEXIT_CRITICAL_FROM_ISR( ulReturn );	
 }
 
 /*
@@ -1633,7 +1661,42 @@ void USART6_IRQHandler(void)
 
 
 
+ 
 
+
+void RS485_U6_RX_EN(void)
+{
+    int i=0;
+
+    for(i=0;i<500;i++)
+    {
+        ;
+    }
+//     GPIOA->BSRRH = GPIO_Pin_8;
+     GPIO_ResetBits(GPIOA,GPIO_Pin_8); 
+    for(i=0;i<500;i++)
+    {
+        ;
+    }
+}
+
+void RS485_U6_TX_EN(void)
+{
+    int i=0;
+
+    for(i=0;i<500;i++)
+    {
+        ;
+    }
+//     GPIOA->BSRRL = GPIO_Pin_8;
+    GPIO_SetBits(GPIOA,GPIO_Pin_8);
+
+    for(i=0;i<500;i++)
+    {
+        ;
+    }
+
+}
 
 
 

@@ -36,7 +36,7 @@
  * 宏定义                                       *
  *----------------------------------------------*/
 #define KEY_STK_SIZE        (configMINIMAL_STACK_SIZE*4)
-#define KEY_TASK_PRIO	    ( tskIDLE_PRIORITY + 2)
+#define KEY_TASK_PRIO	    ( tskIDLE_PRIORITY + 3)
 
 /*----------------------------------------------*
  * 常量定义                                     *
@@ -162,8 +162,8 @@ void check_msg_queue(void)
     u8 msgq_total_size;     //消息队列总大小
     
     taskENTER_CRITICAL();   //进入临界区
-    msgq_remain_size=uxQueueSpacesAvailable(xTransQueue);//得到队列剩余大小
-    msgq_total_size=uxQueueMessagesWaiting(xTransQueue)+uxQueueSpacesAvailable(xTransQueue);//得到队列总大小，总大小=使用+剩余的。
+    msgq_remain_size=uxQueueSpacesAvailable(xDataProcessQueue);//得到队列剩余大小
+    msgq_total_size=uxQueueMessagesWaiting(xDataProcessQueue)+uxQueueSpacesAvailable(xDataProcessQueue);//得到队列总大小，总大小=使用+剩余的。
 	printf("Total Size = %d, Remain Size = %d\r\n",msgq_total_size,msgq_remain_size);	//显示DATA_Msg消息队列总的大小
 
     taskEXIT_CRITICAL();    //退出临界区

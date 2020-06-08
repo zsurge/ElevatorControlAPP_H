@@ -43,8 +43,10 @@ static TaskHandle_t xHandleTaskAppCreate = NULL;
 
 SemaphoreHandle_t gxMutex = NULL;
 EventGroupHandle_t xCreatedEventGroup = NULL;
-QueueHandle_t xTransQueue = NULL; 
+QueueHandle_t xTransDataQueue = NULL; 
+QueueHandle_t xDataProcessQueue = NULL;
 SemaphoreHandle_t CountSem_Handle = NULL;
+
 
 
 
@@ -77,6 +79,9 @@ int main(void)
     
 	/* 创建任务通信机制 */
 	AppObjCreate();
+
+
+	
     
     //创建AppTaskCreate任务
     xTaskCreate((TaskFunction_t )AppTaskCreate,     
@@ -89,6 +94,9 @@ int main(void)
     
     /* 启动调度，开始执行任务 */
     vTaskStartScheduler();
+
+
+    
     
 }
 
@@ -112,16 +120,18 @@ static void AppTaskCreate (void)
     CreateHandShakeTask();
 
     //LED灯
-    CreateLedTask();
+//    CreateLedTask();
 
     //跟电梯通讯
     CreateCommTask();
 
     //数码管显示
     CreateHc595Task();
+
+    CreateDataProcessTask();
     
 //    //按键
-    CreateKeyTask();
+//    CreateKeyTask();
 
     //二合一读卡器
     CreateBarCodeTask();
@@ -139,6 +149,8 @@ static void AppTaskCreate (void)
     taskEXIT_CRITICAL();   
 
 }
+
+
 
 
 /*
@@ -170,17 +182,28 @@ static void AppObjCreate (void)
     }    
 
     //创消息队列，存放刷卡及二维码数据
-    
-    xTransQueue = xQueueCreate((UBaseType_t ) QUEUE_LEN,/* 消息队列的长度 */
+
+    xDataProcessQueue = xQueueCreate((UBaseType_t ) QUEUE_LEN,/* 消息队列的长度 */
                               (UBaseType_t ) sizeof(READER_BUFF_STRU *));/* 消息的大小 */
-    if(xTransQueue == NULL)
+    if(xDataProcessQueue == NULL)
     {
-        App_Printf("创建xTransQueue消息队列失败!\r\n");
+        App_Printf("创建 xDataProcessQueue 消息队列失败!\r\n");
     }
     else
     {
         App_Printf("create queue success!\r\n");
+    }   
+    
+    xTransDataQueue = xQueueCreate((UBaseType_t ) QUEUE_LEN,/* 消息队列的长度 */
+                              (UBaseType_t ) sizeof(char *));/* 消息的大小 */
+    if(xTransDataQueue == NULL)
+    {
+        App_Printf("创建 xTransDataQueue 消息队列失败!\r\n");
     }
+    else
+    {
+        App_Printf("create queue success!\r\n");
+    }    
 
     /*  创建 CountSem */
     CountSem_Handle = xSemaphoreCreateCounting(2,2);

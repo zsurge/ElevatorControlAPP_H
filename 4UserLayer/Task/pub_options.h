@@ -32,7 +32,7 @@
 /*----------------------------------------------*
  * 宏定义                                       *
  *----------------------------------------------*/
-#define  QUEUE_LEN    5     /* 队列的长度，最大可包含多少个消息 */
+#define  QUEUE_LEN    10     /* 队列的长度，最大可包含多少个消息 */
     
     
 //事件标志
@@ -42,12 +42,14 @@
 #define TASK_BIT_3	 (1 << 3)
 #define TASK_BIT_4	 (1 << 4)
 #define TASK_BIT_5	 (1 << 5)
+#define TASK_BIT_6	 (1 << 6)
 
 
     
     
-#define TASK_BIT_ALL ( TASK_BIT_0 | TASK_BIT_1 | TASK_BIT_2 |TASK_BIT_3|TASK_BIT_4|TASK_BIT_5)
+//#define TASK_BIT_ALL ( TASK_BIT_0 | TASK_BIT_1 | TASK_BIT_2 |TASK_BIT_3|TASK_BIT_4|TASK_BIT_5|TASK_BIT_6)
     
+#define TASK_BIT_ALL ( TASK_BIT_1  |TASK_BIT_3|TASK_BIT_4|TASK_BIT_5|TASK_BIT_6)
 
 /*----------------------------------------------*
  * 常量定义                                     *
@@ -59,7 +61,8 @@
 //事件句柄
 extern EventGroupHandle_t xCreatedEventGroup;
 extern SemaphoreHandle_t gxMutex;
-extern QueueHandle_t xTransQueue; 
+extern QueueHandle_t xTransDataQueue; 
+extern QueueHandle_t xDataProcessQueue; 
 
 extern SemaphoreHandle_t CountSem_Handle;
 

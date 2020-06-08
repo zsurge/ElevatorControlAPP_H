@@ -49,6 +49,9 @@ static void calcFloor(uint8_t layer,uint8_t regMode,uint8_t *src,uint8_t *outFlo
 static SYSERRORCODE_E authReader(READER_BUFF_STRU *pQueue,USERDATA_STRU *localUserData);
 static SYSERRORCODE_E packetRemoteRequestToElevator(uint8_t tagFloor,uint8_t *buff);
 
+static ELEVATOR_BUFF_STRU  gtmpElevtorData;
+
+
 
 void packetDefaultSendBuf(uint8_t *buf)
 {
@@ -98,7 +101,7 @@ void packetSendBuf(READER_BUFF_STRU *pQueue,uint8_t *buf)
                 log_d("invalid floor\r\n");
                 return ;  //无权限   
             }
-
+            
             //2.发给服务器
             packetPayload(localUserData,jsonBuf); 
 
@@ -129,12 +132,12 @@ void packetSendBuf(READER_BUFF_STRU *pQueue,uint8_t *buf)
             break;
         case AUTH_MODE_UNBIND:
             //直接发送停用设备指令
-            xQueueReset(xTransQueue); 
+            xQueueReset(xDataProcessQueue); 
             log_d("send AUTH_MODE_UNBIND floor\r\n");
             break;
         case AUTH_MODE_BIND:
             //直接发送启动设置指令
-            xQueueReset(xTransQueue); 
+            xQueueReset(xDataProcessQueue); 
             log_d("send AUTH_MODE_BIND floor\r\n");
             break;
         default:
@@ -275,7 +278,7 @@ SYSERRORCODE_E authRemote(READER_BUFF_STRU *pQueue,USERDATA_STRU *localUserData)
 
     log_d("localUserData->cardNo = %s\r\n",localUserData->cardNo);
     log_d("localUserData->userId = %s\r\n",localUserData->userId);
-    dbh("localUserData->accessLayer",localUserData->accessFloor,sizeof(localUserData->accessFloor));
+//    dbh("localUserData->accessLayer",localUserData->accessFloor,sizeof(localUserData->accessFloor));
     log_d("localUserData->defaultLayer = %d\r\n",localUserData->defaultFloor);    
     log_d("localUserData->startTime = %s\r\n",localUserData->startTime);        
     log_d("localUserData->endTime = %s\r\n",localUserData->endTime);        
@@ -292,6 +295,8 @@ static SYSERRORCODE_E packetToElevator(USERDATA_STRU *localUserData,uint8_t *buf
     char authLayer[64] = {0}; //权限楼层，最多64层
     int num = 0;    
     uint8_t sendBuf[MAX_SEND_LEN+1] = {0};
+
+    ELEVATOR_BUFF_STRU *devSendData = &gElevtorData;
 	
     uint8_t allBuff[MAX_SEND_LEN] = { 0x5A,0x01,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x5B };
 
@@ -304,7 +309,7 @@ static SYSERRORCODE_E packetToElevator(USERDATA_STRU *localUserData,uint8_t *buf
     
     log_d("localUserData->cardNo = %s\r\n",localUserData->cardNo);
     log_d("localUserData->userId = %s\r\n",localUserData->userId);
-    dbh("localUserData->accessLayer",localUserData->accessFloor,sizeof(localUserData->accessFloor));
+//    dbh("localUserData->accessLayer",localUserData->accessFloor,sizeof(localUserData->accessFloor));
     log_d("localUserData->defaultLayer = %d\r\n",localUserData->defaultFloor);    
     log_d("localUserData->startTime = %s\r\n",localUserData->startTime);        
     log_d("localUserData->endTime = %s\r\n",localUserData->endTime);        
@@ -322,7 +327,28 @@ static SYSERRORCODE_E packetToElevator(USERDATA_STRU *localUserData,uint8_t *buf
 	if(num >= 25)
 	{
 		memcpy(buff,allBuff,MAX_SEND_LEN);
-		dbh("sendBuf", (char *)buff, MAX_SEND_LEN);
+		dbh("send multiple", (char *)buff, MAX_SEND_LEN);
+		memcpy(devSendData->data,buff,MAX_SEND_LEN); 
+		
+//		iccc = xorCRC(defaultBuff,MAX_SEND_LEN-2); 
+
+		//全楼层，需上传10次
+//		log_d("--------------------->iccc = %02x\r\n",iccc);
+
+		for(i = 0 ;i<10;i++)
+		{
+			/* 使用消息队列实现指针变量的传递 */
+			if(xQueueSend(xTransDataQueue,				/* 消息队列句柄 */
+						 (void *) &devSendData,   /* 发送指针变量recv_buf的地址 */
+						 (TickType_t)10) != pdPASS )
+			{
+				log_d("the queue is full!\r\n");				
+				xQueueReset(xTransDataQueue);
+			} 
+		   
+		}
+
+		
 		return result;
 	}
     
@@ -331,17 +357,18 @@ static SYSERRORCODE_E packetToElevator(USERDATA_STRU *localUserData,uint8_t *buf
         for(i=0;i<num;i++)
         {
             log_d("current floor = %d\r\n",authLayer[i]);
-            calcFloor(authLayer[i],MANUAL_REG,sendBuf,tmpBuf);
-            memcpy(sendBuf,tmpBuf,MAX_SEND_LEN);
+            calcFloor(authLayer[i],MANUAL_REG,sendBuf,tmpBuf);           
         }        
     }
     else    //单层权限，直接呼默认权限楼层
     {
         if(localUserData->defaultFloor != authLayer[0])
         {
+        
+            log_d("defaultFloor != authLayer,%d,%d\r\n",localUserData->defaultFloor,authLayer[0]);
             localUserData->defaultFloor = authLayer[0];
-            log_e("defaultFloor != authLayer,%d,%d\r\n",localUserData->defaultFloor,authLayer[0]);
         }
+        
         floor = localUserData->defaultFloor;//authLayer[0];   
         
 	    if(floor == 0)
@@ -356,12 +383,27 @@ static SYSERRORCODE_E packetToElevator(USERDATA_STRU *localUserData,uint8_t *buf
     
     sendBuf[0] = CMD_STX;
     sendBuf[1] = bsp_dipswitch_read();
-    memcpy(sendBuf+2,tmpBuf,MAX_SEND_LEN-5);        
-    sendBuf[MAX_SEND_LEN-1] = xorCRC(sendBuf,MAX_SEND_LEN-2);        
-    memcpy(buff,sendBuf,MAX_SEND_LEN);  
-
-    dbh("sendBuf", (char *)sendBuf, MAX_SEND_LEN);
+    memcpy(sendBuf+2,tmpBuf,MAX_SEND_LEN-5);
     
+    sendBuf[MAX_SEND_LEN-1] = xorCRC(sendBuf,MAX_SEND_LEN-2);   
+
+    
+    memcpy(devSendData->data,sendBuf,MAX_SEND_LEN);
+    
+//    dbh("send single1", (char *)devSendData->data, MAX_SEND_LEN);
+
+    for(i = 0 ;i<7;i++)
+    {
+        /* 使用消息队列实现指针变量的传递 */
+        if(xQueueSend(xTransDataQueue,              /* 消息队列句柄 */
+        			 (void *) &devSendData,   /* 发送指针变量recv_buf的地址 */
+        			 (TickType_t)10) != pdPASS )
+        {
+            log_d("the queue is full!\r\n");                
+            xQueueReset(xTransDataQueue);
+        } 
+       
+    }
     return result;
 }
 
@@ -382,7 +424,7 @@ static SYSERRORCODE_E packetRemoteRequestToElevator(uint8_t tagFloor,uint8_t *bu
 	
     calcFloor(tagFloor,AUTO_REG,sendBuf,tmpBuf);
     
-    dbh("tmpBuf", tmpBuf, MAX_SEND_LEN); 
+//    dbh("tmpBuf", tmpBuf, MAX_SEND_LEN); 
 
     memset(sendBuf,0x00,sizeof(sendBuf));
     
@@ -438,7 +480,6 @@ static void calcFloor(uint8_t layer,uint8_t regMode,uint8_t *src,uint8_t *outFlo
 
     memcpy(outFloor,sendBuf,MAX_SEND_LEN);
 
-//    dbh("after", sendBuf, MAX_SEND_LEN);
 }
 
 

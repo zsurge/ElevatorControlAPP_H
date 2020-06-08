@@ -42,7 +42,7 @@
 #define	UART2_FIFO_EN	1
 #define	UART3_FIFO_EN	0
 #define	UART4_FIFO_EN	0
-#define	UART5_FIFO_EN	1
+#define	UART5_FIFO_EN	0
 #define	UART6_FIFO_EN	1
 
 
@@ -51,7 +51,7 @@
 #define	UART2_RS485_EN	0
 #define	UART3_RS485_EN	0
 #define	UART4_RS485_EN	0
-#define	UART5_RS485_EN	1
+#define	UART5_RS485_EN	0
 #define	UART6_RS485_EN	1
 
 
@@ -59,8 +59,8 @@
 #define RS485_U5_RX_EN()	    GPIOD->BSRRH = GPIO_Pin_7
 #define RS485_U5_TX_EN()	    GPIOD->BSRRL = GPIO_Pin_7
 
-#define RS485_U6_RX_EN()	    GPIOA->BSRRH = GPIO_Pin_8
-#define RS485_U6_TX_EN()	    GPIOA->BSRRL = GPIO_Pin_8
+//#define RS485_U6_RX_EN()	    GPIOA->BSRRH = GPIO_Pin_8
+//#define RS485_U6_TX_EN()	    GPIOA->BSRRL = GPIO_Pin_8
 
 
 
@@ -154,8 +154,10 @@ void RS485_SetBaud(COM_PORT_E _ucPort,uint32_t _baud);
 uint16_t RS485_Recv(COM_PORT_E _ucPort,uint8_t *buf, uint16_t len);
 uint16_t RS485_RecvAtTime(COM_PORT_E _ucPort,uint8_t *buf, uint16_t len,uint32_t timeout);
 
+void RS485_U6_RX_EN(void);
+void RS485_U6_TX_EN(void);
 
-
+uint16_t getRxCnt(COM_PORT_E _ucPort);
 
 
 

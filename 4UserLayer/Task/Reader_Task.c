@@ -73,7 +73,6 @@ static void vTaskReader(void *pvParameters)
     memset(&gReaderMsg,0x00,sizeof(READER_BUFF_STRU));
     READER_BUFF_STRU *ptReader = &gReaderMsg;
 
-
     while(1)
     {
     	/* 清零 */
@@ -104,7 +103,7 @@ static void vTaskReader(void *pvParameters)
             memcpy(ptReader->data,tmp,ptReader->dataLen);
 
 			/* 使用消息队列实现指针变量的传递 */
-			if(xQueueSend(xTransQueue,              /* 消息队列句柄 */
+			if(xQueueSend(xDataProcessQueue,              /* 消息队列句柄 */
 						 (void *) &ptReader,   /* 发送结构体指针变量ptReader的地址 */
 						 (TickType_t)50) != pdPASS )
 			{

@@ -48,6 +48,9 @@
 #include "bsp_led.h"
 #include "bsp_beep.h" 
 #include "bsp_spi_flash.h"
+#include "bsp_usart6.h"
+
+#include "bsp_usart5.h"
 
 //#include "bsp_digitaltube.h"
 #include "bsp_iwdg.h"

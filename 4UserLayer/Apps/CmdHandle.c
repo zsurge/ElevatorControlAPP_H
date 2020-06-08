@@ -64,6 +64,7 @@ uint8_t gUpdateDevSn = 0;
 uint32_t gCurTick = 0;
 uint8_t gDeviceStateFlag = DEVICE_ENABLE;
 
+ELEVATOR_BUFF_STRU gElevtorData;
 
 
 READER_BUFF_STRU gReaderMsg;
@@ -185,12 +186,12 @@ static SYSERRORCODE_E SendToQueue(uint8_t *buf,int len,uint8_t authMode)
     memcpy(ptQR->data,buf,len);
     
     /* 使用消息队列实现指针变量的传递 */
-    if(xQueueSend(xTransQueue,              /* 消息队列句柄 */
+    if(xQueueSend(xDataProcessQueue,              /* 消息队列句柄 */
                  (void *) &ptQR,   /* 发送指针变量recv_buf的地址 */
                  (TickType_t)300) != pdPASS )
     {
         DBG("the queue is full!\r\n");                
-        xQueueReset(xTransQueue);
+        xQueueReset(xDataProcessQueue);
     } 
     else
     {
@@ -451,32 +452,32 @@ SYSERRORCODE_E AddCardNo ( uint8_t* msgBuf )
     log_d("userData.defaultFloor = %d\r\n",userData.defaultFloor);
     log_d("userData.startTime = %s\r\n",userData.startTime);
 
- 
-      userData.accessFloor[0] = 25;
-      userData.accessFloor[1] = 24;
-      userData.accessFloor[2] = 23;
-      userData.accessFloor[3] = 22;
-      userData.accessFloor[4] = 21;
-      userData.accessFloor[5] = 20;
-      userData.accessFloor[6] = 19;
-      userData.accessFloor[7] = 18;
-      userData.accessFloor[8] = 17;
-      userData.accessFloor[9] = 16;
-      userData.accessFloor[10] = 15;
-      userData.accessFloor[11] = 14;
-      userData.accessFloor[12] = 13;
-      userData.accessFloor[13] = 12;
-      userData.accessFloor[14] = 11;
-      userData.accessFloor[15] = 10;
-      userData.accessFloor[16] = 9;
-      userData.accessFloor[17] = 7;
-      userData.accessFloor[18] = 6;
-      userData.accessFloor[19] = 5;
-      userData.accessFloor[20] = 4;
-      userData.accessFloor[21] = 3;
-      userData.accessFloor[22] = 2;
-      userData.accessFloor[23] = 1;
-      userData.accessFloor[24] = 8;
+//      userData.accessFloor[0] = 8;
+//      userData.accessFloor[0] = 25;
+//      userData.accessFloor[1] = 24;
+//      userData.accessFloor[2] = 23;
+//      userData.accessFloor[3] = 22;
+//      userData.accessFloor[4] = 21;
+//      userData.accessFloor[5] = 20;
+//      userData.accessFloor[6] = 19;
+//      userData.accessFloor[7] = 18;
+//      userData.accessFloor[8] = 17;
+//      userData.accessFloor[9] = 16;
+//      userData.accessFloor[10] = 15;
+//      userData.accessFloor[11] = 14;
+//      userData.accessFloor[12] = 13;
+//      userData.accessFloor[13] = 12;
+//      userData.accessFloor[14] = 11;
+//      userData.accessFloor[15] = 10;
+//      userData.accessFloor[16] = 9;
+//      userData.accessFloor[17] = 7;
+//      userData.accessFloor[18] = 6;
+//      userData.accessFloor[19] = 5;
+//      userData.accessFloor[20] = 4;
+//      userData.accessFloor[21] = 3;
+//      userData.accessFloor[22] = 2;
+//      userData.accessFloor[23] = 1;
+//      userData.accessFloor[24] = 8;
   
  
     
@@ -720,7 +721,7 @@ SYSERRORCODE_E EnableDev ( uint8_t* msgBuf )
 
 
     //add 2020.04.27
-    xQueueReset(xTransQueue); 
+    xQueueReset(xDataProcessQueue); 
         
     //这里需要发消息到消息队列，启用
     SendToQueue(type,strlen((const char*)type),AUTH_MODE_BIND);
@@ -1319,7 +1320,11 @@ static SYSERRORCODE_E AddSingleUser( uint8_t* msgBuf )
     sprintf((char *)tempUserData.userId,"%08s",tmp);
     log_d("tempUserData.userId = %s,len = %d\r\n",tempUserData.userId,strlen((const char*)tempUserData.userId));
 
-    
+     //4.保存默认楼层
+    memset(tmp,0x00,sizeof(tmp));
+    strcpy((char *)tmp,  (const char*)GetJsonItem((const uint8_t *)msgBuf,(const uint8_t *)"defaultLayer",1));
+    tempUserData.defaultFloor = atoi((const char*)tmp);
+    log_d("tempUserData.defaultFloor = %d\r\n",tempUserData.defaultFloor);   
     
     //3.保存楼层权限
     memset(tmp,0x00,sizeof(tmp));
@@ -1335,17 +1340,14 @@ static SYSERRORCODE_E AddSingleUser( uint8_t* msgBuf )
     }
     else
     {          
-        log_d("tempUserData.accessFloor error!!!!!!!!!!!!!!!\r\n");
+        //modify 2020.06.08 单人楼层权限为默认楼层
+        tempUserData.accessFloor[0] = tempUserData.defaultFloor;
     }
     
 //    dbh("tempUserData.accessFloor", tempUserData.accessFloor,multipleFloorNum );
     
 
-    //4.保存默认楼层
-    memset(tmp,0x00,sizeof(tmp));
-    strcpy((char *)tmp,  (const char*)GetJsonItem((const uint8_t *)msgBuf,(const uint8_t *)"defaultLayer",1));
-    tempUserData.defaultFloor = atoi((const char*)tmp);
-    log_d("tempUserData.defaultFloor = %d\r\n",tempUserData.defaultFloor);
+
 
     //5.保存开始时间
     strcpy((char *)tempUserData.startTime,  (const char*)GetJsonItem((const uint8_t *)msgBuf,(const uint8_t *)"startTime",1));
@@ -1425,7 +1427,7 @@ static SYSERRORCODE_E UnbindDev( uint8_t* msgBuf )
     else if(memcmp(type,"1",1) == 0)
     {  
         //add 2020.04.27
-        xQueueReset(xTransQueue); 
+        xQueueReset(xDataProcessQueue); 
 
         SaveDevState(DEVICE_ENABLE);          
         SendToQueue(type,strlen((const char*)type),AUTH_MODE_BIND);

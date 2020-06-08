@@ -20,7 +20,8 @@
 /*----------------------------------------------*
  * 包含头文件                                   *
  *----------------------------------------------*/
-#include "bsp_uart_fifo.h"
+#include "bsp_usart5.h"
+
 #include "CmdHandle.h"
 #include "tool.h"
 #include "templateprocess.h"
@@ -35,7 +36,7 @@
 /*----------------------------------------------*
  * 宏定义                                       *
  *----------------------------------------------*/
-#define BARCODE_TASK_PRIO		(tskIDLE_PRIORITY + 5)
+#define BARCODE_TASK_PRIO		(tskIDLE_PRIORITY + 7)
 #define BARCODE_STK_SIZE 		(configMINIMAL_STACK_SIZE*10)
 
 /*----------------------------------------------*
@@ -229,12 +230,12 @@ static void vTaskBarCode(void *pvParameters)
                 if(ptQR->state)
                 {
                 	/* 使用消息队列实现指针变量的传递 */
-                	if(xQueueSend(xTransQueue,              /* 消息队列句柄 */
+                	if(xQueueSend(xDataProcessQueue,              /* 消息队列句柄 */
                 				 (void *) &ptQR,   /* 发送指针变量recv_buf的地址 */
                 				 (TickType_t)100) != pdPASS )
                 	{
                         log_d("the queue is full!\r\n");                
-                        xQueueReset(xTransQueue);
+                        xQueueReset(xDataProcessQueue);
                     } 
                     else
                     {
@@ -278,7 +279,7 @@ static void vTaskBarCode(void *pvParameters)
     while(1)
     { 
         memset(sendBuff,0x00,sizeof(sendBuff));    
-        len = RS485_RecvAtTime(COM5,sendBuff,sizeof(sendBuff),500);  
+        len = bsp_Usart5_Read(sendBuff,sizeof(sendBuff));  
         
         if(len > 512)
         {
@@ -289,7 +290,8 @@ static void vTaskBarCode(void *pvParameters)
         
         if(len > 10  && sendBuff[len-1] == 0x0A && sendBuff[len-2] == 0x0D && gDeviceStateFlag == DEVICE_ENABLE)
         {       
-            comClearRxFifo(COM5);
+//            comClearRxFifo(COM5);
+            bsp_Usart5_RecvReset();
             log_d("sendbuff = %s\r\n",sendBuff);
 
             // 获取任务通知 , 没获取到则不等待
@@ -319,7 +321,8 @@ static void vTaskBarCode(void *pvParameters)
                         semavalue=uxSemaphoreGetCount(CountSem_Handle); //获取计数型信号量值
                         
 
-                        comClearRxFifo(COM5);
+//                        comClearRxFifo(COM5);
+                        bsp_Usart5_RecvReset();
                         memset(sendBuff,0x00,sizeof(sendBuff));
                         len = 0;
                 }
@@ -383,12 +386,12 @@ static void vTaskBarCode(void *pvParameters)
                     if(ptQR->state)
                     {
                     	/* 使用消息队列实现指针变量的传递 */
-                    	if(xQueueSend(xTransQueue,              /* 消息队列句柄 */
+                    	if(xQueueSend(xDataProcessQueue,              /* 消息队列句柄 */
                     				 (void *) &ptQR,   /* 发送指针变量recv_buf的地址 */
-                    				 (TickType_t)1000) != pdPASS )
+                    				 (TickType_t)100) != pdPASS )
                     	{
                             log_d("the queue is full!\r\n");                
-                            xQueueReset(xTransQueue);
+                            xQueueReset(xDataProcessQueue);
                         } 
                         else
                         {
@@ -400,25 +403,29 @@ static void vTaskBarCode(void *pvParameters)
 
                     xReturn = xSemaphoreGive(CountSem_Handle);// 给出计数信号量                        
                     semavalue=uxSemaphoreGetCount(CountSem_Handle); //获取计数型信号量值 
-                    comClearRxFifo(COM5);
+//                    comClearRxFifo(COM5);
+                    bsp_Usart5_RecvReset();
                     memset(sendBuff,0x00,sizeof(sendBuff));
                     len = 0;
                 }
 
-                comClearRxFifo(COM5);
+//                comClearRxFifo(COM5);
+                bsp_Usart5_RecvReset();
                 memset(sendBuff,0x00,sizeof(sendBuff));
                 len = 0;
             }
             else
             {
-                comClearRxFifo(COM5);
+//                comClearRxFifo(COM5);
+                bsp_Usart5_RecvReset();
                 memset(sendBuff,0x00,sizeof(sendBuff));
                 len = 0;
             }
         }
         else
         {
-            comClearRxFifo(COM5);
+//            comClearRxFifo(COM5);
+            bsp_Usart5_RecvReset();
             memset(sendBuff,0x00,sizeof(sendBuff));
             len = 0;
         }       
@@ -427,7 +434,7 @@ static void vTaskBarCode(void *pvParameters)
 
     	/* 发送事件标志，表示任务正常运行 */        
     	xEventGroupSetBits(xCreatedEventGroup, TASK_BIT_4);  
-        vTaskDelay(100);        
+        vTaskDelay(300);        
     }
 
 }
@@ -604,7 +611,7 @@ static void getDevData(char *src,int icFlag,int qrFlag,READER_BUFF_STRU *desc)
     uint8_t bcdBuff[512] = {0};
     memset(&readerBuff,0x00,sizeof(READER_BUFF_STRU));  
 
-    uint8_t offset = 0;
+//    uint8_t offset = 0;
 
     //默认是支持上送的
     readerBuff.state = ENABLE;
@@ -617,7 +624,7 @@ static void getDevData(char *src,int icFlag,int qrFlag,READER_BUFF_STRU *desc)
     else
     {
         readerBuff.dataLen = strlen(src)-2;
-        offset = readerBuff.dataLen;
+        //offset = readerBuff.dataLen;
     }
     
     //判定是刷卡还是QR
@@ -632,8 +639,9 @@ static void getDevData(char *src,int icFlag,int qrFlag,READER_BUFF_STRU *desc)
     {
         readerBuff.dataLen = 8;//卡号长度为8
         readerBuff.authMode = AUTH_MODE_CARD;  
-        offset -= 16;
-        memcpy(readerBuff.data,src + offset,readerBuff.dataLen);
+//        offset -= 16;
+        //CARD 120065AA89000000000 所以offset = 7
+        memcpy(readerBuff.data,src + 9,readerBuff.dataLen);
     }
 
     log_d("readerBuff.data = %s,len = %d\r\n",readerBuff.data, readerBuff.dataLen);

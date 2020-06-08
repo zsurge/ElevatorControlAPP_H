@@ -149,7 +149,7 @@ void bsp_ds1302_mdifytime ( uint8_t* descTime ) //初始化1302
 	memcpy ( tmp,descTime+17,2 );
 	buf[0] = IntToBCD ( atoi ( (const char*)tmp ) );
 
-	dbh ( "bsp_ds1302_mdifytime", (char *)buf, 8 );
+//	dbh ( "bsp_ds1302_mdifytime", (char *)buf, 8 );
 
 	write_1302 ( 0x8e,0x00 ); //去除写保护
 	for ( i=0; i<7; i++ ) //进行对时

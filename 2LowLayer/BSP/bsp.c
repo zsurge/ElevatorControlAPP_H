@@ -55,6 +55,8 @@ static void my_mem_init(void)
 	bsp_TIM6_Init();            //定时器6初始化
 	
     bsp_InitUart();
+//    bsp_Usart6_Init(38400);
+    bsp_Usart5_Init(38400);
 
     bsp_initI2C();              //eeprom初始化
 //    AT24CXX_Init();

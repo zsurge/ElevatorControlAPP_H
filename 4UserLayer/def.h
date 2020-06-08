@@ -63,6 +63,7 @@
 #include "Mqtt_Task.h"
 #include "Reader_Task.h"
 #include "Watchdog_Task.h"
+#include "DataProcess_Task.h"
 
 
 /*
