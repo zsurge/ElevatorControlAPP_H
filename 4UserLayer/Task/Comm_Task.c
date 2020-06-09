@@ -35,6 +35,23 @@
  * 宏定义                                       *
  *----------------------------------------------*/
 #define MAX_RS485_LEN 37
+#define SPACE		        			0x00
+#define FINISH		       	 			0x55
+
+#define STEP1   0
+#define STEP2   10
+#define STEP3   20
+#define STEP4   30
+
+
+
+typedef struct FROMHOST
+{
+    uint8_t rxStatus;                   //接收状态
+    uint8_t rxCRC;                      //校验值
+    uint16_t rxCnt;                     //接收字节数
+    volatile uint8_t RxdBuf[32];   //接收包数据缓存         
+}FROMHOST_STRU;
 
  
 #define COMM_TASK_PRIO		(tskIDLE_PRIORITY + 8) 
@@ -57,7 +74,11 @@ TaskHandle_t xHandleTaskComm = NULL;
  * 内部函数原型说明                             *
  *----------------------------------------------*/
 static void vTaskComm(void *pvParameters);
-static uint8_t deal_Serial_Parse(uint8_t *str);
+static uint8_t deal_Serial_Parse(void);
+
+
+
+
 
 
 void CreateCommTask(void)
@@ -111,7 +132,7 @@ static void vTaskComm(void *pvParameters)
         memset(buf,0x00,sizeof(buf));        
         //recvLen = BSP_DMAUsart6Read(buf,5);
 //        recvLen = RS485_Recv(buf,5);
-          if(deal_Serial_Parse(buf) == 1)
+          if(deal_Serial_Parse() == 1)
           {
 
             xReturn = xQueueReceive( xTransDataQueue,    /* 消息队列的句柄 */
@@ -237,54 +258,122 @@ static void vTaskComm(void *pvParameters)
 #endif
 
 
-static uint8_t deal_Serial_Parse(uint8_t *str)
+//static uint8_t deal_Serial_Parse(uint8_t *str)
+//{
+//    uint8_t buf[6] = {0};
+//    uint8_t crc = 0;    
+//    uint8_t stx = 0;    
+
+//	if(getRxCnt(COM6) < 5) 
+//	{
+//		return 0;
+//	}
+
+//	//totalCnt++;
+//    memset(buf,0x00,sizeof(buf));
+//    if(RS485_Recv(COM6,&stx,1)!=1)
+//    {
+//      return 0;
+//    }    
+//    
+//    if(stx != 0x5A)
+//    {
+//        return 0;
+//    }
+//    
+//    buf[0] = stx;
+//    
+//    
+//    if(RS485_Recv(COM6,buf+1,4)!=4)
+//    {
+//        return 0;
+//    }
+
+
+//    if(buf[1] != 1)
+//    {
+//        return 0;
+//    }
+
+//    crc= xorCRC(buf,4);
+
+//    if(crc != buf[4])
+//    {
+//        return 0;
+//    }
+//    memcpy(str,buf,5);
+//    return 1;
+//}
+
+static uint8_t deal_Serial_Parse(void)
 {
-    uint8_t buf[6] = {0};
-    uint8_t crc = 0;    
-    uint8_t stx = 0;    
-
-	if(getRxCnt(COM6) < 5) 
-	{
-		return 0;
-	}
-
-	//totalCnt++;
-    memset(buf,0x00,sizeof(buf));
-    if(RS485_Recv(COM6,&stx,1)!=1)
-    {
-      return 0;
-    }    
+    uint8_t ch = 0; 
+    uint8_t crcValue = 0;
+    uint8_t result = 0;
     
-    if(stx != 0x5A)
-    {
-        return 0;
-    }
+    FROMHOST_STRU rxFromHost;
+
+    memset(&rxFromHost,0x00,sizeof(FROMHOST_STRU));
     
-    buf[0] = stx;
-    
-    
-    if(RS485_Recv(COM6,buf+1,4)!=4)
-    {
-        return 0;
+    while(1)
+    {  
+        if(RS485_Recv(COM6,&ch,1)!=1)
+        { 
+            return 0;
+        }
+        
+       switch (rxFromHost.rxStatus)
+        { /*接收数据状态*/                
+            case STEP1:
+                if(0x5A == ch) /*接收包头*/
+                {
+                    rxFromHost.RxdBuf[0] = ch;
+                    crcValue = ch;
+                    rxFromHost.rxCnt = 1;
+                    rxFromHost.rxStatus = STEP2;
+                }
+                break;
+           case STEP2:
+                if(0x01 == ch)
+                {
+                    rxFromHost.RxdBuf[1] = ch;
+                    crcValue ^= ch;
+                    rxFromHost.rxCnt = 2;
+                    rxFromHost.rxStatus = STEP3;                
+                }
+                break;           
+            case STEP3:      /* 接收整个数据包 */
+                rxFromHost.RxdBuf[rxFromHost.rxCnt++] = ch; 
+                crcValue ^= ch;
+                if(rxFromHost.rxCnt == 4)
+                {
+                    rxFromHost.rxStatus = STEP4;
+                }                
+                break;
+            case STEP4:
+                if(ch == crcValue)
+                {
+                    rxFromHost.RxdBuf[rxFromHost.rxCnt++] = ch;
+                    rxFromHost.rxStatus = STEP1;       
+                    result = 1;
+                    return result;
+                }
+                else
+                {
+                    rxFromHost.RxdBuf[rxFromHost.rxCnt++] = ch;
+                    crcValue ^= ch;
+                    rxFromHost.rxStatus = STEP2;   
+                }               
+                break;               
+            default:               
+                    rxFromHost.rxCRC = 0;
+                    rxFromHost.rxCnt = 0;
+                    rxFromHost.rxStatus = STEP1;
+                break;
+         }
     }
 
-
-    if(buf[1] != 1)
-    {
-        return 0;
-    }
-
-    crc= xorCRC(buf,4);
-
-    if(crc != buf[4])
-    {
-        return 0;
-    }
-
-//	log_e("total:%ld,valid:%ld\r\n",totalCnt,validCnt++);
-    memcpy(str,buf,5);
-    return 1;
+    return result;
 }
-
 
 
