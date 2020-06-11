@@ -172,7 +172,6 @@ unsigned char findDev(unsigned char *str,unsigned char dataFormat)
 
     devSN = atoi((const char*)tmpBuff);
 
-    printf("devSN = %d,str len = %d\r\n",devSN,len);
     char buf[6] = {0};
 
     for(i=0;i<len/dataFormat;i++)
@@ -180,7 +179,6 @@ unsigned char findDev(unsigned char *str,unsigned char dataFormat)
         memset(buf,0x00,sizeof(buf));
         memcpy(buf,str+i*dataFormat,dataFormat);
         tmpValue = myAtoi(buf);
-        printf("i = %d, tmpValue = %d\t",i,tmpValue);      
         
         if(devSN == tmpValue)
         {
@@ -188,34 +186,10 @@ unsigned char findDev(unsigned char *str,unsigned char dataFormat)
         }
     }
 
-    printf("\r\n"); 
 
     return isFind;
 }
 
-//int searchHeaderIndex(unsigned char *str,unsigned char dataFormat )
-//{
-//    int isFind = 0;
-//    
-//    switch (dataFormat)
-//    {
-//        case 1:
-//            findDev(str)
-//            break;
-//        case 2:
-//            break;
-//        case 3:
-//            break;
-//        case 4:
-//            break;
-//        case 5:
-//            break;            
-//       default:
-//            break;
-//    }
-
-//    return isFind;
-//}
 
 
 char *parseAccessFloor(char *str)

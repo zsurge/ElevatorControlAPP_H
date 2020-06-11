@@ -29,7 +29,7 @@
 #include "bsp_ds1302.h"
 #include "des.h"
 #include "malloc.h"
-
+//#include "bsp_uart_fifo.h"
 #define LOG_TAG    "BarCode"
 #include "elog.h"
 
@@ -38,6 +38,14 @@
  *----------------------------------------------*/
 #define BARCODE_TASK_PRIO		(tskIDLE_PRIORITY + 7)
 #define BARCODE_STK_SIZE 		(configMINIMAL_STACK_SIZE*10)
+
+
+#define UNFINISHED		        	    0x00
+#define FINISHED          	 			0x55
+
+#define STARTREAD		        	    0x00
+#define ENDREAD         	 			0xAA
+
 
 /*----------------------------------------------*
  * 常量定义                                     *
@@ -57,9 +65,18 @@ static void vTaskBarCode(void *pvParameters);
 
 static int compareDate(uint8_t *date1,uint8_t *date2);
 static int compareTime(uint8_t *currentTime);
-static void getDevData(char *src,int icFlag,int qrFlag,READER_BUFF_STRU *desc);
+static void packetUserData(char *src,int icFlag,int qrFlag,READER_BUFF_STRU *desc);
+static uint8_t parseReader(void);
 
 
+typedef struct FROMREADER
+{
+    uint8_t rxBuff[512];               //接收字节数    
+    uint8_t rxStatus;                   //接收状态
+    uint16_t rxCnt;                     //接收字节数
+}FROMREADER_STRU;
+
+static FROMREADER_STRU gReaderData;
 
 
 void CreateBarCodeTask(void)
@@ -163,7 +180,7 @@ static void vTaskBarCode(void *pvParameters)
                         else
                         {
                             log_d("peak mode  >in the control time \r\n");
-                            getDevData((char *)recv_buf,gTemplateParam.peakCallingWay.isIcCard,gTemplateParam.peakCallingWay.isQrCode,ptQR);
+                            packetUserData((char *)recv_buf,gTemplateParam.peakCallingWay.isIcCard,gTemplateParam.peakCallingWay.isQrCode,ptQR);
                             //没有指定不受控日期 或 当前日期在有效期内
                             //添加节假日的呼梯方式的判定
 //                            if(gTemplateParam.peakCallingWay.isIcCard == 0)
@@ -203,7 +220,7 @@ static void vTaskBarCode(void *pvParameters)
 //                        } 
                         log_d("outside peak mode the valid date \r\n");
 
-                        getDevData((char *)recv_buf,gTemplateParam.templateCallingWay.isIcCard,gTemplateParam.templateCallingWay.isQrCode,ptQR);
+                        packetUserData((char *)recv_buf,gTemplateParam.templateCallingWay.isIcCard,gTemplateParam.templateCallingWay.isQrCode,ptQR);
 
                     }
 
@@ -221,7 +238,7 @@ static void vTaskBarCode(void *pvParameters)
 //                        //赋值                                
 //                    }  
                     log_d("Now it's normal operation mode \r\n");
-                    getDevData((char *)recv_buf,gTemplateParam.templateCallingWay.isIcCard,gTemplateParam.templateCallingWay.isQrCode,ptQR);
+                    packetUserData((char *)recv_buf,gTemplateParam.templateCallingWay.isIcCard,gTemplateParam.templateCallingWay.isQrCode,ptQR);
 
                  }  
 
@@ -263,7 +280,6 @@ static void vTaskBarCode(void *pvParameters)
 
     uint8_t semavalue = 0;    
     BaseType_t xReturn = pdTRUE;/* 定义一个创建信息返回值，默认为pdPASS */
-    
 
     int cmpTimeFlag = -1;
 
@@ -274,30 +290,34 @@ static void vTaskBarCode(void *pvParameters)
     ptQR->authMode = 0; 
     ptQR->dataLen = 0;
     ptQR->state = ENABLE;
-    memset(ptQR->data,0x00,sizeof(ptQR->data));     
-    
+    memset(ptQR->data,0x00,sizeof(ptQR->data));    
+     
     while(1)
     { 
         memset(sendBuff,0x00,sizeof(sendBuff));    
-        len = bsp_Usart5_Read(sendBuff,sizeof(sendBuff));  
-        
-        if(len > 512)
-        {
-            len = 512;
-        }
+//        len = bsp_Usart5_Read(sendBuff,sizeof(sendBuff)); 
 
-//        dbh("card", sendBuff, len);
+        if(parseReader() == FINISHED)
+        {        
+
+        len = gReaderData.rxCnt;
+        memcpy(sendBuff,gReaderData.rxBuff,len);
+        
+        dbh("sendbuff hex",gReaderData.rxBuff,len);
+        memset(&gReaderData,0x00,sizeof(FROMREADER_STRU));
+
         
         if(len > 10  && sendBuff[len-1] == 0x0A && sendBuff[len-2] == 0x0D && gDeviceStateFlag == DEVICE_ENABLE)
         {       
 //            comClearRxFifo(COM5);
-            bsp_Usart5_RecvReset();
+//            bsp_Usart5_RecvReset();
             log_d("sendbuff = %s\r\n",sendBuff);
+            dbh("sendbuff hex",sendBuff,len);
 
             // 获取任务通知 , 没获取到则不等待
             xReturn = xSemaphoreTake(CountSem_Handle,0); /*  等待时间：0 */
             semavalue=uxSemaphoreGetCount(CountSem_Handle);	//获取计数型信号量值
-//            log_d("1 semavalue = %d,xReturn = %d\r\n",semavalue,xReturn);
+            log_d("1 semavalue = %d,xReturn = %d\r\n",semavalue,xReturn);
 
             if(semavalue == 1) 
             {
@@ -322,7 +342,7 @@ static void vTaskBarCode(void *pvParameters)
                         
 
 //                        comClearRxFifo(COM5);
-                        bsp_Usart5_RecvReset();
+//                        bsp_Usart5_RecvReset();
                         memset(sendBuff,0x00,sizeof(sendBuff));
                         len = 0;
                 }
@@ -356,7 +376,7 @@ static void vTaskBarCode(void *pvParameters)
                             else
                             {
                                 log_d("peak mode  >in the control time \r\n");
-                                getDevData((char *)sendBuff,gTemplateParam.peakCallingWay.isIcCard,gTemplateParam.peakCallingWay.isQrCode,ptQR);
+                                packetUserData((char *)sendBuff,gTemplateParam.peakCallingWay.isIcCard,gTemplateParam.peakCallingWay.isQrCode,ptQR);
                                 //没有指定不受控日期 或 当前日期在有效期内
                                 //添加节假日的呼梯方式的判定
                                     
@@ -368,7 +388,7 @@ static void vTaskBarCode(void *pvParameters)
                             //判定模板的呼梯方式
                             log_d("outside peak mode the valid date \r\n");
 
-                            getDevData((char *)sendBuff,gTemplateParam.templateCallingWay.isIcCard,gTemplateParam.templateCallingWay.isQrCode,ptQR);
+                            packetUserData((char *)sendBuff,gTemplateParam.templateCallingWay.isIcCard,gTemplateParam.templateCallingWay.isQrCode,ptQR);
 
                         }
 
@@ -377,7 +397,7 @@ static void vTaskBarCode(void *pvParameters)
                      {
                         //判定模板的呼梯方式
 //                        log_d("Now it's normal operation mode \r\n");
-                        getDevData((char *)sendBuff,gTemplateParam.templateCallingWay.isIcCard,gTemplateParam.templateCallingWay.isQrCode,ptQR);
+                        packetUserData((char *)sendBuff,gTemplateParam.templateCallingWay.isIcCard,gTemplateParam.templateCallingWay.isQrCode,ptQR);
 
                      }  
 
@@ -404,20 +424,20 @@ static void vTaskBarCode(void *pvParameters)
                     xReturn = xSemaphoreGive(CountSem_Handle);// 给出计数信号量                        
                     semavalue=uxSemaphoreGetCount(CountSem_Handle); //获取计数型信号量值 
 //                    comClearRxFifo(COM5);
-                    bsp_Usart5_RecvReset();
+//                    bsp_Usart5_RecvReset();
                     memset(sendBuff,0x00,sizeof(sendBuff));
                     len = 0;
                 }
 
 //                comClearRxFifo(COM5);
-                bsp_Usart5_RecvReset();
+//                bsp_Usart5_RecvReset();
                 memset(sendBuff,0x00,sizeof(sendBuff));
                 len = 0;
             }
             else
             {
 //                comClearRxFifo(COM5);
-                bsp_Usart5_RecvReset();
+//                bsp_Usart5_RecvReset();
                 memset(sendBuff,0x00,sizeof(sendBuff));
                 len = 0;
             }
@@ -425,16 +445,16 @@ static void vTaskBarCode(void *pvParameters)
         else
         {
 //            comClearRxFifo(COM5);
-            bsp_Usart5_RecvReset();
+//            bsp_Usart5_RecvReset();
             memset(sendBuff,0x00,sizeof(sendBuff));
             len = 0;
         }       
        
-
+}
 
     	/* 发送事件标志，表示任务正常运行 */        
     	xEventGroupSetBits(xCreatedEventGroup, TASK_BIT_4);  
-        vTaskDelay(300);        
+        vTaskDelay(200);        
     }
 
 }
@@ -604,7 +624,7 @@ static int compareTime(uint8_t *currentTime)
 }
 
 
-static void getDevData(char *src,int icFlag,int qrFlag,READER_BUFF_STRU *desc)
+static void packetUserData(char *src,int icFlag,int qrFlag,READER_BUFF_STRU *desc)
 {
     READER_BUFF_STRU readerBuff = {0}; 
     uint8_t key[16] ={ 0x82,0x5d,0x82,0xd8,0xd5,0x2f,0xdf,0x85,0x28,0xa2,0xb5,0xd8,0x88,0x88,0x88,0x88 }; 
@@ -672,5 +692,48 @@ static void getDevData(char *src,int icFlag,int qrFlag,READER_BUFF_STRU *desc)
     
     *desc = readerBuff;    
 }
+
+
+static uint8_t parseReader(void)
+{
+    uint8_t ch = 0;
+
+    uint8_t ppp[512] = {0};
+    
+
+    while(1)
+    {    
+        //读取485数据，若是没读到，退出，再重读
+        if(bsp_Usart5_RecvOne(&ch) !=1)
+        {            
+            return UNFINISHED;
+        }
+        
+        //读取缓冲区数据到BUFF
+        gReaderData.rxBuff[gReaderData.rxCnt++] = ch;
+        
+//        log_d("ch = %c,gReaderData.rxBuff = %c \r\n",ch,gReaderData.rxBuff[gReaderData.rxCnt-1]);
+         
+        //最后一个字节为回车，或者总长度为510后，结束读取
+        if(gReaderData.rxBuff[gReaderData.rxCnt-1] == 0x0A || gReaderData.rxCnt >=510)
+        {   
+            
+           if(gReaderData.rxBuff[gReaderData.rxCnt-1] == 0x0A)
+           {
+//                dbh("gReaderData.rxBuff", (char*)gReaderData.rxBuff, gReaderData.rxCnt);  
+//                log_d("gReaderData.rxBuff = %s,len = %d\r\n",gReaderData.rxBuff,gReaderData.rxCnt-1);
+                return FINISHED;
+           }
+
+            //若没读到最后一个字节，但是总长到位后，清空，重读缓冲区
+            memset(&gReaderData,0xFF,sizeof(FROMREADER_STRU));
+        }
+        
+    }   
+
+   
+}
+
+
 
             

@@ -102,8 +102,8 @@ typedef enum
 
 #if UART5_FIFO_EN == 1
 	#define UART5_BAUD			38400
-	#define UART5_TX_BUF_SIZE	1*1024
-	#define UART5_RX_BUF_SIZE	1*1024
+	#define UART5_TX_BUF_SIZE	1*512
+	#define UART5_RX_BUF_SIZE	1*512
 #endif
 
 #if UART6_FIFO_EN == 1

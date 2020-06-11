@@ -81,7 +81,6 @@ static void vTaskDataProcess(void *pvParameters)
     uint8_t defaultBuff[MAX_RS485_LEN+1] = { 0x5A,0x01,0x01,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x5A };
 
     uint32_t i = 0;
-    uint8_t cmd[5] = { 0x5A,0x01,0x29,0x00,0x72 };
 
     
     READER_BUFF_STRU *ptMsg  = &gReaderMsg;
@@ -105,10 +104,12 @@ static void vTaskDataProcess(void *pvParameters)
         if(pdTRUE == xReturn)
         {
             //消息接收成功，发送接收到的消息
-            packetSendBuf(ptMsg,sendBuf); 
+            packetSendBuf(ptMsg); 
             //packetSendBuf(ptMsg,sendBuf->data); 
 
+            log_d("exec packetSendBuf end\r\n");
 
+    
 //            dbh("packetToElevator", (char *)sendBuf, MAX_SEND_LEN);
 
 //            /* 使用消息队列实现指针变量的传递 */

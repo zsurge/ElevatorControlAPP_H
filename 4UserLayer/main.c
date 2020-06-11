@@ -131,7 +131,7 @@ static void AppTaskCreate (void)
     CreateDataProcessTask();
     
 //    //按键
-//    CreateKeyTask();
+    CreateKeyTask();
 
     //二合一读卡器
     CreateBarCodeTask();

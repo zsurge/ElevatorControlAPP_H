@@ -60,7 +60,7 @@
  *----------------------------------------------*/
 
 void packetDefaultSendBuf(uint8_t *buf);
-void packetSendBuf(READER_BUFF_STRU *pQueue,uint8_t *buf);
+void packetSendBuf(READER_BUFF_STRU *pQueue);
 
 
 SYSERRORCODE_E authRemote(READER_BUFF_STRU *pQueue,USERDATA_STRU *localUserData);

@@ -49,8 +49,8 @@ typedef struct FROMHOST
 {
     uint8_t rxStatus;                   //接收状态
     uint8_t rxCRC;                      //校验值
-    uint16_t rxCnt;                     //接收字节数
-    uint16_t rxBuff[16];                     //接收字节数
+    uint8_t rxBuff[16];                 //接收字节数
+    uint16_t rxCnt;                     //接收字节数    
 }FROMHOST_STRU;
 
  

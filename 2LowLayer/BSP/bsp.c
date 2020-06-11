@@ -56,7 +56,7 @@ static void my_mem_init(void)
 	
     bsp_InitUart();
 //    bsp_Usart6_Init(38400);
-    bsp_Usart5_Init(38400);
+    bsp_Usart5_Init(9600);
 
     bsp_initI2C();              //eeprom≥ı ºªØ
 //    AT24CXX_Init();
