@@ -12,21 +12,23 @@
 
 //用户需要根据设备信息完善以下宏定义中的四元组内容
 #define PRODUCT_KEY    	"a1Yjxb6GjGk"															//阿里云颁发的产品唯一标识，11位长度的英文数字随机组合
-#define DEVICE_NAME    	"mqtt_test"																//用户注册设备时生成的设备唯一编号，支持系统自动生成，也可支持用户添加自定义编号，产品维度内唯一
+#define DEVICE_NAME    	"elevator"																//用户注册设备时生成的设备唯一编号，支持系统自动生成，也可支持用户添加自定义编号，产品维度内唯一
 #define DEVICE_SECRET  	"vfW2KtmvfGy9AcBwNY9h4wksJifwt2Lf"				//设备密钥，与DeviceName成对出现，可用于一机一密的认证方案
 
 
 #define CMD_ID   "commandCode"
 
 
-#define   KEEPLIVE_TIME   100//300 //一分钟
+#define   KEEPLIVE_TIME   50
 #define   MQTT_VERSION    4
 
 //以下宏定义固定，不需要修改
-#define CONTENT				"clientId"DEVICE_NAME"deviceName"DEVICE_NAME"productKey"PRODUCT_KEY"timestamp789"	//计算登录密码用
-#define CLIENT_ID			DEVICE_NAME"|1233444444434234234234234234"											//客户端ID
-#define USER_NAME			DEVICE_NAME"&"PRODUCT_KEY																													//客户端用户名
-#define PASSWORD			"AA6A749E740A3019D58090FF3ADC57B9DB4B380E"																			//客户端登录password通过hmac_sha1算法得到，大小写不敏感
+
+
+//#define CONTENT				"7A13DCC67054F72CC07F"//"clientId"DEVICE_NAME"deviceName"DEVICE_NAME"productKey"PRODUCT_KEY"timestamp789"	//计算登录密码用
+//#define CLIENT_ID			DEVICE_NAME"|1233444444434234234234234234"											//客户端ID
+#define USER_NAME			"adm"																													//客户端用户名
+#define PASSWORD			"1234567812345678"																			//客户端登录password通过hmac_sha1算法得到，大小写不敏感
 
 
 //#define   HOST_NAME       "192.168.110.78"     //服务器IP地址 线下 

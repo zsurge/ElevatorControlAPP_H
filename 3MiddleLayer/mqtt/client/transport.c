@@ -49,37 +49,65 @@ s32 transport_getdata(u8* buf, s32 count)
 ************************************************************************/
 s32 transport_open(s8* servip, s32 port)
 {
-    int* sock = &mysock;
-	struct hostent *server;
-	struct sockaddr_in serv_addr;
-	static struct  timeval tv;
-	int timeout = 1000;
-	fd_set readset;
-	fd_set writeset;
-	*sock = socket(AF_INET, SOCK_STREAM, 0);
-	if(*sock < 0)
-		printf("[ERROR] Create socket failed\n");
-	
-	server = gethostbyname(servip);
-	if(server == NULL)
-		printf("[ERROR] Get host ip failed\n");
-	
-	memset(&serv_addr,0,sizeof(serv_addr));
-	serv_addr.sin_family = AF_INET;
-	serv_addr.sin_port = htons(port);
-	memcpy(&serv_addr.sin_addr.s_addr,server->h_addr,server->h_length);
-	if(connect(*sock,(struct sockaddr *)&serv_addr,sizeof(serv_addr)) < 0)
-	{
-		//关闭链接
-		close(*sock);        
-		printf("[ERROR] connect failed\n");
+
+    int32_t* sock = &mysock;
+    struct hostent *server;
+    struct sockaddr_in serv_addr;
+
+    *sock = socket(AF_INET, SOCK_STREAM, 0);
+    if(*sock < 0)
+        printf("[ERROR] Create socket failed\n");
+
+    server = gethostbyname(servip);
+    if(server == NULL)
+        printf("[ERROR] Get host ip failed\n");
+
+    memset(&serv_addr,0,sizeof(serv_addr));
+    serv_addr.sin_family = AF_INET;
+    serv_addr.sin_port = htons(port);
+    memcpy(&serv_addr.sin_addr.s_addr,server->h_addr,server->h_length);
+    if(connect(*sock,(struct sockaddr *)&serv_addr,sizeof(serv_addr)) < 0)
+    {
+        //关闭链接
+        close(*sock);        
+        printf("[ERROR] connect failed\n");
         return -1;
-	}
-	tv.tv_sec = 10;  /* 1 second Timeout */
-	tv.tv_usec = 0; 
-	setsockopt(*sock, SOL_SOCKET, SO_RCVTIMEO, (char*)&timeout,sizeof(timeout));
-    
-    return *sock;    
+    }
+
+    //返回套接字
+    return *sock;
+
+//    int* sock = &mysock;
+//	struct hostent *server;
+//	struct sockaddr_in serv_addr;
+//	static struct  timeval tv;
+//	int timeout = 1000;
+//	fd_set readset;
+//	fd_set writeset;
+//	*sock = socket(AF_INET, SOCK_STREAM, 0);
+//	if(*sock < 0)
+//		printf("[ERROR] Create socket failed\n");
+//	
+//	server = gethostbyname(servip);
+//	if(server == NULL)
+//		printf("[ERROR] Get host ip failed\n");
+//	
+//	memset(&serv_addr,0,sizeof(serv_addr));
+//	serv_addr.sin_family = AF_INET;
+//	serv_addr.sin_port = htons(port);
+//	memcpy(&serv_addr.sin_addr.s_addr,server->h_addr,server->h_length);
+//	if(connect(*sock,(struct sockaddr *)&serv_addr,sizeof(serv_addr)) < 0)
+//	{
+//		//关闭链接
+//		close(*sock);        
+//		printf("[ERROR] connect failed\n");
+//        return -1;
+//	}
+//	tv.tv_sec = 10;  /* 1 second Timeout */
+//	tv.tv_usec = 0; 
+//	setsockopt(*sock, SOL_SOCKET, SO_RCVTIMEO, (char*)&timeout,sizeof(timeout));
+//    
+//    return *sock;    
 }
 
 

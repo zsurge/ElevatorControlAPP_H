@@ -110,17 +110,15 @@ MQTT_START:
 
 	ReadLocalDevSn();
 
-    strcpy(data.clientID.cstring,gMqttDevSn.sn);
-    strcat(data.clientID.cstring,time_to_timestamp());
+//    strcpy(data.clientID.cstring,gMqttDevSn.sn);
+//    strcat(data.clientID.cstring,time_to_timestamp());
     
-	//data.clientID.cstring = gMqttDevSn.sn;              //随机
+	data.clientID.cstring = gMqttDevSn.sn;              
 	data.keepAliveInterval = KEEPLIVE_TIME;         //保持活跃
-	data.username.cstring = USER_NAME;              //用户名
+	data.username.cstring = USER_NAME;//gMqttDevSn.sn;              //用户名
 	data.password.cstring = PASSWORD;               //秘钥
 	data.MQTTVersion = MQTT_VERSION;                //3表示3.1版本，4表示3.11版本
 	data.cleansession = 1;
-
-
 
 	while ( 1 )
 	{
@@ -130,10 +128,7 @@ MQTT_START:
 			{
 				gCurTick =  xTaskGetTickCount();
 				msgtypes = PINGREQ;
-//				log_d ( "send heartbeat!!  set msgtypes = %d \r\n",msgtypes );
-//				showTask();
 			}
-
 		}
 
         if(gUpdateDevSn == 1)

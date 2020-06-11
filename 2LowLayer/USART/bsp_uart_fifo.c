@@ -731,7 +731,7 @@ uint16_t RS485_Recv(COM_PORT_E _ucPort,uint8_t *buf, uint16_t len)
         UartGetChar(pUart,buf+i);  //将数据复制到buf中
     }
 
-    return len;                   //返回实际读取长度
+    return len;  //返回实际读取长度
 }
 
 
