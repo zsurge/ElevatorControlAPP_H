@@ -165,7 +165,9 @@ void Proscess(void* data)
     char cmd[8+1] = {0};
     log_d("Start parsing JSON data\r\n");
     
-    strcpy(cmd,(const char *)GetJsonItem ( data, ( const uint8_t* ) "commandCode",0 ));   
+    strcpy(cmd,(const char *)GetJsonItem ( data, ( const uint8_t* ) "commandCode",0 ));  
+
+    log_d("-----commandCode = %s-----\r\n",cmd);
     
     exec_proc (cmd ,data);
 }
@@ -210,7 +212,7 @@ int mqttSendData(uint8_t *payload_out,uint16_t payload_out_len)
     
 	uint32_t len = 0;
 	int32_t rc = 0;
-	unsigned char buf[MQTT_MAX_LEN];
+	unsigned char buf[1024];
 	int buflen = sizeof(buf);
 
 	unsigned short msgid = 1;
@@ -1364,21 +1366,20 @@ static SYSERRORCODE_E AddSingleUser( uint8_t* msgBuf )
         tempUserData.userState = USER_VALID;
         ret = writeUserData(tempUserData,USER_MODE);
         log_d("write user id = %d\r\n",ret);       
-    }   
-
-    
-    log_d("tempUserData.cardNo = %s,len = %d\r\n",tempUserData.cardNo,strlen((const char*)tempUserData.cardNo));    
+    }      
 
 
+    result = modifyJsonItem((const uint8_t *)msgBuf,(const uint8_t *)"commandCode","3004",0,buf);
 
     if(ret == 0)
     {
         //Ó°Ïì·þÎñÆ÷
-        result = modifyJsonItem((const uint8_t *)msgBuf,(const uint8_t *)"status","1",1,buf);
+        result = modifyJsonItem((const uint8_t *)buf,(const uint8_t *)"status","1",1,buf);
+        
     }
     else
     {
-        result = modifyJsonItem((const uint8_t *)msgBuf,(const uint8_t *)"status","0",1,buf);
+        result = modifyJsonItem((const uint8_t *)buf,(const uint8_t *)"status","1",1,buf);        
     }
     
     if(result != NO_ERR)

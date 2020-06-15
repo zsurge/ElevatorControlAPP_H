@@ -76,7 +76,7 @@ static void vTaskWatchDog(void *pvParameters)
 
       目前我们使用的是128分频，最大13.1秒
 	*/
-	bsp_InitIwdg(4095);
+	bsp_InitIwdg(4000);
 	
 	/* 打印系统开机状态，方便查看系统是否复位 */
 	printf("=====================================================\r\n");

@@ -255,7 +255,10 @@ tcp_input(struct pbuf *p, struct netif *inp)
       }
     
       LWIP_DEBUGF(TCP_INPUT_DEBUG, ("tcp_input: packed for LISTENing connection.\n"));
+
       tcp_listen_input(lpcb);
+
+      
       pbuf_free(p);
       return;
     }
