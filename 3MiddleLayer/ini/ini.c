@@ -378,7 +378,7 @@ uint8_t packetPayload(USERDATA_STRU *localUserData,uint8_t *descJson)
         cJSON_AddNumberToObject(dataObj, "status", ON_LINE); 
         strcpy(tmpTime,(const char*)bsp_ds1302_readtime());  
         cJSON_AddStringToObject(dataObj, "callElevatorTime",tmpTime);        
-        cJSON_AddStringToObject(dataObj, "timeStamp",(const char*)localUserData->timeStamp);
+        cJSON_AddStringToObject(dataObj, "timeStamp",(const char*)localUserData->startTime);
         cJSON_AddStringToObject(dataObj, "userId", (const char*)localUserData->userId);              
         
         if(localUserData->authMode == 7)

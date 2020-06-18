@@ -37,7 +37,7 @@
 
  
 #define DATAPROC_TASK_PRIO		(tskIDLE_PRIORITY + 6) 
-#define DATAPROC_STK_SIZE 		(configMINIMAL_STACK_SIZE*4)
+#define DATAPROC_STK_SIZE 		(configMINIMAL_STACK_SIZE*5)
 
 /*----------------------------------------------*
  * 常量定义                                     *
@@ -72,17 +72,7 @@ void CreateDataProcessTask(void)
 
 static void vTaskDataProcess(void *pvParameters)
 {
-    uint16_t recvLen = 0;
-    uint8_t buf[5] = {0};
-    uint8_t crc = 0;    
-    uint8_t sendBuf[38] = {0};
-//    ELEVATOR_BUFF_STRU *sendBuf = &gElevtorData;
 
-    uint8_t defaultBuff[MAX_RS485_LEN+1] = { 0x5A,0x01,0x01,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x5A };
-
-    uint32_t i = 0;
-
-    
     READER_BUFF_STRU *ptMsg  = &gReaderMsg;
     BaseType_t xReturn = pdTRUE;/* 定义一个创建信息返回值，默认为pdPASS */
     const TickType_t xMaxBlockTime = pdMS_TO_TICKS(100); /* 设置最大等待时间为100ms */ 
@@ -93,8 +83,6 @@ static void vTaskDataProcess(void *pvParameters)
     ptMsg->authMode = 0; //默认为刷卡
     ptMsg->dataLen = 0;
     memset(ptMsg->data,0x00,sizeof(ptMsg->data));
-
-    //memset(sendBuf->data,0x00,sizeof(sendBuf->data));
     
     while (1)
     {
@@ -105,28 +93,9 @@ static void vTaskDataProcess(void *pvParameters)
         {
             //消息接收成功，发送接收到的消息
             packetSendBuf(ptMsg); 
-            //packetSendBuf(ptMsg,sendBuf->data); 
-
             log_d("exec packetSendBuf end\r\n");
-
-    
-//            dbh("packetToElevator", (char *)sendBuf, MAX_SEND_LEN);
-
-//            /* 使用消息队列实现指针变量的传递 */
-//            if(xQueueSend(xTransDataQueue,              /* 消息队列句柄 */
-//            			 (void *) &sendBuf,   /* 发送指针变量recv_buf的地址 */
-//            			 (TickType_t)10) != pdPASS )
-//            {
-//                log_d("the queue is full!\r\n");                
-//                xQueueReset(xTransDataQueue);
-//            } 
-//            else
-//            {
-//               //dbh("vTaskDataProcess send buf", sendBuf->data, MAX_RS485_LEN);
-//                printf("1.%02x,%02x\r\n",sendBuf->data[11],sendBuf->data[36]);
-//            }
         }
-
+        
         
         /* 发送事件标志，表示任务正常运行 */        
         xEventGroupSetBits(xCreatedEventGroup, TASK_BIT_6);  

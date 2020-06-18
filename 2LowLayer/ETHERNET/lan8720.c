@@ -266,6 +266,18 @@ u8 ETH_Mem_Malloc(void)
 		return 1;	//申请失败
 	}	
 	return 0;		//申请成功
+
+//    DMARxDscrTab=mymalloc(SRAMCCM,ETH_RXBUFNB*sizeof(ETH_DMADESCTypeDef));//申请内存
+//    DMATxDscrTab=mymalloc(SRAMCCM,ETH_TXBUFNB*sizeof(ETH_DMADESCTypeDef));//申请内存  
+//    Rx_Buff=mymalloc(SRAMCCM,ETH_RX_BUF_SIZE*ETH_RXBUFNB);   //申请内存
+//    Tx_Buff=mymalloc(SRAMCCM,ETH_TX_BUF_SIZE*ETH_TXBUFNB);   //申请内存
+//    if(!DMARxDscrTab||!DMATxDscrTab||!Rx_Buff||!Tx_Buff)
+//    {
+//        ETH_Mem_Free();
+//        return 1;   //申请失败
+//    }   
+//    return 0;       //申请成功
+
 }
 
 //释放ETH 底层驱动申请的内存
@@ -275,6 +287,11 @@ void ETH_Mem_Free(void)
 	myfree(SRAMIN,DMATxDscrTab);//释放内存
 	myfree(SRAMIN,Rx_Buff);		//释放内存
 	myfree(SRAMIN,Tx_Buff);		//释放内存  
+
+//	myfree(SRAMCCM,DMARxDscrTab);//释放内存
+//	myfree(SRAMCCM,DMATxDscrTab);//释放内存
+//	myfree(SRAMCCM,Rx_Buff);		//释放内存
+//	myfree(SRAMCCM,Tx_Buff);		//释放内存  	
 }
 
 

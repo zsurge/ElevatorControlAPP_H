@@ -64,6 +64,8 @@ void NMI_Handler(void)
   * @param  None
   * @retval None
   */
+
+#if 0  
 void HardFault_Handler(void)
 {
     
@@ -111,6 +113,8 @@ void HardFault_Handler(void)
 //	  	t = 0;
 	}
 }
+
+#endif
 
 /**
   * @brief  This function handles Memory Manage exception.

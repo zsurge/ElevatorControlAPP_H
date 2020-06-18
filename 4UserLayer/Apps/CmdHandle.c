@@ -105,7 +105,7 @@ typedef struct
 	cmd_fun  fun_ptr;               /* 函数指针 */
 } CMD_HANDLE_T;
 
-CMD_HANDLE_T CmdList[] =
+const CMD_HANDLE_T CmdList[] =
 {
 	{"201",  OpenDoor},
 	{"1006", AbnormalAlarm},
@@ -212,7 +212,7 @@ int mqttSendData(uint8_t *payload_out,uint16_t payload_out_len)
     
 	uint32_t len = 0;
 	int32_t rc = 0;
-	unsigned char buf[1024];
+	unsigned char buf[1280];
 	int buflen = sizeof(buf);
 
 	unsigned short msgid = 1;
@@ -224,11 +224,9 @@ int mqttSendData(uint8_t *payload_out,uint16_t payload_out_len)
         return STR_EMPTY_ERR;
     }
 
-    log_d("payload_out = %s,payload_out_len = %d\r\n",payload_out,payload_out_len);
 
    if(gConnectStatus == 1)
    { 
-//       topicString.cstring = DEVICE_PUBLISH;       //属性上报 发布       
        topicString.cstring = gMqttDevSn.publish;       //属性上报 发布    
 
        len = MQTTSerialize_publish((unsigned char*)buf, buflen, 0, req_qos, retained, msgid, topicString, payload_out, payload_out_len);//发布消息
@@ -296,8 +294,7 @@ SYSERRORCODE_E OpenDoor ( uint8_t* msgBuf )
     {
         return STR_EMPTY_ERR;
     }
-
-//    result = modifyJsonItem(msgBuf,"openStatus","1",1,buf);
+    
     result = modifyJsonItem(packetBaseJson(msgBuf),"openStatus","1",1,buf);
 
     if(result != NO_ERR)

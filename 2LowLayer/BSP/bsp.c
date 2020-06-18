@@ -25,6 +25,8 @@
 /*----------------------------------------------*
  * 宏定义                                       *
  *----------------------------------------------*/
+#define HARDWARE_VERSION               "V1.0.1"
+#define SOFTWARE_VERSION               "V1.0.4"
 
 /*----------------------------------------------*
  * 常量定义                                     *
@@ -55,7 +57,7 @@ static void my_mem_init(void)
 	bsp_TIM6_Init();            //定时器6初始化
 	
     bsp_InitUart();
-    bsp_Usart5_Init(38400);
+    bsp_Usart5_Init(9600);
 //    bsp_Usart5_Init(9600);
 
     bsp_initI2C();              //eeprom初始化
@@ -80,6 +82,9 @@ static void my_mem_init(void)
 //    bsp_WiegandInit();          //韦根读卡器初始化
 
     my_mem_init();                  //对内存进行初始化
+
+  /* CmBacktrace initialize */
+   cm_backtrace_init("ElevatorControlAPP", HARDWARE_VERSION, SOFTWARE_VERSION);
 
 }
 

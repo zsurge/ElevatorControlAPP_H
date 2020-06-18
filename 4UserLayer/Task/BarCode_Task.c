@@ -294,18 +294,14 @@ static void vTaskBarCode(void *pvParameters)
      
     while(1)
     { 
-        memset(sendBuff,0x00,sizeof(sendBuff));    
-//        len = bsp_Usart5_Read(sendBuff,sizeof(sendBuff)); 
-
+        memset(sendBuff,0x00,sizeof(sendBuff));
+        
         if(parseReader() == FINISHED)
         {        
 
         len = gReaderData.rxCnt;
-        memcpy(sendBuff,gReaderData.rxBuff,len);
-        
-        dbh("sendbuff hex",gReaderData.rxBuff,len);
+        memcpy(sendBuff,gReaderData.rxBuff,len);        
         memset(&gReaderData,0x00,sizeof(FROMREADER_STRU));
-
         
         if(len > 10  && sendBuff[len-1] == 0x0A && sendBuff[len-2] == 0x0D && gDeviceStateFlag == DEVICE_ENABLE)
         {       

@@ -36,6 +36,7 @@
 #include "lwip_comm.h"
 #include "lwip/netif.h"
 #include "lwipopts.h"
+#include "cm_backtrace.h"
 
 
 

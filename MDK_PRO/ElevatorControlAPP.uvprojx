@@ -338,7 +338,7 @@
               <MiscControls></MiscControls>
               <Define>STM32F40_41xxx,USE_STDPERIPH_DRIVER</Define>
               <Undefine></Undefine>
-              <IncludePath>..\1McuLayer\STM32F4x7_ETH_Driver\inc;..\1McuLayer\CMSIS;..\1McuLayer\STM32F4xx_StdPeriph_Driver\inc;..\2LowLayer\LED;..\2LowLayer\USART;..\2LowLayer\FLASH;..\2LowLayer\TIME;..\2LowLayer\KEY;..\2LowLayer\FLASH\inc;..\2LowLayer\BEEP;..\2LowLayer\DigitalTube;..\2LowLayer\BSP;..\2LowLayer\ETHERNET;..\2LowLayer\WDG;..\2LowLayer\DIPSWITCH;..\2LowLayer\DS1302;..\2LowLayer\RTC;..\2LowLayer\READER;..\2LowLayer\AT24Cxx;..\2LowLayer\SUART;..\3MiddleLayer\sys;..\3MiddleLayer\delay;..\3MiddleLayer\easyflash\inc;..\3MiddleLayer\ini;..\3MiddleLayer\stmflash;..\3MiddleLayer\ymodem;..\3MiddleLayer\cjson;..\3MiddleLayer\malloc;..\3MiddleLayer\easylogger\inc;..\3MiddleLayer\mqtt;..\4UserLayer;..\5FreeRTOS\portable\RVDS\ARM_CM4F;..\5FreeRTOS\include;..\6LWIP;..\6LWIP\arch;..\6LWIP\lwip-1.4.1\src\include;..\6LWIP\lwip-1.4.1\src\include\ipv4;..\6LWIP\lwip-1.4.1\src\include\netif;..\6LWIP\lwip-1.4.1\src\include\lwip;..\6LWIP\lwip_app\lwip_comm;..\4UserLayer\Apps;..\4UserLayer\Task;..\3MiddleLayer\des</IncludePath>
+              <IncludePath>..\1McuLayer\STM32F4x7_ETH_Driver\inc;..\1McuLayer\CMSIS;..\1McuLayer\STM32F4xx_StdPeriph_Driver\inc;..\2LowLayer\LED;..\2LowLayer\USART;..\2LowLayer\FLASH;..\2LowLayer\TIME;..\2LowLayer\KEY;..\2LowLayer\FLASH\inc;..\2LowLayer\BEEP;..\2LowLayer\DigitalTube;..\2LowLayer\BSP;..\2LowLayer\ETHERNET;..\2LowLayer\WDG;..\2LowLayer\DIPSWITCH;..\2LowLayer\DS1302;..\2LowLayer\RTC;..\2LowLayer\READER;..\2LowLayer\AT24Cxx;..\2LowLayer\SUART;..\3MiddleLayer\sys;..\3MiddleLayer\delay;..\3MiddleLayer\easyflash\inc;..\3MiddleLayer\ini;..\3MiddleLayer\stmflash;..\3MiddleLayer\ymodem;..\3MiddleLayer\cjson;..\3MiddleLayer\malloc;..\3MiddleLayer\easylogger\inc;..\3MiddleLayer\mqtt;..\4UserLayer;..\5FreeRTOS\portable\RVDS\ARM_CM4F;..\5FreeRTOS\include;..\6LWIP;..\6LWIP\arch;..\6LWIP\lwip-1.4.1\src\include;..\6LWIP\lwip-1.4.1\src\include\ipv4;..\6LWIP\lwip-1.4.1\src\include\netif;..\6LWIP\lwip-1.4.1\src\include\lwip;..\6LWIP\lwip_app\lwip_comm;..\4UserLayer\Apps;..\4UserLayer\Task;..\3MiddleLayer\des;..\3MiddleLayer\cm_backtrace</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -1589,6 +1589,21 @@
               <FileName>transport.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\3MiddleLayer\mqtt\transport.c</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
+          <GroupName>cm_backtrace</GroupName>
+          <Files>
+            <File>
+              <FileName>cm_backtrace.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\3MiddleLayer\cm_backtrace\cm_backtrace.c</FilePath>
+            </File>
+            <File>
+              <FileName>cmb_fault.S</FileName>
+              <FileType>2</FileType>
+              <FilePath>..\3MiddleLayer\cm_backtrace\fault_handler\keil\cmb_fault.S</FilePath>
             </File>
           </Files>
         </Group>
