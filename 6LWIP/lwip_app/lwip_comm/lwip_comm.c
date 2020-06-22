@@ -44,41 +44,41 @@ void lwip_pkt_handle ( void )
 //    其他,失败
 u8 lwip_comm_mem_malloc ( void )
 {
-	u32 mempsize;
-	u32 ramheapsize;
-	mempsize=memp_get_memorysize();			//得到memp_memory数组大小
-	memp_memory=mymalloc ( SRAMIN,mempsize );	//为memp_memory申请内存
-	ramheapsize=LWIP_MEM_ALIGN_SIZE ( MEM_SIZE )+2*LWIP_MEM_ALIGN_SIZE ( 4*3 )+MEM_ALIGNMENT; //得到ram heap大小
-	ram_heap=mymalloc ( SRAMIN,ramheapsize );	//为ram_heap申请内存
-	if ( !memp_memory||!ram_heap ) //有申请失败的
-	{
-		lwip_comm_mem_free();
-		return 1;
-	}
-	return 0;
+//	u32 mempsize;
+//	u32 ramheapsize;
+//	mempsize=memp_get_memorysize();			//得到memp_memory数组大小
+//	memp_memory=mymalloc ( SRAMIN,mempsize );	//为memp_memory申请内存
+//	ramheapsize=LWIP_MEM_ALIGN_SIZE ( MEM_SIZE )+2*LWIP_MEM_ALIGN_SIZE ( 4*3 )+MEM_ALIGNMENT; //得到ram heap大小
+//	ram_heap=mymalloc ( SRAMIN,ramheapsize );	//为ram_heap申请内存
+//	if ( !memp_memory||!ram_heap ) //有申请失败的
+//	{
+//		lwip_comm_mem_free();
+//		return 1;
+//	}
+//	return 0;
 
-//u32 mempsize;
-//u32 ramheapsize;
-//mempsize=memp_get_memorysize();         //得到memp_memory数组大小
-//memp_memory=mymalloc ( SRAMCCM,mempsize );   //为memp_memory申请内存
-//ramheapsize=LWIP_MEM_ALIGN_SIZE ( MEM_SIZE )+2*LWIP_MEM_ALIGN_SIZE ( 4*3 )+MEM_ALIGNMENT; //得到ram heap大小
-//ram_heap=mymalloc ( SRAMCCM,ramheapsize );   //为ram_heap申请内存
-//if ( !memp_memory||!ram_heap ) //有申请失败的
-//{
-//    lwip_comm_mem_free();
-//    return 1;
-//}
-//return 0;
+u32 mempsize;
+u32 ramheapsize;
+mempsize=memp_get_memorysize();         //得到memp_memory数组大小
+memp_memory=mymalloc ( SRAMCCM,mempsize );   //为memp_memory申请内存
+ramheapsize=LWIP_MEM_ALIGN_SIZE ( MEM_SIZE )+2*LWIP_MEM_ALIGN_SIZE ( 4*3 )+MEM_ALIGNMENT; //得到ram heap大小
+ram_heap=mymalloc ( SRAMCCM,ramheapsize );   //为ram_heap申请内存
+if ( !memp_memory||!ram_heap ) //有申请失败的
+{
+    lwip_comm_mem_free();
+    return 1;
+}
+return 0;
 
 }
 //lwip中mem和memp内存释放
 void lwip_comm_mem_free ( void )
 {
-	myfree ( SRAMIN,memp_memory );
-	myfree ( SRAMIN,ram_heap );
+//	myfree ( SRAMIN,memp_memory );
+//	myfree ( SRAMIN,ram_heap );
 
-//	myfree ( SRAMCCM,memp_memory );
-//	myfree ( SRAMCCM,ram_heap );	
+	myfree ( SRAMCCM,memp_memory );
+	myfree ( SRAMCCM,ram_heap );	
 }
 //lwip 默认IP设置
 //lwipx:lwip控制结构体指针

@@ -26,10 +26,11 @@
 
 /* #define AT24C02 */
 /* #define AT24C04 */
- #define AT24C08 
+// #define AT24C08 
 /* #define AT24C16 */
 /* #define AT24C32 */
 /* #define AT24C64 */
+#define MB85RC1MT
 
 #ifdef AT24C02
 	#define EE_MODEL_NAME		"AT24C02"
@@ -93,6 +94,16 @@
 	#define EE_ADDR_BYTES		2			    /* 地址字节个数 */
 	#define EE_ADDR_A8			0			    /* 地址字节的高8bit不在首字节 */
 #endif
+
+#ifdef MB85RC1MT
+	#define EE_MODEL_NAME		"MB85RC1MT"
+	#define EE_DEV_ADDR			0xA0	  	/* 设备地址 */
+	#define EE_PAGE_SIZE		256			  /* 页面大小(字节) */
+	#define EE_SIZE				(8*131072)	/* 总容量(字节) */
+	#define EE_ADDR_BYTES		2			    /* 地址字节个数 */
+	#define EE_ADDR_A8			0			    /* 地址字节的高8bit不在首字节 */
+#endif
+
 
 /* Exported macro ------------------------------------------------------------*/
 

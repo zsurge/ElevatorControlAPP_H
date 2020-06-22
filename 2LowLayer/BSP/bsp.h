@@ -63,8 +63,9 @@
 #include "bsp_rtc.h"
 #include "bsp_ds1302.h"
 
-#include "bsp_24cxx.h"
-#include "bsp_i2c.h"
+//#include "bsp_24cxx.h"
+//#include "bsp_i2c.h"
+#include "bsp_MB85RC128.h"
 
 //#include "24cxx.h"
 

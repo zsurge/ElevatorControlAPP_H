@@ -92,7 +92,6 @@ uint8_t writeHeader(uint8_t  * header,uint8_t mode,uint32_t *headIndex)
 
     if(header == NULL || strlen((const char*)header) == 0)
     {
-        //log_d("<<<<<<<<<<<<<<cardNoHeader is empty>>>>>>>>>>>>>>\r\n");
         return 1;
     }
 

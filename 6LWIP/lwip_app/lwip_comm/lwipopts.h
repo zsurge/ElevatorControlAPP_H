@@ -12,17 +12,17 @@
 #define SYS_LIGHTWEIGHT_PROT    1		//为1时使用实时操作系统的轻量级保护,保护关键代码不被中断打断
 #define NO_SYS                  0  		//使用UCOS操作系统
 #define MEM_ALIGNMENT           4  		//使用4字节对齐模式
-#define MEM_SIZE                20000 	//内存堆heap大小
+#define MEM_SIZE                (25*1024) 	//内存堆heap大小
 #define MEMP_NUM_PBUF           20 		//MEMP_NUM_PBUF:memp结构的pbuf数量,如果应用从ROM或者静态存储区发送大量数据时,这个值应该设置大一点
 #define MEMP_NUM_UDP_PCB        6		//MEMP_NUM_UDP_PCB:UDP协议控制块(PCB)数量.每个活动的UDP"连接"需要一个PCB.
 #define MEMP_NUM_TCP_PCB        10		//MEMP_NUM_TCP_PCB:同时建立激活的TCP数量
 #define MEMP_NUM_TCP_PCB_LISTEN 6		//MEMP_NUM_TCP_PCB_LISTEN:能够监听的TCP连接数量
-#define MEMP_NUM_TCP_SEG        15		//MEMP_NUM_TCP_SEG:最多同时在队列中的TCP段数量
+#define MEMP_NUM_TCP_SEG        40		//MEMP_NUM_TCP_SEG:最多同时在队列中的TCP段数量
 #define MEMP_NUM_SYS_TIMEOUT    8		//MEMP_NUM_SYS_TIMEOUT:能够同时激活的timeout个数
 
 //pbuf选项
 #define PBUF_POOL_SIZE          20		//PBUF_POOL_SIZE:pbuf内存池个数
-#define PBUF_POOL_BUFSIZE       512		//PBUF_POOL_BUFSIZE:每个pbuf内存池大小
+#define PBUF_POOL_BUFSIZE       1024    //PBUF_POOL_BUFSIZE:每个pbuf内存池大小
 
 #define LWIP_TCP                1  		//使用TCP
 #define TCP_TTL                 255		//生存时间
@@ -41,9 +41,9 @@
 
 
 #define TCP_MSS                 (1500 - 40)	  	//最大TCP分段,TCP_MSS = (MTU - IP报头大小 - TCP报头大小
-#define TCP_SND_BUF             (4*TCP_MSS)		//TCP发送缓冲区大小(bytes).
-#define TCP_SND_QUEUELEN        (2* TCP_SND_BUF/TCP_MSS)	//TCP_SND_QUEUELEN: TCP发送缓冲区大小(pbuf).这个值最小为(2 * TCP_SND_BUF/TCP_MSS)
-#define TCP_WND                 (2*TCP_MSS)		//TCP发送窗口
+#define TCP_SND_BUF             (10*TCP_MSS)		//TCP发送缓冲区大小(bytes).
+#define TCP_SND_QUEUELEN        (4* TCP_SND_BUF/TCP_MSS)	//TCP_SND_QUEUELEN: TCP发送缓冲区大小(pbuf).这个值最小为(2 * TCP_SND_BUF/TCP_MSS)
+#define TCP_WND                 (12*TCP_MSS)		//TCP发送窗口
 #define LWIP_ICMP               1 	//使用ICMP协议
 #define LWIP_DHCP               1	//使用DHCP
 #define LWIP_UDP                1 	//使用UDP服务
@@ -91,7 +91,7 @@
 
 //有关系统的选项
 #define TCPIP_THREAD_STACKSIZE          1024	//内核任务堆栈大小
-#define DEFAULT_UDP_RECVMBOX_SIZE       1024
+#define DEFAULT_UDP_RECVMBOX_SIZE       2000
 #define DEFAULT_THREAD_STACKSIZE        512
 
 //LWIP调试选项
