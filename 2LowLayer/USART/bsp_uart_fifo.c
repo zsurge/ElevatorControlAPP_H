@@ -1427,9 +1427,9 @@ static uint8_t UartGetChar(UART_T *_pUart, uint8_t *_pByte)
 	uint16_t usCount;
 
 	/* usRxWrite 变量在中断函数中被改写，主程序读取该变量时，必须进行临界区保护 */
-//	DISABLE_INT();
+	DISABLE_INT();
 	usCount = _pUart->usRxCount;
-//	ENABLE_INT();
+	ENABLE_INT();
 
 	/* 如果读和写索引相同，则返回0 */
 	//if (_pUart->usRxRead == usRxWrite)
@@ -1442,13 +1442,13 @@ static uint8_t UartGetChar(UART_T *_pUart, uint8_t *_pByte)
 		*_pByte = _pUart->pRxBuf[_pUart->usRxRead];		/* 从串口接收FIFO取1个数据 */
 
 		/* 改写FIFO读索引 */
-//		DISABLE_INT();
+		DISABLE_INT();
 		if (++_pUart->usRxRead >= _pUart->usRxBufSize)
 		{
 			_pUart->usRxRead = 0;
 		}
 		_pUart->usRxCount--;
-//		ENABLE_INT();
+		ENABLE_INT();
 		return 1;
 	}
 }

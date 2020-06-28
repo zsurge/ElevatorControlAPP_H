@@ -31,6 +31,7 @@ volatile uint32_t ulHighFrequencyTimerTicks = 0UL;
 volatile uint32_t g500usTimerUART = 0;
 volatile uint32_t g500usTimerRS485 = 0;
 
+//volatile uint32_t gRandomNum = 0;
 
 void bsp_TimeSysTickHandler (void)
 {
@@ -79,6 +80,7 @@ void TIM6_DAC_IRQHandler( void )
 	if(TIM_GetITStatus(TIM6, TIM_IT_Update) != RESET)
 	{
 		ulHighFrequencyTimerTicks++;
+//		gRandomNum++;
         bsp_TimeSysTickHandler();
 
         if(WG_Rx_Str.END_TIME_C_EN)

@@ -22,6 +22,7 @@
 
 extern volatile uint32_t g500usTimerUART;
 extern volatile uint32_t g500usTimerRS485;
+//extern volatile uint32_t gRandomNum;
 
 
 

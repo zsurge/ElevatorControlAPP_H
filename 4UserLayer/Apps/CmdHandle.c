@@ -1215,20 +1215,20 @@ static SYSERRORCODE_E PCOptDev ( uint8_t* msgBuf )
 
 
 
-//log_d("===============CARD_MODE==================\r\n");
-//TestFlash(CARD_MODE);
+log_d("===============CARD_MODE==================\r\n");
+TestFlash(CARD_MODE);
 
 
-//log_d("===============USER_MODE==================\r\n");
-//TestFlash(USER_MODE);
+log_d("===============USER_MODE==================\r\n");
+TestFlash(USER_MODE);
 
 
-//log_d("===============CARD_DEL_MODE==================\r\n");
-//TestFlash(CARD_DEL_MODE);
+log_d("===============CARD_DEL_MODE==================\r\n");
+TestFlash(CARD_DEL_MODE);
 
 
-//log_d("===============USER_DEL_MODE==================\r\n");
-//TestFlash(USER_DEL_MODE);
+log_d("===============USER_DEL_MODE==================\r\n");
+TestFlash(USER_DEL_MODE);
 
 
 

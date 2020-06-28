@@ -29,6 +29,7 @@
 #include "bsp_beep.h"
 #include "localdata.h"
 #include "bsp_MB85RC128.h"
+#include "test.h"
 
 
 #define LOG_TAG    "keyTask"
@@ -37,7 +38,7 @@
 /*----------------------------------------------*
  * 宏定义                                       *
  *----------------------------------------------*/
-#define KEY_STK_SIZE        (configMINIMAL_STACK_SIZE*4)
+#define KEY_STK_SIZE        (configMINIMAL_STACK_SIZE*8)
 #define KEY_TASK_PRIO	    ( tskIDLE_PRIORITY + 3)
 
 /*----------------------------------------------*
@@ -104,7 +105,7 @@ static void vTaskKey(void *pvParameters)
                     printf("系统当前内存大小为 %d 字节，开始申请内存\n",g_memsize);
 
 //                    farm_read();
-                    
+                    searchHeadTest("29870238");
 					break;				
 				/* K2键按下，打印串口操作命令 */
 				case KEY_RR_PRES:                 
@@ -113,7 +114,8 @@ static void vTaskKey(void *pvParameters)
 //                    bsp_ds1302_mdifytime("2020-01-17 09:24:15");
                     
                     log_d("read gpio = %02x\r\n",bsp_dipswitch_read());
-
+                wirteHeadTest();
+//                      searchHeadTest("24450854");
 //                    farm_test();
 
 //                    testSplit();
@@ -124,13 +126,13 @@ static void vTaskKey(void *pvParameters)
 					break;
 				case KEY_LL_PRES:   
                     log_i("KEY_DOWN_K3\r\n");
+                    searchHeadTest("16707692");
 //                    ef_env_set_default();
 //                    calcRunTime();       
 //                    bsp_ds1302_mdifytime("2020-03-31 10:18:20");
-
+                
                     log_d("bsp_ds1302_readtime = %s\r\n",bsp_ds1302_readtime());
 //                    ef_set_env_blob("device_sn","88888888",8); 
-                    time_to_timestamp();
 //                    ef_print_env();
 //                    searchHeaderIndex("00012926",USER_MODE,&index);
 

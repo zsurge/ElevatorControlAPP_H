@@ -77,7 +77,7 @@ static void my_mem_init(void)
     
 //    bsp_spi_flash_init();
 
-    bsp_beep_init();            //蜂鸣器初始化        
+//    bsp_beep_init();            //蜂鸣器初始化        
 
 //    bsp_WiegandInit();          //韦根读卡器初始化
 

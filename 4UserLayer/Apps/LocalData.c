@@ -27,6 +27,8 @@
 #include "stdio.h"
 #include "tool.h"
 #include "malloc.h"
+#include "bsp_MB85RC128.h"
+
 
 
 
@@ -89,17 +91,21 @@ uint8_t writeHeader(uint8_t  * header,uint8_t mode,uint32_t *headIndex)
     uint8_t temp[HEAD_lEN+1] = {0};
     uint32_t addr = 0;
     uint32_t tempIndex = 0;     
+    int32_t iTime1, iTime2;
 
     if(header == NULL || strlen((const char*)header) == 0)
     {
         return 1;
     }
 
-    //log_d("writeHeader = %s\r\n",header);
+//    log_d("writeHeader = %s\r\n",header);
 
     memset(temp,0x00,sizeof(temp));
     asc2bcd(temp, header,HEAD_lEN*2, 0);
     
+   
+    
+    iTime1 = xTaskGetTickCount();	/* 记下开始时间 */ 
 
     if(mode == CARD_MODE)
     {
@@ -152,11 +158,12 @@ uint8_t writeHeader(uint8_t  * header,uint8_t mode,uint32_t *headIndex)
     
    	while(times)
 	{		
-		ret = bsp_sf_WriteBuffer (temp, addr, HEAD_lEN);
-        
+//		ret = bsp_sf_WriteBuffer (temp, addr, HEAD_lEN);
+        ret = FRAM_Write(FM24V10_1, addr, temp,HEAD_lEN);
 		//再读出来，对比是否一致
 		memset(readBuff,0x00,sizeof(readBuff));
-		bsp_sf_ReadBuffer (readBuff, addr, HEAD_lEN);
+//		bsp_sf_ReadBuffer (readBuff, addr, HEAD_lEN);
+        FRAM_Read (FM24V10_1, addr, readBuff, HEAD_lEN);		
 		
 		ret = compareArray(temp,readBuff,HEAD_lEN);
 		
@@ -174,6 +181,13 @@ uint8_t writeHeader(uint8_t  * header,uint8_t mode,uint32_t *headIndex)
 		times--;
 	} 	
 
+    iTime2 = xTaskGetTickCount();	/* 记下结束时间 */
+	printf("writeHeader %s 成功，耗时: %dms\r\n",header,iTime2 - iTime1);		
+
+iTime1 = xTaskGetTickCount();	/* 记下开始时间 */ 
+
+
+    printf("iTime1 =%d\r\n",iTime1);
     //这里需要保存  
     if(mode == CARD_MODE)
     {
@@ -189,8 +203,13 @@ uint8_t writeHeader(uint8_t  * header,uint8_t mode,uint32_t *headIndex)
         {
             *headIndex = gCurCardHeaderIndex++;
             memset(headCnt,0x00,sizeof(headCnt));
-            sprintf((char *)headCnt,"%08d",gCurCardHeaderIndex);
+            sprintf((char *)headCnt,"%08d",gCurCardHeaderIndex);    
+//            log_d(">>>>>>>>>>>>>\r\n");
+            
             ef_set_env_blob("CardHeaderIndex",headCnt,CARD_USER_LEN);   
+
+//            log_d(">>>>>>>>>>>>>___________________\r\n");
+            
         }
     }
     else if(mode == USER_MODE)
@@ -214,7 +233,11 @@ uint8_t writeHeader(uint8_t  * header,uint8_t mode,uint32_t *headIndex)
 
 	//log_d("gCurCardHeaderIndex = %d,gCurUserHeaderIndex = %d\r\n",gCurCardHeaderIndex,gCurUserHeaderIndex);    
 	//log_d("gDelCardHeaderIndex = %d,gDelUserHeaderIndex = %d\r\n",gDelCardHeaderIndex,gDelUserHeaderIndex);
-	
+
+
+    iTime2 = xTaskGetTickCount();	/* 记下结束时间 */
+    printf("iTime2 =%d\r\n",iTime2);    
+	printf("ef_set_env_blob 成功，耗时: %dms\r\n",iTime2 - iTime1);			
     return 0;
     
 }
@@ -240,7 +263,9 @@ uint32_t readDelIndexValue(uint8_t mode,uint16_t curIndex)
 
     //log_d("curIndex = %d,addr = %d\r\n",curIndex,addr);
     
-    bsp_sf_ReadBuffer (readBuff, addr, HEAD_lEN);
+//    bsp_sf_ReadBuffer (readBuff, addr, HEAD_lEN);
+
+    FRAM_Read (FM24V10_1, addr, readBuff, HEAD_lEN);    
 
     
     bcd2asc(temp, readBuff,HEAD_lEN*2, 0);    
@@ -318,6 +343,8 @@ ISFIND_ENUM findIndex(uint8_t* header,uint32_t address,uint16_t curIndex,uint16_
 	uint16_t remainder = 0;
 	uint16_t loop = 0;   
 
+	int32_t iTime1, iTime2;
+
     char *buff = my_malloc(SECTOR_SIZE);
     
     if (buff == NULL || header == NULL)
@@ -326,7 +353,9 @@ ISFIND_ENUM findIndex(uint8_t* header,uint32_t address,uint16_t curIndex,uint16_
        //log_d("my_malloc error\r\n");
        return isFind;
     }
-
+    
+    iTime1 = xTaskGetTickCount();	/* 记下开始时间 */ 
+    
     multiple = curIndex / HEAD_NUM_SECTOR;
     remainder = curIndex % HEAD_NUM_SECTOR;
 
@@ -335,7 +364,8 @@ ISFIND_ENUM findIndex(uint8_t* header,uint32_t address,uint16_t curIndex,uint16_
     for(i= 0;i<multiple;i++)
     {
         memset(buff,0x00,sizeof(buff));
-        bsp_sf_ReadBuffer ((uint8_t *)buff, address+i*SECTOR_SIZE, SECTOR_SIZE);   
+//        bsp_sf_ReadBuffer ((uint8_t *)buff, address+i*SECTOR_SIZE, SECTOR_SIZE); 
+        FRAM_Read (FM24V10_1, address+i*SECTOR_SIZE, buff, SECTOR_SIZE);        
 
         for(loop=0; loop<HEAD_NUM_SECTOR; loop++)
         {
@@ -345,14 +375,18 @@ ISFIND_ENUM findIndex(uint8_t* header,uint32_t address,uint16_t curIndex,uint16_
                 *index = loop + i*HEAD_NUM_SECTOR;
 
                 my_free(buff);
+    iTime2 = xTaskGetTickCount();	/* 记下结束时间 */
+	log_d("findIndex成功，耗时: %dms\r\n",iTime2 - iTime1);		                   
                 return isFind;
             }        
         }
     }    
 
     memset(buff,0x00,sizeof(buff));
-    bsp_sf_ReadBuffer ((uint8_t *)buff, address + multiple*SECTOR_SIZE, remainder*HEAD_lEN); 
+//    bsp_sf_ReadBuffer ((uint8_t *)buff, address + multiple*SECTOR_SIZE, remainder*HEAD_lEN); 
  
+    FRAM_Read (FM24V10_1,address + multiple*SECTOR_SIZE, buff, remainder*HEAD_lEN);     
+    
     for(loop=0; loop<remainder; loop++)
     {
         if(memcmp(header,buff+loop*HEAD_lEN,HEAD_lEN) == 0)
@@ -361,9 +395,14 @@ ISFIND_ENUM findIndex(uint8_t* header,uint32_t address,uint16_t curIndex,uint16_
             *index = loop + i*HEAD_NUM_SECTOR;
     
             my_free(buff);
+    iTime2 = xTaskGetTickCount();	/* 记下结束时间 */
+	log_d("findIndex成功，耗时: %dms\r\n",iTime2 - iTime1);		               
             return isFind;
         }        
     }
+
+
+ 
     
     *index = 0;
     my_free(buff);
@@ -407,12 +446,13 @@ static void eraseUserDataIndex(void)
 
 void eraseHeadSector(void)
 {  
-    uint16_t i = 0;
+    uint32_t size = CARD_HEAD_SECTOR_NUM*4;
 
-    for(i=0;i<CARD_HEAD_SECTOR_NUM+USER_HEAD_SECTOR_NUM+CARD_HEAD_DEL_SECTOR_NUM+USER_HEAD_DEL_SECTOR_NUM;i++)
-    {
-        bsp_sf_EraseSector(CARD_NO_HEAD_ADDR+i*SECTOR_SIZE);
-    }
+//    for(i=0;i<CARD_HEAD_SECTOR_NUM+USER_HEAD_SECTOR_NUM+CARD_HEAD_DEL_SECTOR_NUM+USER_HEAD_DEL_SECTOR_NUM;i++)
+//    {
+//        bsp_sf_EraseSector(CARD_NO_HEAD_ADDR+i*SECTOR_SIZE);
+        FRAM_Erase(FM24V10_1,FM24V10_1,size);
+//    }
 
     eraseUserDataIndex();
 }
@@ -870,11 +910,13 @@ uint8_t writeDelHeader(uint8_t* header,uint8_t mode)
 
    	while(times)
 	{		
-		ret = bsp_sf_WriteBuffer (temp, addr, HEAD_lEN);
+//		ret = bsp_sf_WriteBuffer (temp, addr, HEAD_lEN);
+		ret = FRAM_Write(FM24V10_1, addr, temp,HEAD_lEN);
         
 		//再读出来，对比是否一致
 		memset(readBuff,0x00,sizeof(readBuff));
-		bsp_sf_ReadBuffer (readBuff, addr, HEAD_lEN);
+//		bsp_sf_ReadBuffer (readBuff, addr, HEAD_lEN);
+        FRAM_Read (FM24V10_1, addr, readBuff, HEAD_lEN);   		
 		
 		ret = compareArray(temp,readBuff,HEAD_lEN);
 		
@@ -937,11 +979,13 @@ static uint8_t delSourceHeader(uint16_t index,uint8_t mode)
     
     while(times)
     {       
-        ret = bsp_sf_WriteBuffer (temp, addr, HEAD_lEN);
+//        ret = bsp_sf_WriteBuffer (temp, addr, HEAD_lEN);
+        ret = FRAM_Write(FM24V10_1, addr, temp,HEAD_lEN);
         
         //再读出来，对比是否一致
         memset(readBuff,0x00,sizeof(readBuff));
-        bsp_sf_ReadBuffer (readBuff, addr, HEAD_lEN);
+//        bsp_sf_ReadBuffer (readBuff, addr, HEAD_lEN);
+        FRAM_Read (FM24V10_1, addr, readBuff, HEAD_lEN);   
         
         ret = compareArray(temp,readBuff,HEAD_lEN);
         

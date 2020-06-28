@@ -35,46 +35,11 @@
 #include "ini.h"
 
 
-//驱动层头文件
-#include "bsp.h"
 
+void wirteHeadTest(void);
 
+void searchHeadTest(uint8_t* header);
 
-
-
-
-#define MY_DEBUGF
-#ifdef MY_DEBUGF  
-#define MY_DEBUG(message,...) do { \
-                                  {UARTprintf(message,##__VA_ARGS__);}\
-                               } while(0)  
-#else    
-#define MY_DEBUG(message,...)    
-#endif /* PLC_DEBUG */
-
-
-
-
-void FlashTest(void);
-void test_env(void);
-
-//uint8_t SPI_Flash_Test(void);
-
-
-int CJSON_CDECL json_test(void);
-//void spi_flash_demo(void);
-
-
-void testled(uint8_t flag);
-
-
-void addJsonTest(void);
-
-void calcRunTime(void);
-
-int testSplit(void);
-
-void ee_test(void);
 
 
 #endif
