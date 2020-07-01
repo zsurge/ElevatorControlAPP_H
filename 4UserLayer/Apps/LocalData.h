@@ -107,11 +107,11 @@ FLASH操作思路：
 /*----------------------------------------------*
  * 模块级变量                                   *
  *----------------------------------------------*/
-extern uint16_t gCurCardHeaderIndex;    //卡号索引
-extern uint16_t gCurUserHeaderIndex;    //用户ID索引
-extern uint16_t gDelCardHeaderIndex;    //已删除卡号索引
-extern uint16_t gDelUserHeaderIndex;    //已删除用户ID索引
-extern uint16_t gCurRecordIndex;
+extern volatile uint16_t gCurCardHeaderIndex;    //卡号索引
+extern volatile uint16_t gCurUserHeaderIndex;    //用户ID索引
+extern volatile uint16_t gDelCardHeaderIndex;    //已删除卡号索引
+extern volatile uint16_t gDelUserHeaderIndex;    //已删除用户ID索引
+extern volatile uint16_t gCurRecordIndex;
 
 
 /*----------------------------------------------*
@@ -120,6 +120,7 @@ extern uint16_t gCurRecordIndex;
 typedef struct HEADER
 {    
     uint8_t value[HEAD_lEN];     //表头的值
+    uint8_t flashIndex[2];       //在FLASH中的索引
 }HEADER_STRU;
 
 typedef enum 
@@ -175,6 +176,7 @@ uint8_t modifyUserData(USERDATA_STRU userData,uint8_t mode);
 uint8_t delUserData(uint8_t *header,uint8_t mode);
 
 uint8_t writeDelHeader(uint8_t* header,uint8_t mode);
+//ISFIND_ENUM fIndex( uint8_t* header,uint8_t mode,uint16_t* index );
 
 
 

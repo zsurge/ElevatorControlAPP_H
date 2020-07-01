@@ -23,13 +23,14 @@
 #include "easyflash.h"
 #include "version.h"
 #include "string.h"
-#include "templateprocess.h"
+#include "deviceInfo.h"
 #include "tool.h"
 #include "LocalData.h"
 #include "eth_cfg.h"
 #include "cJSON.h"
 #include "errorcode.h"
 #include "calcDevNO.h"
+
 
 //设备在线状态
 #define ON_LINE                 1
@@ -64,6 +65,8 @@ void ReadLocalDevSn(void);
 uint8_t packetPayload(USERDATA_STRU *localUserData,uint8_t *descJson);
 //解析QRCODE数据
 uint8_t parseQrCode(uint8_t *jsonBuff,USERDATA_STRU *qrCodeInfo);
+//保存模板信息
+SYSERRORCODE_E saveTemplateParam(uint8_t *jsonBuff);
 
 
 #endif

@@ -27,7 +27,10 @@
 #define LOG_TAG    "ini"
 #include "elog.h"
 
-MQTT_DEVICE_SN_STRU gMqttDevSn;
+DEVICE_ID_STRU gDeviceId;
+MQTT_TOPIC_STRU gMqttTopic;
+TEMPLATE_PARAM_STRU gTemplateParam;
+
 
 
 /*****************************************************************************
@@ -300,7 +303,7 @@ void ReadLocalDevSn ( void )
     char remote_sn[20+1] = {0};
     uint8_t read_len = 0;
 
-    memset ( &gMqttDevSn,0x00,sizeof ( gMqttDevSn ) );
+    memset ( &gMqttTopic,0x00,sizeof ( gMqttTopic ) );
 
     read_len = ef_get_env_blob ( "sn_flag", sn_flag, sizeof ( sn_flag ), NULL );
 
@@ -312,18 +315,19 @@ void ReadLocalDevSn ( void )
         ef_get_env_blob("device_sn",id,sizeof ( id ), NULL ); 
         if ( read_len == 20 )
         {
-            strcpy ( gMqttDevSn.deviceSn,id);
+            strcpy ( gDeviceId.qrSn,id);
             
             log_d ( "sn = %s,len = %d\r\n",remote_sn,read_len );
-            strcpy ( gMqttDevSn.sn,remote_sn );
-            log_d("1 deviceCode = %s\r\n",gMqttDevSn.sn);
-            strcpy ( gMqttDevSn.publish,DEVICE_PUBLISH );
-            strcpy ( gMqttDevSn.subscribe,DEVICE_SUBSCRIBE );
-            strcat ( gMqttDevSn.subscribe,remote_sn );          
+            strcpy ( gDeviceId.deviceSn,remote_sn );
+            log_d("1 deviceCode = %s\r\n",gDeviceId.deviceSn);
+            
+            strcpy ( gMqttTopic.publish,DEVICE_PUBLISH );
+            strcpy ( gMqttTopic.subscribe,DEVICE_SUBSCRIBE );
+            
+            strcat ( gMqttTopic.subscribe,remote_sn );          
         }
 
-         log_d("2 deviceCode = %s\r\n",gMqttDevSn.sn);
-         log_d("gMqttDevSn.deviceSn = %s\r\n",gMqttDevSn.deviceSn);
+         log_d("2 deviceCode = %s\r\n",gDeviceId.deviceSn);
     }
     else
     {
@@ -331,19 +335,19 @@ void ReadLocalDevSn ( void )
         calcMac ( (unsigned char*)mac );
         bcd2asc ( (unsigned char*)asc, (unsigned char*)mac, 12, 0 );
         Insertchar ( asc,temp,':' );
-        memcpy ( gMqttDevSn.sn,temp,strlen ( temp )-1 );
+        memcpy ( gDeviceId.deviceSn,temp,strlen ( temp )-1 );
 
-        log_d ( "strToUpper asc = %s\r\n",gMqttDevSn.sn );
-        ef_set_env_blob ( "remote_sn",gMqttDevSn.sn,strlen ( gMqttDevSn.sn ) );
+        log_d ( "strToUpper asc = %s\r\n",gDeviceId.deviceSn );
+        ef_set_env_blob ( "remote_sn",gDeviceId.deviceSn,strlen ( gDeviceId.deviceSn ) );
 
-        strcpy ( gMqttDevSn.publish,DEV_FACTORY_PUBLISH );
-        strcpy ( gMqttDevSn.subscribe,DEV_FACTORY_SUBSCRIBE );
-        strcat ( gMqttDevSn.subscribe,gMqttDevSn.sn );
-        memcpy ( gMqttDevSn.deviceSn,gMqttDevSn.sn,8);
+        strcpy ( gMqttTopic.publish,DEV_FACTORY_PUBLISH );
+        strcpy ( gMqttTopic.subscribe,DEV_FACTORY_SUBSCRIBE );
+        strcat ( gMqttTopic.subscribe,gDeviceId.deviceSn );
+        memcpy ( gDeviceId.qrSn,gDeviceId.deviceSn,8); //使用前8位做为本机的QRID
     }
 
 
-    log_d ( "publish = %s,subscribe = %s\r\n",gMqttDevSn.publish,gMqttDevSn.subscribe );
+    log_d ( "publish = %s,subscribe = %s\r\n",gMqttTopic.publish,gMqttTopic.subscribe );
 }
 
 uint8_t packetPayload(USERDATA_STRU *localUserData,uint8_t *descJson)
@@ -365,8 +369,8 @@ uint8_t packetPayload(USERDATA_STRU *localUserData,uint8_t *descJson)
 		return CJSON_CREATE_ERR;
     }
 
-    cJSON_AddStringToObject(root, "deviceCode", gMqttDevSn.sn);
-    log_d("deviceCode = %s",gMqttDevSn.sn);
+    cJSON_AddStringToObject(root, "deviceCode", gDeviceId.deviceSn);
+    log_d("deviceCode = %s",gDeviceId.deviceSn);
     
     cJSON_AddItemToObject(root, "data", dataObj);
 
@@ -471,54 +475,69 @@ uint8_t parseQrCode(uint8_t *jsonBuff,USERDATA_STRU *qrCodeInfo)
     
     memset(buf,0x00,sizeof(buf));
     tmpArray = cJSON_GetObjectItem(root, "d1");
-    strcpy((char *)buf,tmpArray->valuestring);
-    log_d("d1 = %s\r\n",buf);  
-    if(findDev(buf,1) == 1)
+    strcpy((char *)buf,tmpArray->valuestring);  
+    if(strlen((const char*)buf) > 0)
     {
-        isFind =1;
-        goto QR_END;
+        log_d("d1 = %s\r\n",buf); 
+        if(findDev(buf,1) == 1)
+        {
+            isFind =1;
+            goto QR_END;
+        }
     }
 
     memset(buf,0x00,sizeof(buf));
     tmpArray = cJSON_GetObjectItem(root, "d2");
-    strcpy((char *)buf,tmpArray->valuestring);
-    log_d("d2 = %s\r\n",buf); 
-    if(findDev(buf,2) == 1)
+    strcpy((char *)buf,tmpArray->valuestring);    
+    if(strlen((const char*)buf) > 0)
     {
-        isFind =1;
-        goto QR_END;
+        log_d("d2 = %s\r\n",buf); 
+        if(findDev(buf,2) == 1)
+        {
+            isFind =1;
+            goto QR_END;
+        }
     }
     
     memset(buf,0x00,sizeof(buf));
     tmpArray = cJSON_GetObjectItem(root, "d3");
-    strcpy((char *)buf,tmpArray->valuestring);
-    log_d("d3= %s\r\n",buf); 
-    if(findDev(buf,3) == 1)
+    strcpy((char *)buf,tmpArray->valuestring);    
+    if(strlen((const char*)buf) > 0)
     {
-        isFind =1;
-        goto QR_END;
+        log_d("d3= %s\r\n",buf); 
+        if(findDev(buf,3) == 1)
+        {
+            isFind =1;
+            goto QR_END;
+        }
     }
 
     
     memset(buf,0x00,sizeof(buf));
     tmpArray = cJSON_GetObjectItem(root, "d4");
     strcpy((char *)buf,tmpArray->valuestring);
-    log_d("d4 = %s\r\n",buf);
-    if(findDev(buf,4) == 1)
+    if(strlen((const char*)buf) > 0)
     {
-        isFind =1;
-        goto QR_END;
-    }    
+        log_d("d4 = %s\r\n",buf);    
+        if(findDev(buf,4) == 1)
+        {
+            isFind =1;
+            goto QR_END;
+        }    
+    }
 
 
     memset(buf,0x00,sizeof(buf));
     tmpArray = cJSON_GetObjectItem(root, "d5");
     strcpy((char *)buf,tmpArray->valuestring);
-    log_d("d5 = %s\r\n",buf);
-    if(findDev(buf,5) == 1)
+    if(strlen((const char*)buf) > 0)
     {
-       isFind =1;
-    }    
+        log_d("d5 = %s\r\n",buf);    
+        if(findDev(buf,5) == 1)
+        {
+           isFind =1;
+        }    
+    }
   
 QR_END:    
     cJSON_Delete(root);
@@ -526,6 +545,260 @@ QR_END:
     return isFind;
 
 }
+
+
+//保存模板信息
+SYSERRORCODE_E saveTemplateParam(uint8_t *jsonBuff)
+{
+    SYSERRORCODE_E result = NO_ERR;
+    cJSON* root,*data,*templateData,*templateMap,*holidayTimeMap,*peakTimeMap;   
+    cJSON* tmpArray,*arrayElement;
+
+    memset(&gTemplateParam,0x00,sizeof(TEMPLATE_PARAM_STRU));
+    TEMPLATE_PARAM_STRU *templateParam = &gTemplateParam; 
+
+    //TEMPLATE_PARAM_STRU *templateParam = my_malloc(sizeof(TEMPLATE_PARAM_STRU)); 
+    int holidayTimeMapCnt=0,peakTimeMapCnt=0,index = 0;
+    char tmpbuf[8] = {0};
+
+    char tmpIndex[2] = {0};
+    char tmpKey[32] = {0};
+
+    
+
+    uint32_t curtick  =  xTaskGetTickCount();
+    
+    root = cJSON_Parse((char *)jsonBuff);    //解析数据包
+    if (!root)  
+    {  
+        cJSON_Delete(root);
+        log_d("Error before: [%s]\r\n",cJSON_GetErrorPtr());  
+        return CJSON_PARSE_ERR;
+    } 
+
+    data = cJSON_GetObjectItem(root, "data");
+    if(data == NULL)
+    {
+        log_d("data NULL\r\n");
+        result = CJSON_GETITEM_ERR;
+        cJSON_Delete(root);
+        return result;        
+    }    
+
+    templateData = cJSON_GetObjectItem(data, "template");
+    if(templateMap == NULL)
+    {
+        log_d("templateData NULL\r\n");
+        result = CJSON_GETITEM_ERR;
+        cJSON_Delete(root);
+        return result;   
+    }    
+
+    templateMap = cJSON_GetObjectItem(templateData, "templateMap");
+    if(templateMap == NULL)
+    {
+        log_d("templateMap NULL\r\n");
+        result = CJSON_GETITEM_ERR;
+        cJSON_Delete(root);
+        return result;   
+    }
+
+    holidayTimeMap = cJSON_GetObjectItem(templateData, "hoildayTimeMap");
+    if(holidayTimeMap == NULL)
+    {
+        log_d("hoildayTimeMap NULL\r\n");
+        result = CJSON_GETITEM_ERR;
+        cJSON_Delete(root);
+        return result;   
+    }
+
+    peakTimeMap = cJSON_GetObjectItem(templateData, "peakTimeMap");
+    if(peakTimeMap ==NULL)
+    {
+        log_d("peakTimeMap NULL\r\n");
+        result = CJSON_GETITEM_ERR;
+        cJSON_Delete(root);
+        return result;   
+    }
+
+
+//--------------------------------------------------    
+    //获取templateMap数据
+    cJSON *json_item = cJSON_GetObjectItem(templateMap, "id");
+    templateParam->id = json_item->valueint;
+    sprintf(tmpbuf,"%8d",templateParam->id);
+    ef_set_env_blob("templateID",tmpbuf,8); 
+    log_d("templateParam->id = %d\r\n",templateParam->id);
+
+    json_item = cJSON_GetObjectItem(templateMap, "templateCode");
+    strcpy((char *)templateParam->templateCode,json_item->valuestring);
+    ef_set_env_blob("templateCode",templateParam->templateCode,strlen((const char *)templateParam->templateCode)); 
+    log_d("templateParam->templateCode = %s\r\n",templateParam->templateCode);
+
+    json_item = cJSON_GetObjectItem(templateMap, "templateName");
+    strcpy((char *)templateParam->templateName,json_item->valuestring);
+//    ef_set_env_blob("templateName",templateParam->templateName,strlen(templateParam->templateName)); 
+    log_d("templateParam->templateName = %s\r\n",templateParam->templateName);    
+
+    json_item = cJSON_GetObjectItem(templateMap, "templateStatus");
+    templateParam->templateStatus = json_item->valueint;
+    memset(tmpbuf,0x00,sizeof(tmpbuf));
+    sprintf(tmpbuf,"%8d",templateParam->templateStatus);
+    ef_set_env_blob("templateStatus",tmpbuf,8); 
+    log_d("templateParam->templateStatus = %d\r\n",templateParam->templateStatus);      
+    
+    json_item = cJSON_GetObjectItem(templateMap, "callingWay");
+    strcpy((char *)templateParam->callingWay,json_item->valuestring);
+    ef_set_env_blob("T_callingWay",templateParam->callingWay,strlen((const char*)templateParam->callingWay));     
+    log_d("templateParam->callingWay = %s\r\n",templateParam->callingWay);    
+
+    json_item = cJSON_GetObjectItem(templateMap, "offlineProcessing");
+    templateParam->offlineProcessing = json_item->valueint;
+    memset(tmpbuf,0x00,sizeof(tmpbuf));
+    sprintf(tmpbuf,"%8d",templateParam->offlineProcessing);
+    ef_set_env_blob("offlineStatus",tmpbuf,8);     
+    log_d("templateParam->offlineProcessing = %d\r\n",templateParam->offlineProcessing);     
+
+
+    json_item = cJSON_GetObjectItem(templateMap, "modeType");
+    strcpy((char *)templateParam->modeType,json_item->valuestring);
+    ef_set_env_blob("modeType",templateParam->modeType,strlen((const char*)templateParam->modeType));     
+    log_d("templateParam->modeType = %s\r\n",templateParam->modeType);
+
+    json_item = cJSON_GetObjectItem(templateMap, "peakCallingWay");
+    strcpy((char *)templateParam->peakInfo[0].callingWay,json_item->valuestring);
+    ef_set_env_blob("peakCallingWay",templateParam->peakInfo[0].callingWay,strlen((const char *)templateParam->peakInfo[0].callingWay));
+    log_d("templateParam->peakInfo[0].callingWay = %s\r\n",templateParam->peakInfo[0].callingWay);
+
+    json_item = cJSON_GetObjectItem(templateMap, "peakStartDate");
+    strcpy((char *)templateParam->peakInfo[0].beginTime,json_item->valuestring);
+    ef_set_env_blob("peakStartDate",templateParam->peakInfo[0].beginTime,strlen((const char*)templateParam->peakInfo[0].beginTime));
+    log_d("templateParam->peakInfo[0].beginTime = %s\r\n",templateParam->peakInfo[0].beginTime);
+
+    json_item = cJSON_GetObjectItem(templateMap, "peakEndDate");
+    strcpy((char *)templateParam->peakInfo[0].endTime,json_item->valuestring);
+    ef_set_env_blob("peakEndDate",templateParam->peakInfo[0].endTime,strlen((const char*)templateParam->peakInfo[0].endTime));
+    log_d("templateParam->peakInfo[0].endTime = %s\r\n",templateParam->peakInfo[0].endTime);
+
+    json_item = cJSON_GetObjectItem(templateMap, "peakHolidaysType");
+    strcpy((char *)templateParam->peakInfo[0].outsideTimeMode,json_item->valuestring);
+    ef_set_env_blob("peakHolidaysType",templateParam->peakInfo[0].outsideTimeMode,strlen((const char*)templateParam->peakInfo[0].outsideTimeMode));
+    log_d("templateParam->peakInfo[0].outsideTimeMode = %s\r\n",templateParam->peakInfo[0].outsideTimeMode);
+
+    json_item = cJSON_GetObjectItem(templateMap, "peakHolidays");
+    strcpy((char *)templateParam->peakInfo[0].outsideTimeData,json_item->valuestring);
+    ef_set_env_blob("peakHolidays",templateParam->peakInfo[0].outsideTimeData,strlen((const char*)templateParam->peakInfo[0].outsideTimeData));
+    log_d("templateParam->peakInfo[0].outsideTimeData = %s\r\n",templateParam->peakInfo[0].outsideTimeData);    
+//------------------------------------------------------------------------------
+    json_item = cJSON_GetObjectItem(templateMap, "holidayCallingWay");
+    strcpy((char *)templateParam->hoildayInfo[0].callingWay,json_item->valuestring);
+    ef_set_env_blob("holidayCallingWay",templateParam->hoildayInfo[0].callingWay,strlen((const char*)templateParam->hoildayInfo[0].callingWay));
+    log_d("templateParam->hoildayInfo[0].callingWay = %s\r\n",templateParam->hoildayInfo[0].callingWay);
+
+    json_item = cJSON_GetObjectItem(templateMap, "holidayStartDate");
+    strcpy((char *)templateParam->hoildayInfo[0].beginTime,json_item->valuestring);
+    ef_set_env_blob("holidayStartDate",templateParam->hoildayInfo[0].beginTime,strlen((const char*)templateParam->hoildayInfo[0].beginTime));
+    log_d("templateParam->hoildayInfo[0].beginTime = %s\r\n",templateParam->hoildayInfo[0].beginTime);
+
+    json_item = cJSON_GetObjectItem(templateMap, "holidayEndDate");
+    strcpy((char *)templateParam->hoildayInfo[0].endTime,json_item->valuestring);
+    ef_set_env_blob("holidayEndDate",templateParam->hoildayInfo[0].endTime,strlen((const char*)templateParam->hoildayInfo[0].endTime));
+    log_d("templateParam->hoildayInfo[0].endTime = %s\r\n",templateParam->hoildayInfo[0].endTime);
+
+    json_item = cJSON_GetObjectItem(templateMap, "holidayHolidaysType");
+    strcpy((char *)templateParam->hoildayInfo[0].outsideTimeMode,json_item->valuestring);
+    ef_set_env_blob("holidayHolidaysType",templateParam->hoildayInfo[0].outsideTimeMode,strlen((const char*)templateParam->hoildayInfo[0].outsideTimeMode));
+    log_d("templateParam->hoildayInfo[0].outsideTimeMode = %s\r\n",templateParam->hoildayInfo[0].outsideTimeMode);
+
+    json_item = cJSON_GetObjectItem(templateMap, "holidayHolidays");
+    strcpy((char *)templateParam->hoildayInfo[0].outsideTimeData,json_item->valuestring);
+    ef_set_env_blob("holidayHolidays",templateParam->hoildayInfo[0].outsideTimeData,strlen((const char*)templateParam->hoildayInfo[0].outsideTimeData));
+    log_d("templateParam->hoildayInfo[0].outsideTimeData = %s\r\n",templateParam->hoildayInfo[0].outsideTimeData);       
+
+//--------------------------------------------------
+    //存储hoildayTimeMap中数据
+    holidayTimeMapCnt = cJSON_GetArraySize(holidayTimeMap); /*获取数组长度*/
+    log_d("array len = %d\r\n",holidayTimeMapCnt);
+
+    //存储不受控时间段的个数
+    if(holidayTimeMapCnt > 0)
+    {
+        sprintf(tmpKey,"%04d",holidayTimeMapCnt);
+        ef_set_env_blob("holidayTimeMapCnt",tmpKey,4);        
+    }
+
+    for(index=0; index<holidayTimeMapCnt; index++)
+    {
+        tmpArray = cJSON_GetArrayItem(holidayTimeMap, index);
+
+        memset(tmpKey,0x00,sizeof(tmpKey));
+        memset(tmpIndex,0x00,sizeof(tmpIndex));       
+        
+        arrayElement = cJSON_GetObjectItem(tmpArray, "templateType");
+        templateParam->holidayMode[index].templateType = arrayElement->valueint;        
+        log_d("templateType = %d\r\n",templateParam->holidayMode[index].templateType);
+
+        arrayElement = cJSON_GetObjectItem(tmpArray, "voiceSize");
+        templateParam->holidayMode[index].voiceSize = arrayElement->valueint;        
+        log_d("voiceSize = %d\r\n",templateParam->holidayMode[index].voiceSize);
+        
+        arrayElement = cJSON_GetObjectItem(tmpArray, "modeType");
+        templateParam->holidayMode[index].channelType = arrayElement->valueint;
+        log_d("modeType = %d\r\n",templateParam->holidayMode[index].channelType);
+        
+        arrayElement = cJSON_GetObjectItem(tmpArray, "startTime");
+        //因为节假日跟高峰共用，所以只记录到FLASH一种就可以了
+        strcpy((char*)templateParam->holidayMode[index].startTime,arrayElement->valuestring);
+        sprintf(tmpIndex,"%d",index);
+        strcpy(tmpKey,"hoildayModeStartTime");
+        strcat(tmpKey,tmpIndex); 
+        ef_set_env_blob(tmpKey,templateParam->holidayMode[index].startTime,strlen((const char*)templateParam->holidayMode[index].startTime));        
+        log_d("%s = %s\r\n",tmpKey,templateParam->holidayMode[index].startTime);
+        
+        
+        arrayElement = cJSON_GetObjectItem(tmpArray, "endTime");
+        strcpy((char*)templateParam->holidayMode[index].endTime,arrayElement->valuestring);  
+        memset(tmpKey,0x00,sizeof(tmpKey));
+        strcpy(tmpKey,"hoildayModeEndTime");
+        strcat(tmpKey,tmpIndex);      
+        ef_set_env_blob(tmpKey,templateParam->holidayMode[index].endTime,strlen((const char*)templateParam->holidayMode[index].endTime));                
+        log_d("%s= %s\r\n",tmpKey,templateParam->holidayMode[index].endTime);        
+    }
+    
+    log_d("=====================================================\r\n");
+//--------------------------------------------------
+    peakTimeMapCnt = cJSON_GetArraySize(peakTimeMap); /*获取数组长度*/
+    log_d("peakTimeMapCnt len = %d\r\n",peakTimeMapCnt);
+
+    for(index=0; index<peakTimeMapCnt; index++)
+    {
+        tmpArray = cJSON_GetArrayItem(peakTimeMap, index);
+        
+        arrayElement = cJSON_GetObjectItem(tmpArray, "templateType");
+        log_d("templateType = %d\r\n",arrayElement->valueint);
+
+        arrayElement = cJSON_GetObjectItem(tmpArray, "voiceSize");
+        log_d("voiceSize = %d\r\n",arrayElement->valueint);
+        
+        arrayElement = cJSON_GetObjectItem(tmpArray, "modeType");
+        log_d("modeType = %d\r\n",arrayElement->valueint);
+        
+        arrayElement = cJSON_GetObjectItem(tmpArray, "startTime");
+        log_d("startTime = %s\r\n",arrayElement->valuestring);
+        
+        arrayElement = cJSON_GetObjectItem(tmpArray, "endTime");
+        log_d("endTime = %s\r\n",arrayElement->valuestring);        
+    }
+    
+ 
+    cJSON_Delete(root);
+
+    log_d("saveTemplateParam took %d ms to save\r\n",xTaskGetTickCount()-curtick);
+
+    return result;
+}
+
+
 
 
 

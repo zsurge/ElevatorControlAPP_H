@@ -26,9 +26,11 @@
 #include "FloorDataProc.h"
 #include "bsp_usart6.h"
 #include "malloc.h"
+#include "tool.h"
 
 #define LOG_TAG    "DataProcess"
 #include "elog.h"
+static void test(void);
 
 /*----------------------------------------------*
  * 宏定义                                       *
@@ -37,7 +39,7 @@
 
  
 #define DATAPROC_TASK_PRIO		(tskIDLE_PRIORITY + 6) 
-#define DATAPROC_STK_SIZE 		(configMINIMAL_STACK_SIZE*5)
+#define DATAPROC_STK_SIZE 		(configMINIMAL_STACK_SIZE*12)
 
 /*----------------------------------------------*
  * 常量定义                                     *
@@ -105,5 +107,20 @@ static void vTaskDataProcess(void *pvParameters)
 
 }
 
+
+static void test(void)
+{
+    int i = 0; 
+    char buf[4096] = {0};
+
+    memset(buf,0x00,sizeof(buf));
+
+   for(i=0;i<4096;i++)
+   {
+    buf[i] = i;
+   }
+
+    dbh("buf", buf, 4096);
+}
 
  

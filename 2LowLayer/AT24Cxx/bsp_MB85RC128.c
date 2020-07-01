@@ -271,6 +271,7 @@ uint8_t FRAM_Read(FRAMDev_t FM24xx, uint32_t addr, void *pvbuf, uint32_t size)
   uint32_t i = 0;
   uint8_t err = I2C_TRUE;
   uint8_t *p = (uint8_t *)pvbuf;
+  
   do
   {
 #ifdef INC_FREERTOS_H
@@ -281,6 +282,12 @@ uint8_t FRAM_Read(FRAMDev_t FM24xx, uint32_t addr, void *pvbuf, uint32_t size)
     }
     xSemaphoreTake(hMutexFRAM, portMAX_DELAY);
 #endif /* INC_FREERTOS_H */
+
+    if(size == 0)
+    {
+      return err;
+    }
+
 
     err = i2c_start();  if(!err)  continue;
 

@@ -47,7 +47,7 @@
 #include<stdio.h>
 #include<string.h>
 #include "calcDevNO.h"
-#include "eth_cfg.h"
+#include "deviceinfo.h"
 
 /*----------------------------------------------*
  * ∫Í∂®“Â                                       *
@@ -168,7 +168,7 @@ unsigned char findDev(unsigned char *str,unsigned char dataFormat)
 
     memset(tmpBuff,0x00,sizeof(tmpBuff));
 
-    memcpy(tmpBuff,gMqttDevSn.deviceSn,8);
+    memcpy(tmpBuff,gDeviceId.qrSn,8);
 
     devSN = atoi((const char*)tmpBuff);
 

@@ -88,7 +88,7 @@ void wirteHeadTest(void)
 void searchHeadTest(uint8_t* header)
 {
     uint16_t index = 0;
-    if(searchHeaderIndex(header,1, &index) == 1)
+    if(searchFlashIndex(header,1,&index,fIndex) == 1)
     {
         printf("find it! index = %d\r\n",index);
     }

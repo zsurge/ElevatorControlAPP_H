@@ -38,7 +38,7 @@
 /*----------------------------------------------*
  * 宏定义                                       *
  *----------------------------------------------*/
-#define KEY_STK_SIZE        (configMINIMAL_STACK_SIZE*8)
+#define KEY_STK_SIZE        (configMINIMAL_STACK_SIZE*4)
 #define KEY_TASK_PRIO	    ( tskIDLE_PRIORITY + 3)
 
 /*----------------------------------------------*
@@ -105,7 +105,6 @@ static void vTaskKey(void *pvParameters)
                     printf("系统当前内存大小为 %d 字节，开始申请内存\n",g_memsize);
 
 //                    farm_read();
-                    searchHeadTest("29870238");
 					break;				
 				/* K2键按下，打印串口操作命令 */
 				case KEY_RR_PRES:                 
@@ -114,7 +113,6 @@ static void vTaskKey(void *pvParameters)
 //                    bsp_ds1302_mdifytime("2020-01-17 09:24:15");
                     
                     log_d("read gpio = %02x\r\n",bsp_dipswitch_read());
-                wirteHeadTest();
 //                      searchHeadTest("24450854");
 //                    farm_test();
 
@@ -126,7 +124,7 @@ static void vTaskKey(void *pvParameters)
 					break;
 				case KEY_LL_PRES:   
                     log_i("KEY_DOWN_K3\r\n");
-                    searchHeadTest("16707692");
+//                    searchHeadTest("16707692");
 //                    ef_env_set_default();
 //                    calcRunTime();       
 //                    bsp_ds1302_mdifytime("2020-03-31 10:18:20");

@@ -110,12 +110,12 @@ MQTT_START:
 
 	ReadLocalDevSn();
 
-//    strcpy(data.clientID.cstring,gMqttDevSn.sn);
+//    strcpy(data.clientID.cstring,gDeviceId.deviceSn);
 //    strcat(data.clientID.cstring,time_to_timestamp());
     
-	data.clientID.cstring = gMqttDevSn.sn;              
+	data.clientID.cstring = gDeviceId.deviceSn;              
 	data.keepAliveInterval = KEEPLIVE_TIME;         //保持活跃
-	data.username.cstring = USER_NAME;//gMqttDevSn.sn;              //用户名
+	data.username.cstring = USER_NAME;//gDeviceId.deviceSn;              //用户名
 	data.password.cstring = PASSWORD;               //秘钥
 	data.MQTTVersion = MQTT_VERSION;                //3表示3.1版本，4表示3.11版本
 	data.cleansession = 1;
@@ -177,8 +177,7 @@ MQTT_START:
 				break;
 			//订阅主题 客户端订阅请求
 			case SUBSCRIBE://8
-//              topicString.cstring = DEVICE_SUBSCRIBE;
-				topicString.cstring = gMqttDevSn.subscribe;
+				topicString.cstring = gMqttTopic.subscribe;
 
 				len = MQTTSerialize_subscribe ( ( unsigned char* ) buf, buflen, 0, msgid, 1, &topicString, &req_qos );
 				rc = transport_sendPacketBuffer ( gMySock, ( unsigned char* ) buf, len );
@@ -386,8 +385,7 @@ static void ackUp ( void )
 		ef_set_env_blob ( "up_status", "101722",6 );
         exec_proc("1017"," ");
 	}
-    exec_proc("30131","");
-	
+    exec_proc("30131","");	
 }
 
 

@@ -32,10 +32,10 @@
 /*----------------------------------------------*
  * 宏定义                                       *
  *----------------------------------------------*/
-#define   HOST_NAME       "192.168.110.79"     //服务器IP地址 测试专用 
+//#define   HOST_NAME       "192.168.110.79"     //服务器IP地址 测试专用 
 //#define   HOST_NAME       "192.168.110.109"     //服务器IP地址 线下 
 //#define   HOST_NAME         "mqtt.bsgoal.net.cn"
-//#define   HOST_NAME         "120.78.247.221"
+#define   HOST_NAME         "120.78.247.221"
 
 #define   HOST_PORT     1883    //由于是TCP连接，端口必须是1883
 
@@ -51,11 +51,9 @@
 
 typedef struct
 {
-    char deviceSn[8];
-    char sn[32];    
-    char publish[128];
-    char subscribe[128];
-}MQTT_DEVICE_SN_STRU;
+    char publish[128];   //发布的主题
+    char subscribe[128]; //订阅的主题
+}MQTT_TOPIC_STRU;
 
 
 /*----------------------------------------------*
@@ -65,7 +63,7 @@ typedef struct
 /*----------------------------------------------*
  * 模块级变量                                   *
  *----------------------------------------------*/
-extern MQTT_DEVICE_SN_STRU gMqttDevSn;
+extern MQTT_TOPIC_STRU gMqttTopic;
 /*----------------------------------------------*
  * 内部函数原型说明                             *
  *----------------------------------------------*/

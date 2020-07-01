@@ -53,6 +53,7 @@ TaskHandle_t xHandleTaskHandShake = NULL;      //LED灯
  * 内部函数原型说明                             *
  *----------------------------------------------*/
 static void vTaskHandShake(void *pvParameters);
+static void DisplayDevInfo (void);
 
 
 static void vTaskHandShake(void *pvParameters)
@@ -88,7 +89,8 @@ static void vTaskHandShake(void *pvParameters)
     readDevState();
     readCardAndUserIdIndex();
     ReadLocalDevSn();
-
+    
+    DisplayDevInfo();
     
     vTaskDelay(500);
     vTaskDelete( NULL ); //删除自己
@@ -107,6 +109,17 @@ void CreateHandShakeTask(void)
 }
 
 
+static void DisplayDevInfo(void)
+{
+    printf("\r\n==========Version==========\r\n");
+	printf("Softversion :%s\r\n",gDevinfo.SoftwareVersion);
+    printf("HardwareVersion :%s\r\n", gDevinfo.HardwareVersion);
+	printf("Model :%s\r\n", gDevinfo.Model);
+	printf("ProductBatch :%s\r\n", gDevinfo.ProductBatch);	    
+	printf("BulidDate :%s\r\n", gDevinfo.BulidDate);
+	printf("DevSn :%s\r\n", gDevinfo.GetSn());
+    printf("Devip :%s\r\n", gDevinfo.GetIP());
+}
 
 
 

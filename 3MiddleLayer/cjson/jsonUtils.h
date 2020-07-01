@@ -115,14 +115,8 @@ SYSERRORCODE_E getTimePacket(uint8_t *descBuf);
 
 
 
-//保存模板信息
-SYSERRORCODE_E saveTemplateParam(uint8_t *jsonBuff);
-
-
-
-
 //获取JSON数组
-uint8_t** GetJsonArray ( const uint8_t* jsonBuff,const uint8_t* item,uint8_t *num);
+uint8_t** GetCardArray ( const uint8_t* jsonBuff,const uint8_t* item,uint8_t *num);
 
 
 

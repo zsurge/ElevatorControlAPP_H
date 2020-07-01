@@ -24,7 +24,7 @@
 
 #include "CmdHandle.h"
 #include "tool.h"
-#include "templateprocess.h"
+#include "deviceInfo.h"
 #include "stdlib.h"
 #include "bsp_ds1302.h"
 #include "des.h"
