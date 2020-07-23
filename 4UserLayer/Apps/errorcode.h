@@ -40,6 +40,7 @@ typedef enum {
     CJSON_FORMAT_ERR,   //cjson格式化失败
     COMM_PARSE_ERR,     //指令解析失败
     COMM_CRC_ERR,      //解析指令，CRC校验失败
+    FLASH_R_ERR,        //读FLASH失败 
     FLASH_W_ERR,        //写FLASH失败    
     RET_OK = 200,       //给服务器返回OK  
     //读卡判定

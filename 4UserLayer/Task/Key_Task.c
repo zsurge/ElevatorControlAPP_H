@@ -102,8 +102,7 @@ static void vTaskKey(void *pvParameters)
 					printf("%s\r\n", pcWriteBuffer);          
 
                     g_memsize = xPortGetFreeHeapSize();
-                    printf("系统当前内存大小为 %d 字节，开始申请内存\n",g_memsize);
-
+                    printf("系统当前内存大小为 %d 字节，开始申请内存\r\n",g_memsize);
 //                    farm_read();
 					break;				
 				/* K2键按下，打印串口操作命令 */
@@ -118,7 +117,6 @@ static void vTaskKey(void *pvParameters)
 
 //                    testSplit();
 //                    eraseUserDataAll();
-
 //                      ee_test();
 //			        
 					break;
@@ -128,7 +126,6 @@ static void vTaskKey(void *pvParameters)
 //                    ef_env_set_default();
 //                    calcRunTime();       
 //                    bsp_ds1302_mdifytime("2020-03-31 10:18:20");
-                
                     log_d("bsp_ds1302_readtime = %s\r\n",bsp_ds1302_readtime());
 //                    ef_set_env_blob("device_sn","88888888",8); 
 //                    ef_print_env();
@@ -138,8 +135,8 @@ static void vTaskKey(void *pvParameters)
 					break;
 				case KEY_OK_PRES:    
 //                    test_env();
-                    log_w("KEY_DOWN_K4\r\n");
-                    ef_set_env_blob("sn_flag","0000",4); 
+                   
+                     log_d("KEY_DOWN_K4\r\n");
 //                    ef_set_env_blob("remote_sn","7A13DCC67054F72CC07F",20);
 //                ef_set_env_blob("remote_sn","823545AE9B2345B08FD8",20);
                     

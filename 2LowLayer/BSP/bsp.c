@@ -58,10 +58,8 @@ static void my_mem_init(void)
 	
     bsp_InitUart();
     bsp_Usart5_Init(9600);
-//    bsp_Usart5_Init(9600);
 
     FRAM_Init();              //eeprom初始化
-//    AT24CXX_Init();
     bsp_ds1302_init(); //DS1302_GPIO_Init();             //时钟芯片初始化
     
 //    bsp_rtc_init();             //初始化RTC，只能放在UART后面

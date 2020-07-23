@@ -40,20 +40,13 @@
 #define   HOST_PORT     1883    //由于是TCP连接，端口必须是1883
 
 #define DEVICE_PUBLISH		"/smartCloud/server/msg/device"	
-#define DEVICE_SUBSCRIBE	"/smartCloud/terminal/msg/"   
-
-
-
+#define DEVICE_SUBSCRIBE	"/smartCloud/terminal/msg/"  
 
 #define DEV_FACTORY_PUBLISH		"/smartCloud/production/msg/device"	
 #define DEV_FACTORY_SUBSCRIBE	"/smartCloud/production/msg/"    
 
 
-typedef struct
-{
-    char publish[128];   //发布的主题
-    char subscribe[128]; //订阅的主题
-}MQTT_TOPIC_STRU;
+
 
 
 /*----------------------------------------------*
@@ -63,7 +56,6 @@ typedef struct
 /*----------------------------------------------*
  * 模块级变量                                   *
  *----------------------------------------------*/
-extern MQTT_TOPIC_STRU gMqttTopic;
 /*----------------------------------------------*
  * 内部函数原型说明                             *
  *----------------------------------------------*/

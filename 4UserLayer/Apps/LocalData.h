@@ -42,31 +42,48 @@ FLASH操作思路：
  *----------------------------------------------*/
 #include "stm32f4xx.h" 
 
-#define HEAD_lEN 4                  //每条记录占4个字节
-#define MAX_HEAD_RECORD     32768   //最大32768条记录
+#define CARD_NO_LEN_ASC     8       //卡号ASC码长度
+#define CARD_NO_LEN_BCD     (CARD_NO_LEN_ASC/2) //卡号BCD码长度
+#define HEAD_lEN 8                  //每条记录占8个字节,4字节卡号，4字节flash中索引
+#define MAX_HEAD_RECORD     7680   //最大32768条记录
 #define SECTOR_SIZE         4096    //每个扇区大小
 
+#define MAX_HEAD_DEL_CARDNO     128   //最大可以在删除128张卡
+#define MAX_HEAD_DEL_USERID     128   //最大可以在删除128个用户ID
 
-#define CARD_NO_HEAD_SIZE   (HEAD_lEN*MAX_HEAD_RECORD)  //128K
+
+
+#define CARD_NO_HEAD_SIZE   (HEAD_lEN*MAX_HEAD_RECORD)  //60K
 #define USER_ID_HEAD_SIZE   (CARD_NO_HEAD_SIZE)
-#define CARD_DEL_HEAD_SIZE  (CARD_NO_HEAD_SIZE)
-#define USER_DEL_HEAD_SIZE  (CARD_NO_HEAD_SIZE)
+#define CARD_DEL_HEAD_SIZE  (HEAD_lEN*MAX_HEAD_DEL_CARDNO)   //1K
+#define USER_DEL_HEAD_SIZE  (HEAD_lEN*MAX_HEAD_DEL_USERID)
 
 
-#define CARD_HEAD_SECTOR_NUM     (CARD_NO_HEAD_SIZE/SECTOR_SIZE) //32个扇区
+#define CARD_HEAD_SECTOR_NUM     (CARD_NO_HEAD_SIZE/SECTOR_SIZE) //15个扇区
 #define USER_HEAD_SECTOR_NUM     (CARD_HEAD_SECTOR_NUM)
-#define CARD_HEAD_DEL_SECTOR_NUM (CARD_HEAD_SECTOR_NUM)
-#define USER_HEAD_DEL_SECTOR_NUM (CARD_HEAD_SECTOR_NUM)
 
-#define HEAD_NUM_SECTOR     (SECTOR_SIZE/HEAD_lEN) //1024个
+#define HEAD_NUM_SECTOR     (SECTOR_SIZE/HEAD_lEN) //每个扇区存储512个卡号/用户ID
 
-
-//#define CARD_NO_HEAD_ADDR   0x400000
 //改为存储在铁电
-#define CARD_NO_HEAD_ADDR   0x000000
+#define CARD_NO_HEAD_ADDR   0x0000
 #define USER_ID_HEAD_ADDR   (CARD_NO_HEAD_ADDR+CARD_NO_HEAD_SIZE)
 #define CARD_DEL_HEAD_ADDR  (USER_ID_HEAD_ADDR+USER_ID_HEAD_SIZE)
 #define USER_DEL_HEAD_ADDR  (CARD_DEL_HEAD_ADDR+CARD_DEL_HEAD_SIZE)
+
+
+//基本参数存储长度及地址
+#define DEVICE_BASE_PARAM_SIZE (896)
+#define DEVICE_BASE_PARAM_ADDR (USER_DEL_HEAD_ADDR+USER_DEL_HEAD_SIZE)
+
+
+//表头的索引存储长度及地址
+#define RECORD_INDEX_SIZE   (128)
+#define RECORD_INDEX_ADDR   (DEVICE_BASE_PARAM_ADDR+DEVICE_BASE_PARAM_SIZE)
+
+//参数的存储地址
+#define DEVICE_TEMPLATE_PARAM_SIZE   (1024*2)
+#define DEVICE_TEMPLATE_PARAM_ADDR  (RECORD_INDEX_ADDR+RECORD_INDEX_SIZE) //参数存储分配4K空间
+
 
 
 #define CARD_NO_DATA_ADDR   0X500000
@@ -94,6 +111,7 @@ FLASH操作思路：
 #define USER_VALID                  CARD_VALID
 #define TABLE_HEAD                  0xAA
 
+#define NO_FIND_HEAD                (-1)
 
 
 /*----------------------------------------------*
@@ -107,21 +125,16 @@ FLASH操作思路：
 /*----------------------------------------------*
  * 模块级变量                                   *
  *----------------------------------------------*/
-extern volatile uint16_t gCurCardHeaderIndex;    //卡号索引
-extern volatile uint16_t gCurUserHeaderIndex;    //用户ID索引
-extern volatile uint16_t gDelCardHeaderIndex;    //已删除卡号索引
-extern volatile uint16_t gDelUserHeaderIndex;    //已删除用户ID索引
-extern volatile uint16_t gCurRecordIndex;
+//extern volatile uint16_t gCurCardHeaderIndex;    //卡号索引
+//extern volatile uint16_t gCurUserHeaderIndex;    //用户ID索引
+//extern volatile uint16_t gDelCardHeaderIndex;    //已删除卡号索引
+//extern volatile uint16_t gDelUserHeaderIndex;    //已删除用户ID索引
+//extern volatile uint16_t gCurRecordIndex;
 
 
 /*----------------------------------------------*
  * 内部函数原型说明                             *
  *----------------------------------------------*/
-typedef struct HEADER
-{    
-    uint8_t value[HEAD_lEN];     //表头的值
-    uint8_t flashIndex[2];       //在FLASH中的索引
-}HEADER_STRU;
 
 typedef enum 
 {
@@ -129,9 +142,20 @@ typedef enum
   ISFIND_YES 
 }ISFIND_ENUM;
 
+//表头数据
+typedef union
+{
+	uint32_t id;        //卡号
+	uint8_t sn[4];    //卡号按字符
+}HEADTPYE;
+
+typedef struct CARDHEADINFO
+{
+    HEADTPYE headData;  //卡号
+    uint32_t flashAddr; //在FLASH中的索引,其地址=索引*固定卡号内容长度+基地址 
+}HEADINFO_STRU;
 
 
-//HEADER_STRU cardNoHeader,userIdHeader;
 
 #pragma pack(1)
 typedef struct USERDATA
@@ -168,21 +192,29 @@ typedef struct USERSTATE
 void eraseHeadSector(void);
 void eraseDataSector(void);
 void eraseUserDataAll(void);
-uint8_t writeHeader(uint8_t* header,uint8_t mode,uint32_t *headIndex);
-ISFIND_ENUM searchHeaderIndex(uint8_t* header,uint8_t mode,uint16_t *index);
-uint8_t writeUserData(USERDATA_STRU userData,uint8_t mode);
+
+
+
+uint8_t writeUserData(USERDATA_STRU *userData,uint8_t mode);
+
 uint8_t readUserData(uint8_t* header,uint8_t mode,USERDATA_STRU *userData);
-uint8_t modifyUserData(USERDATA_STRU userData,uint8_t mode);
+
+uint8_t modifyUserData(USERDATA_STRU *userData,uint8_t mode);
+
 uint8_t delUserData(uint8_t *header,uint8_t mode);
 
 uint8_t writeDelHeader(uint8_t* header,uint8_t mode);
 //ISFIND_ENUM fIndex( uint8_t* header,uint8_t mode,uint16_t* index );
 
-
-
 void TestFlash(uint8_t mode);
 
 
+//add 2020.07.14
+int readHead(HEADINFO_STRU *head,uint8_t mode);
+
+void sortHead(HEADINFO_STRU *head,int length);
+
+void addHead(uint8_t *head,uint8_t mode);
 
 
 

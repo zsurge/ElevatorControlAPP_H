@@ -30,6 +30,11 @@
 #include "cJSON.h"
 #include "errorcode.h"
 #include "calcDevNO.h"
+#include "malloc.h"
+#include "bsp_MB85RC128.h"
+#include "bsp_ds1302.h"
+
+
 
 
 //设备在线状态
@@ -46,20 +51,20 @@
 #define DIRECTION_IN            1
 #define DIRECTION_OUT           2
 
+typedef uint8_t(*CallBackParam)(void * struParam,uint8_t mode,uint32_t len,uint32_t addr);
 
 void readTemplateData(void);
 
-void readCardAndUserIdIndex(void);
 
 void RestoreDefaultSetting(void);
 
 void SystemUpdate(void);
 
-void readDevState(void);
+//void readDevState(void);
 
-void SaveDevState(char state);
+void SaveDevState(uint32_t     state);
 
-void ReadLocalDevSn(void);
+//void ReadLocalDevSn(void);
 
 
 uint8_t packetPayload(USERDATA_STRU *localUserData,uint8_t *descJson);
@@ -67,6 +72,25 @@ uint8_t packetPayload(USERDATA_STRU *localUserData,uint8_t *descJson);
 uint8_t parseQrCode(uint8_t *jsonBuff,USERDATA_STRU *qrCodeInfo);
 //保存模板信息
 SYSERRORCODE_E saveTemplateParam(uint8_t *jsonBuff);
+
+
+//add 2020.07.06
+void initTemplateParam(void);
+void ClearTemplateParam(void);
+uint8_t optTemplateParam(void *stParam,uint8_t mode,uint32_t len,uint32_t addr);
+
+void initDevBaseParam(void);
+void ClearDevBaseParam(void);
+uint8_t optDevBaseParam(void *stParam,uint8_t mode,uint32_t len,uint32_t addr);
+
+void initRecordIndex(void);
+void ClearRecordIndex(void);
+uint8_t optRecordIndex(RECORDINDEX_STRU *recoIndex,uint8_t mode);
+
+
+
+void clearTemplateFRAM(void);
+
 
 
 #endif

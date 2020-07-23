@@ -82,15 +82,24 @@ static void vTaskHandShake(void *pvParameters)
     asc2bcd(bcdbuf,(uint8_t *)c_new_boot_times , 12, 0);
 
     //读取本地时间
-    log_d("bsp_ds1302_readtime= %s\r\n",bsp_ds1302_readtime());
+    log_i("bsp_ds1302_readtime= %s\r\n",bsp_ds1302_readtime());
 
     //读取模板数据
-    readTemplateData();
-    readDevState();
-    readCardAndUserIdIndex();
-    ReadLocalDevSn();
+//    readTemplateData();
+//    readDevState();
+//    clearTemplateFRAM();
+
+//    eraseUserDataAll();
+
+    initRecordIndex();
+    
+    initDevBaseParam();
+
+    initTemplateParam();
     
     DisplayDevInfo();
+
+
     
     vTaskDelay(500);
     vTaskDelete( NULL ); //删除自己

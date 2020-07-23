@@ -19,6 +19,9 @@
 /*----------------------------------------------*
  * 包含头文件                                   *
  *----------------------------------------------*/
+#define LOG_TAG    "DataProcess"
+#include "elog.h"
+
 #include "DataProcess_Task.h"
 #include "CmdHandle.h"
 #include "bsp_uart_fifo.h"
@@ -28,8 +31,7 @@
 #include "malloc.h"
 #include "tool.h"
 
-#define LOG_TAG    "DataProcess"
-#include "elog.h"
+
 static void test(void);
 
 /*----------------------------------------------*

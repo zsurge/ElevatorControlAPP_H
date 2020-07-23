@@ -179,10 +179,7 @@ static void AppObjCreate (void)
     {
         App_Printf("创建 xDataProcessQueue 消息队列失败!\r\n");
     }
-    else
-    {
-        App_Printf("create queue success!\r\n");
-    }   
+    
     
     xTransDataQueue = xQueueCreate((UBaseType_t ) QUEUE_LEN,/* 消息队列的长度 */
                               (UBaseType_t ) sizeof(char *));/* 消息的大小 */
@@ -190,10 +187,7 @@ static void AppObjCreate (void)
     {
         App_Printf("创建 xTransDataQueue 消息队列失败!\r\n");
     }
-    else
-    {
-        App_Printf("create queue success!\r\n");
-    }    
+   
 
     /*  创建 CountSem */
     CountSem_Handle = xSemaphoreCreateCounting(2,2);

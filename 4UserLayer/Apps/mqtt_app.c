@@ -6,6 +6,9 @@
 ** 生成日期		:2018-08-08
 ** 描述			:mqtt服务程序
 ************************************************************************************************************/
+#define LOG_TAG    "MQTTAPP"
+#include "elog.h"
+
 #include "mqtt_app.h"
 #include "MQTTPacket.h"
 #include "transport.h"
@@ -25,8 +28,7 @@
 
 
 
-#define LOG_TAG    "MQTTAPP"
-#include "elog.h"
+
 static void ackUp ( void );
 
 //static void showTask ( void );
@@ -108,14 +110,22 @@ MQTT_START:
         goto MQTT_reconnect;
     }
 
-	ReadLocalDevSn();
+
+log_e("2 gDevBaseParam.deviceCode.deviceSn = %s\r\n",gDevBaseParam.deviceCode.deviceSn);
+log_e("2 gDevBaseParam.mqttTopic.publish = %s\r\n",gDevBaseParam.mqttTopic.publish);
+log_e("2 gDevBaseParam.mqttTopic.subscribe = %s\r\n",gDevBaseParam.mqttTopic.subscribe);       
+log_e("2 gDevBaseParam.deviceCode.qrSn = %s\r\n",gDevBaseParam.deviceCode.qrSn);
+
+
+//	ReadLocalDevSn();
 
 //    strcpy(data.clientID.cstring,gDeviceId.deviceSn);
 //    strcat(data.clientID.cstring,time_to_timestamp());
     
-	data.clientID.cstring = gDeviceId.deviceSn;              
+//	data.clientID.cstring = gDevBaseParam.deviceCode.deviceSn;       
+	memcpy(data.clientID.cstring,gDevBaseParam.deviceCode.deviceSn,20);
 	data.keepAliveInterval = KEEPLIVE_TIME;         //保持活跃
-	data.username.cstring = USER_NAME;//gDeviceId.deviceSn;              //用户名
+	data.username.cstring = USER_NAME;//gDevBaseParam.deviceCode.deviceSn;              //用户名
 	data.password.cstring = PASSWORD;               //秘钥
 	data.MQTTVersion = MQTT_VERSION;                //3表示3.1版本，4表示3.11版本
 	data.cleansession = 1;
@@ -177,7 +187,7 @@ MQTT_START:
 				break;
 			//订阅主题 客户端订阅请求
 			case SUBSCRIBE://8
-				topicString.cstring = gMqttTopic.subscribe;
+				topicString.cstring = gDevBaseParam.mqttTopic.subscribe;
 
 				len = MQTTSerialize_subscribe ( ( unsigned char* ) buf, buflen, 0, msgid, 1, &topicString, &req_qos );
 				rc = transport_sendPacketBuffer ( gMySock, ( unsigned char* ) buf, len );

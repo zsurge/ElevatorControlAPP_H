@@ -27,6 +27,30 @@
  * 宏定义                                       *
  *----------------------------------------------*/
  #define UPGRADE_URL_MAX_LEN    300
+ #define MQTT_TOPIC_MAX_LEN     128
+
+ #define DEFAULT_INIVAL 0x55AA55CC
+ #define DEFAULT_DEV_NAME "ELEVATOR"
+
+ #define DEVICE_DISABLE 0x00
+ #define DEVICE_ENABLE  0x5555AAAA
+
+ #define WRITE_PRARM    0x01
+ #define READ_PRARM     0x02
+
+
+//#define DEFAULT_TEMPLATE_PARAM                                              
+//{                                                                             
+//    {.id = 1,
+//    .modeType = "5",
+//    .templateCode = "100000",
+//    .templateName = "defaultName",
+//    .templateStatus = 1,
+//    .callingWay = "1,2,3",
+//    .offlineProcessing = 2
+//    }
+//}
+
 
 /*----------------------------------------------*
  * 常量定义                                     *
@@ -73,9 +97,17 @@
      uint8_t outsideTimeMode[20];
      uint8_t outsideTimeData[20];          
  }TEMPLATE_SET_DATA_STRU;
+
+typedef union
+{
+	unsigned int iFlag;        //
+	unsigned char cFlag[4];    //卡号按字符
+}DEVICE_SWITCH;
+
  
  typedef struct
  {
+     DEVICE_SWITCH initFlag;   //初始化标志\x55\xAA\x55\xBB认定为已做初始化
      uint8_t id;
      uint8_t modeType[8];
      uint8_t templateCode[20];
@@ -103,18 +135,11 @@ typedef enum UPGRADE_STATUS
     UPGRADE_FAILED
 }UPGRADE_STATUS_ENUM;
 
-//设备状态
-typedef enum DEVICE_STATUS
-{
-    DEVICE_DISABLE = 0,
-    DEVICE_ENABLE
-}DEVICE_STATUS_ENUM;
-
 typedef struct DEVICE_ID
 {
-    char downLoadFlag;       //0x00未下载SN，使用MAC做为默认SN；0x01，已下载SN
-    char qrSn[8];            //二维码下发的本机ID
-    char deviceSn[32];       //MQTT 订阅时的SN      
+    DEVICE_SWITCH downLoadFlag;       //
+    char qrSn[8];                     //二维码下发的本机ID
+    char deviceSn[32];                //MQTT 订阅时的SN      
 }DEVICE_ID_STRU;
 
 typedef struct UPGRADE_URL
@@ -124,15 +149,50 @@ typedef struct UPGRADE_URL
     char retUrl[UPGRADE_URL_MAX_LEN];//通知服务器升级状态的数据
 }UPGRADE_URL_STRU;
 
+typedef struct
+{
+    char publish[MQTT_TOPIC_MAX_LEN];   //发布的主题
+    char subscribe[MQTT_TOPIC_MAX_LEN]; //订阅的主题
+}MQTT_TOPIC_STRU;
+
+
+
+
+typedef struct DEV_BASE_PARAM
+{
+    //设备状态
+    DEVICE_SWITCH deviceState; //\x55\xAA\x55\xBB 设备可用  
+    
+    //SN
+    DEVICE_ID_STRU deviceCode;
+
+    //升级参数
+    UPGRADE_URL_STRU upgradeInfo;   
+
+    //MQTT参数
+    MQTT_TOPIC_STRU mqttTopic;    
+}DEV_BASE_PARAM_STRU;
+
+///////////////////////FLASH相关///////////////////////////////////////////
+
+//存储表头的一些索引值
+typedef struct RECORDINDEX
+{
+    volatile uint32_t cardNoIndex;      //当前已存储了多少个卡号
+    volatile uint32_t userIdIndex;      //当前已存储了多少个用户号
+    volatile uint32_t delCardNoIndex;   //当前已存储了多少个已删除的卡号
+    volatile uint32_t delUserIdIndex;   //当前已存储了多少个已删除的用户号
+}RECORDINDEX_STRU;
+
 
 
 /*----------------------------------------------*
  * 模块级变量                                   *
  *----------------------------------------------*/
-extern DEVICE_ID_STRU gDeviceId;
-extern TEMPLATE_PARAM_STRU gTemplateParam;
+extern TEMPLATE_PARAM_STRU gtemplateParam;
+extern DEV_BASE_PARAM_STRU gDevBaseParam;
+extern RECORDINDEX_STRU gRecordIndex;
 
-extern uint8_t gDeviceStateFlag;
 
 /*----------------------------------------------*
  * 内部函数原型说明                             *

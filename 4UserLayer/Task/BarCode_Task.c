@@ -139,7 +139,7 @@ static void vTaskBarCode(void *pvParameters)
               
 //            dbh("reader", recv_buf, len);
             //添加模版是否启用的判定
-            if(gTemplateParam.templateStatus == 0)
+            if(gtemplateParam.templateStatus == 0)
             {
                 //2020-03-18 这里应该发送电梯不接受控制的指令，而不是不用continue,
                 //在授权方式那里，添加控制类型，并定义控制指令，发给电梯
@@ -154,13 +154,13 @@ static void vTaskBarCode(void *pvParameters)
             {
                 log_d("the template is enable\r\n");
                 //判定高峰节假日模式是否开启
-                if(gTemplateParam.workMode.isPeakMode || gTemplateParam.workMode.isHolidayMode)
+                if(gtemplateParam.workMode.isPeakMode || gtemplateParam.workMode.isHolidayMode)
                 {
                     //读取当前时间
                     memcpy(localTime,bsp_ds1302_readtime(),8);
                     
                     //判定节假日模板有效期
-                    if(compareDate(localTime,gTemplateParam.peakInfo[0].endTime) < 0) //在有效期内
+                    if(compareDate(localTime,gtemplateParam.peakInfo[0].endTime) < 0) //在有效期内
                     {   
                         log_d("in the peak mode valid date \r\n");
                         
@@ -180,10 +180,10 @@ static void vTaskBarCode(void *pvParameters)
                         else
                         {
                             log_d("peak mode  >in the control time \r\n");
-                            packetUserData((char *)recv_buf,gTemplateParam.peakCallingWay.isIcCard,gTemplateParam.peakCallingWay.isQrCode,ptQR);
+                            packetUserData((char *)recv_buf,gtemplateParam.peakCallingWay.isIcCard,gtemplateParam.peakCallingWay.isQrCode,ptQR);
                             //没有指定不受控日期 或 当前日期在有效期内
                             //添加节假日的呼梯方式的判定
-//                            if(gTemplateParam.peakCallingWay.isIcCard == 0)
+//                            if(gtemplateParam.peakCallingWay.isIcCard == 0)
 //                            {
 //                                //赋值   
 //                                if(ptQR->authMode == AUTH_MODE_CARD)
@@ -193,7 +193,7 @@ static void vTaskBarCode(void *pvParameters)
 //                                }
 //                            }
 
-//                            if(gTemplateParam.peakCallingWay.isQrCode == 0)
+//                            if(gtemplateParam.peakCallingWay.isQrCode == 0)
 //                            {
 //                                //赋值   
 //                                if(ptQR->authMode == AUTH_MODE_QR)
@@ -209,18 +209,18 @@ static void vTaskBarCode(void *pvParameters)
                     {
                         //不在有效期内
                         //判定模板的呼梯方式
-//                        if(gTemplateParam.templateCallingWay.isIcCard)
+//                        if(gtemplateParam.templateCallingWay.isIcCard)
 //                        {
 //                            //赋值                                
 //                        }
 
-//                        if(gTemplateParam.templateCallingWay.isQrCode)
+//                        if(gtemplateParam.templateCallingWay.isQrCode)
 //                        {
 //                            //赋值                                
 //                        } 
                         log_d("outside peak mode the valid date \r\n");
 
-                        packetUserData((char *)recv_buf,gTemplateParam.templateCallingWay.isIcCard,gTemplateParam.templateCallingWay.isQrCode,ptQR);
+                        packetUserData((char *)recv_buf,gtemplateParam.templateCallingWay.isIcCard,gtemplateParam.templateCallingWay.isQrCode,ptQR);
 
                     }
 
@@ -228,17 +228,17 @@ static void vTaskBarCode(void *pvParameters)
                  else
                  {
                     //判定模板的呼梯方式
-//                    if(gTemplateParam.templateCallingWay.isIcCard)
+//                    if(gtemplateParam.templateCallingWay.isIcCard)
 //                    {
 //                        //赋值                                
 //                    }
 
-//                    if(gTemplateParam.templateCallingWay.isQrCode)
+//                    if(gtemplateParam.templateCallingWay.isQrCode)
 //                    {
 //                        //赋值                                
 //                    }  
                     log_d("Now it's normal operation mode \r\n");
-                    packetUserData((char *)recv_buf,gTemplateParam.templateCallingWay.isIcCard,gTemplateParam.templateCallingWay.isQrCode,ptQR);
+                    packetUserData((char *)recv_buf,gtemplateParam.templateCallingWay.isIcCard,gtemplateParam.templateCallingWay.isQrCode,ptQR);
 
                  }  
 
@@ -303,12 +303,12 @@ static void vTaskBarCode(void *pvParameters)
         memcpy(sendBuff,gReaderData.rxBuff,len);        
         memset(&gReaderData,0x00,sizeof(FROMREADER_STRU));
         
-        if(len > 10  && sendBuff[len-1] == 0x0A && sendBuff[len-2] == 0x0D && gDeviceStateFlag == DEVICE_ENABLE)
+        if(len > 10  && sendBuff[len-1] == 0x0A && sendBuff[len-2] == 0x0D && gDevBaseParam.deviceState.iFlag == DEVICE_ENABLE)
         {       
 //            comClearRxFifo(COM5);
 //            bsp_Usart5_RecvReset();
-            log_d("sendbuff = %s\r\n",sendBuff);
-            dbh("sendbuff hex",sendBuff,len);
+            log_i("card or qr = %s\r\n",sendBuff);
+            dbh("sendbuff hex",(char *)sendBuff,len);
 
             // 获取任务通知 , 没获取到则不等待
             xReturn = xSemaphoreTake(CountSem_Handle,0); /*  等待时间：0 */
@@ -320,7 +320,7 @@ static void vTaskBarCode(void *pvParameters)
 //                log_d("2 semavalue = %d,xReturn = %d\r\n",semavalue,xReturn);
                 
                 //添加模版是否启用的判定
-                if(gTemplateParam.templateStatus == 0 || gTemplateParam.offlineProcessing == 1 || gDeviceStateFlag == DEVICE_DISABLE)
+                if(gtemplateParam.templateStatus == 0 || gtemplateParam.offlineProcessing == 1)
                 {
                     //2020-03-18 这里应该发送电梯不接受控制的指令，而不是不用continue,
                     //在授权方式那里，添加控制类型，并定义控制指令，发给电梯
@@ -346,13 +346,13 @@ static void vTaskBarCode(void *pvParameters)
                 {
 //                    log_d("the template is enable\r\n");
                     //判定高峰节假日模式是否开启
-                    if(gTemplateParam.workMode.isPeakMode || gTemplateParam.workMode.isHolidayMode)
+                    if(gtemplateParam.workMode.isPeakMode || gtemplateParam.workMode.isHolidayMode)
                     {
                         //读取当前时间
                         strcpy((char*)localTime,(const char*)bsp_ds1302_readtime());
                         
                         //判定节假日模板有效期
-                        if(compareDate(localTime,gTemplateParam.peakInfo[0].endTime) < 0) //在有效期内
+                        if(compareDate(localTime,gtemplateParam.peakInfo[0].endTime) < 0) //在有效期内
                         {   
                             log_d("in the peak mode valid date \r\n");
                             
@@ -372,7 +372,7 @@ static void vTaskBarCode(void *pvParameters)
                             else
                             {
                                 log_d("peak mode  >in the control time \r\n");
-                                packetUserData((char *)sendBuff,gTemplateParam.peakCallingWay.isIcCard,gTemplateParam.peakCallingWay.isQrCode,ptQR);
+                                packetUserData((char *)sendBuff,gtemplateParam.peakCallingWay.isIcCard,gtemplateParam.peakCallingWay.isQrCode,ptQR);
                                 //没有指定不受控日期 或 当前日期在有效期内
                                 //添加节假日的呼梯方式的判定
                                     
@@ -384,7 +384,7 @@ static void vTaskBarCode(void *pvParameters)
                             //判定模板的呼梯方式
                             log_d("outside peak mode the valid date \r\n");
 
-                            packetUserData((char *)sendBuff,gTemplateParam.templateCallingWay.isIcCard,gTemplateParam.templateCallingWay.isQrCode,ptQR);
+                            packetUserData((char *)sendBuff,gtemplateParam.templateCallingWay.isIcCard,gtemplateParam.templateCallingWay.isQrCode,ptQR);
 
                         }
 
@@ -393,7 +393,7 @@ static void vTaskBarCode(void *pvParameters)
                      {
                         //判定模板的呼梯方式
 //                        log_d("Now it's normal operation mode \r\n");
-                        packetUserData((char *)sendBuff,gTemplateParam.templateCallingWay.isIcCard,gTemplateParam.templateCallingWay.isQrCode,ptQR);
+                        packetUserData((char *)sendBuff,gtemplateParam.templateCallingWay.isIcCard,gtemplateParam.templateCallingWay.isQrCode,ptQR);
 
                      }  
 
@@ -412,7 +412,7 @@ static void vTaskBarCode(void *pvParameters)
                         else
                         {
                             log_d("xQueueSend ok\r\n");     
-                            log_e("ptQR = %s,len = %d,state = %d\r\n",ptQR->data,ptQR->dataLen,ptQR->state);
+                            log_d("ptQR = %s,len = %d,state = %d\r\n",ptQR->data,ptQR->dataLen,ptQR->state);
                         }
                         
                     }
@@ -538,7 +538,7 @@ static int compareTime(uint8_t *currentTime)
 
     int begin1,begin2,begin3,end1,end2,end3;
 
-    if(strlen((const char*)gTemplateParam.holidayMode[0].startTime)==0 && strlen((const char*)gTemplateParam.holidayMode[1].startTime)==0 && strlen((const char*)gTemplateParam.holidayMode[2].startTime)==0)
+    if(strlen((const char*)gtemplateParam.holidayMode[0].startTime)==0 && strlen((const char*)gtemplateParam.holidayMode[1].startTime)==0 && strlen((const char*)gtemplateParam.holidayMode[2].startTime)==0)
     {
         //没有指定时间段
         ret = 0;
@@ -556,45 +556,45 @@ static int compareTime(uint8_t *currentTime)
     
     //17:30
     memset(buff,0x00,sizeof(buff));
-    memcpy(buff,gTemplateParam.holidayMode[0].startTime,2);
+    memcpy(buff,gtemplateParam.holidayMode[0].startTime,2);
     begin1 = atoi(buff)*60;
     memset(buff,0x00,sizeof(buff));
-    memcpy(buff,gTemplateParam.holidayMode[0].startTime+3,2);
+    memcpy(buff,gtemplateParam.holidayMode[0].startTime+3,2);
     begin1 += atoi(buff); 
 
     memset(buff,0x00,sizeof(buff));
-    memcpy(buff,gTemplateParam.holidayMode[1].startTime,2);
+    memcpy(buff,gtemplateParam.holidayMode[1].startTime,2);
     begin2 = atoi(buff)*60;
     memset(buff,0x00,sizeof(buff));
-    memcpy(buff,gTemplateParam.holidayMode[1].startTime+3,2);
+    memcpy(buff,gtemplateParam.holidayMode[1].startTime+3,2);
     begin2 += atoi(buff);   
 
     memset(buff,0x00,sizeof(buff));
-    memcpy(buff,gTemplateParam.holidayMode[2].startTime,2);
+    memcpy(buff,gtemplateParam.holidayMode[2].startTime,2);
     begin3 = atoi(buff)*60;
     memset(buff,0x00,sizeof(buff));
-    memcpy(buff,gTemplateParam.holidayMode[2].startTime+3,2);
+    memcpy(buff,gtemplateParam.holidayMode[2].startTime+3,2);
     begin3 += atoi(buff);   
 
     memset(buff,0x00,sizeof(buff));
-    memcpy(buff,gTemplateParam.holidayMode[0].endTime,2);
+    memcpy(buff,gtemplateParam.holidayMode[0].endTime,2);
     end1 = atoi(buff)*60;
     memset(buff,0x00,sizeof(buff));
-    memcpy(buff,gTemplateParam.holidayMode[0].endTime+3,2);
+    memcpy(buff,gtemplateParam.holidayMode[0].endTime+3,2);
     end1 += atoi(buff);   
     
     memset(buff,0x00,sizeof(buff));
-    memcpy(buff,gTemplateParam.holidayMode[1].endTime,2);
+    memcpy(buff,gtemplateParam.holidayMode[1].endTime,2);
     end2 = atoi(buff)*60;
     memset(buff,0x00,sizeof(buff));
-    memcpy(buff,gTemplateParam.holidayMode[1].endTime+3,2);
+    memcpy(buff,gtemplateParam.holidayMode[1].endTime+3,2);
     end2 += atoi(buff);   
     
     memset(buff,0x00,sizeof(buff));
-    memcpy(buff,gTemplateParam.holidayMode[2].endTime,2);
+    memcpy(buff,gtemplateParam.holidayMode[2].endTime,2);
     end3 = atoi(buff)*60;
     memset(buff,0x00,sizeof(buff));
-    memcpy(buff,gTemplateParam.holidayMode[2].endTime+3,2);
+    memcpy(buff,gtemplateParam.holidayMode[2].endTime+3,2);
     end3 += atoi(buff);       
 
 
@@ -649,7 +649,8 @@ static void packetUserData(char *src,int icFlag,int qrFlag,READER_BUFF_STRU *des
         //QR
         readerBuff.authMode = AUTH_MODE_QR;   
         asc2bcd(bcdBuff, (uint8_t *)src, readerBuff.dataLen, 0);
-        Des3_2(key, bcdBuff, readerBuff.dataLen/2, readerBuff.data, 1);
+        Des3_2(key, bcdBuff, readerBuff.dataLen/2, (uint8_t *)readerBuff.data, 1);
+        log_i("QR = %s\r\n",readerBuff.data);
     }
     else
     {
@@ -658,9 +659,9 @@ static void packetUserData(char *src,int icFlag,int qrFlag,READER_BUFF_STRU *des
 //        offset -= 16;
         //CARD 120065AA89000000000 所以offset = 7
         memcpy(readerBuff.data,src + 9,readerBuff.dataLen);
-    }
 
-    log_d("readerBuff.data = %s,len = %d\r\n",readerBuff.data, readerBuff.dataLen);
+        log_i("card NO. = %s\r\n",readerBuff.data);
+    }
     
     if(icFlag == 0)
     {
@@ -692,11 +693,8 @@ static void packetUserData(char *src,int icFlag,int qrFlag,READER_BUFF_STRU *des
 
 static uint8_t parseReader(void)
 {
-    uint8_t ch = 0;
-
-    uint8_t ppp[512] = {0};
+    uint8_t ch = 0;   
     
-
     while(1)
     {    
         //读取485数据，若是没读到，退出，再重读

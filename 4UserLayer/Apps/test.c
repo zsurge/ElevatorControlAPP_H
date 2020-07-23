@@ -48,43 +48,6 @@ static char *createRandom(void)
 }
 
 
-
-
-void wirteHeadTest(void)
-{
-    int i = 0;
-    uint8_t ret = 1;
-    uint32_t  headIndex = 0;
-    USERDATA_STRU tempUserData = {0};
-    memset(&tempUserData,0x00,sizeof(USERDATA_STRU));
-
-    memcpy(tempUserData.userId,"12345678",8)     ;
-    tempUserData.accessFloor[0] = 15;
-    tempUserData.accessFloor[1] = 16;
-    tempUserData.defaultFloor = 15;
-    memcpy(tempUserData.startTime,"2020-01-01",10);
-    memcpy(tempUserData.startTime,"2029-12-31",10);
-    tempUserData.cardState = 1;
-    
-    for(i=0;i<HEAD_MAX_NUM;i++)
-    {
-        memcpy(tempUserData.cardNo,createRandom(),8);
-//        ret = writeUserData(tempUserData,CARD_MODE);
-
-        ret = writeHeader(tempUserData.cardNo,1,&headIndex);
-
-        if(ret != 0)
-        {
-            printf("i=%d",i);
-            break;
-        }  
-    }
-
-    printf("wirteHeadTest end \r\n");
-}
-
-
-
 void searchHeadTest(uint8_t* header)
 {
     uint16_t index = 0;

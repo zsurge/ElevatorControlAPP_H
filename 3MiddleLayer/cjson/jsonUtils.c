@@ -20,6 +20,9 @@
 /*----------------------------------------------*
  * 包含头文件                                   *
  *----------------------------------------------*/
+#define LOG_TAG    "jsonutils"
+#include "elog.h"
+
 #include "jsonUtils.h"
 #include "version.h"
 #include "calcDevNO.h"
@@ -264,7 +267,7 @@ SYSERRORCODE_E PacketDeviceInfo ( const uint8_t* jsonBuff,const uint8_t* descJso
         cJSON_AddStringToObject(dataObj, "appName", (const char*)gDevinfo.Model);
 
         memset(buf,0x00,sizeof(buf));
-        sprintf(buf,"%d",gCurCardHeaderIndex);
+        sprintf(buf,"%d",gRecordIndex.cardNoIndex);
         cJSON_AddStringToObject(dataObj, "regRersion", buf);
         cJSON_AddStringToObject(dataObj, "regface", " ");
         cJSON_AddStringToObject(dataObj, "ip", (const char*)gDevinfo.GetIP());
@@ -442,7 +445,7 @@ SYSERRORCODE_E getTimePacket(uint8_t *descBuf)
     } 
     
     cJSON_AddStringToObject(root,"commandCode","3013");
-    cJSON_AddStringToObject(root,"deviceCode",gDeviceId.deviceSn);
+    cJSON_AddStringToObject(root,"deviceCode",gDevBaseParam.deviceCode.deviceSn);
      
     tmpBuf = cJSON_PrintUnformatted(root); 
 

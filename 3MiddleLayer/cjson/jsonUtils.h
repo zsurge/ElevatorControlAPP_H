@@ -24,8 +24,7 @@
 #include <stdio.h>
 #include "cJSON.h"
 
-#define LOG_TAG    "jsonutils"
-#include "elog.h"
+
 
 /*----------------------------------------------*
  * 包含头文件                                   *
@@ -34,7 +33,7 @@
 /*----------------------------------------------*
  * 宏定义                                       *
  *----------------------------------------------*/
-#define JSON_ITEM_MAX_LEN   1024*1 
+#define JSON_ITEM_MAX_LEN   1024*2 
 #define CARD_NO_LEN             (8)
 #define USER_ID_LEN             (8)
 #define FLOOR_ARRAY_LEN         (64) //每个普通用户最多10个层权限

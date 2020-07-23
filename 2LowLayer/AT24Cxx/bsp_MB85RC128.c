@@ -57,7 +57,7 @@
 #define ADDR_3rd_CYCLE(ADDR)       (uint8_t)(((ADDR)& 0xFF0000UL) >> 16)   /* 3rd addressing cycle */
 #define ADDR_4th_CYCLE(ADDR)       (uint8_t)(((ADDR)& 0xFF000000UL) >> 24) /* 4th addressing cycle */
 
-#define FRAMSIZE (1*1024)
+#define FRAMSIZE (1*1024*1024)
 
 
 /* CONSTANTS  ----------------------------------------------------------------- */

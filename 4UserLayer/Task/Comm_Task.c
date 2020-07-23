@@ -20,6 +20,9 @@
 /*----------------------------------------------*
  * 包含头文件                                   *
  *----------------------------------------------*/
+#define LOG_TAG    "CommTask"
+#include "elog.h"
+
 #include "Comm_Task.h"
 #include "CmdHandle.h"
 #include "bsp_uart_fifo.h"
@@ -28,8 +31,7 @@
 #include "bsp_usart6.h"
 #include "malloc.h"
 
-#define LOG_TAG    "CommTask"
-#include "elog.h"
+
 
 /*----------------------------------------------*
  * 宏定义                                       *
