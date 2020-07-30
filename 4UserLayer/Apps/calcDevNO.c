@@ -168,7 +168,10 @@ unsigned char findDev(unsigned char *str,unsigned char dataFormat)
 
     memset(tmpBuff,0x00,sizeof(tmpBuff));
 
-    memcpy(tmpBuff,gDevBaseParam.deviceCode.qrSn,8);
+//    memcpy(tmpBuff,gDevBaseParam.deviceCode.qrSn,8);
+
+    //Îª²âÊÔ£¬¸ÄÎª4 2020.07.29
+    memcpy(tmpBuff,gDevBaseParam.deviceCode.qrSn,4);
 
     devSN = atoi((const char*)tmpBuff);
 
@@ -179,7 +182,7 @@ unsigned char findDev(unsigned char *str,unsigned char dataFormat)
         memset(buf,0x00,sizeof(buf));
         memcpy(buf,str+i*dataFormat,dataFormat);
         tmpValue = myAtoi(buf);
-        
+        printf("current devSn = %d,format(90) = %s,decimal = %d\r\n",devSN,buf,tmpValue);
         if(devSN == tmpValue)
         {
             isFind = 1;

@@ -24,6 +24,7 @@
 #include "elog.h"
 
 #include "ini.h"
+#include "stdlib.h"
 
 
 TEMPLATE_PARAM_STRU gtemplateParam;
@@ -295,7 +296,7 @@ uint8_t packetPayload(USERDATA_STRU *localUserData,uint8_t *descJson)
     }
 
     cJSON_AddStringToObject(root, "deviceCode", gDevBaseParam.deviceCode.deviceSn);
-    log_d("deviceCode = %s",gDevBaseParam.deviceCode.deviceSn);
+    log_d("deviceCode = %s\r\n",gDevBaseParam.deviceCode.deviceSn);
     
     cJSON_AddItemToObject(root, "data", dataObj);
 
@@ -383,7 +384,12 @@ uint8_t parseQrCode(uint8_t *jsonBuff,USERDATA_STRU *qrCodeInfo)
     log_d("qrCodeInfo->endTime= %s\r\n",qrCodeInfo->endTime); 
     
     tmpArray = cJSON_GetObjectItem(root, "qI");
-    strcpy((char *)qrCodeInfo->userId,tmpArray->valuestring);
+//    strcpy((char *)qrCodeInfo->userId,tmpArray->valueint);
+//modify 2020.07.29
+
+//    log_d("QI= %d\r\n",tmpArray->valueint);
+    sprintf((char*)qrCodeInfo->userId,"%d",tmpArray->valueint);
+//    itoa(tmpArray->valueint, (char*)qrCodeInfo->userId, 10);
     log_d("qrCodeInfo->qrID= %s\r\n",qrCodeInfo->userId); 
 
     tmpArray = cJSON_GetObjectItem(root, "t");

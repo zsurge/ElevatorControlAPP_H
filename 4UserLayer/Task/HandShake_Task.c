@@ -128,6 +128,7 @@ static void DisplayDevInfo(void)
 	printf("BulidDate :%s\r\n", gDevinfo.BulidDate);
 	printf("DevSn :%s\r\n", gDevinfo.GetSn());
     printf("Devip :%s\r\n", gDevinfo.GetIP());
+	printf("DevID :%s\r\n", gDevBaseParam.deviceCode.qrSn);
 }
 
 

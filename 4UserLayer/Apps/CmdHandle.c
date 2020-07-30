@@ -1608,6 +1608,7 @@ static SYSERRORCODE_E SetLocalSn( uint8_t* msgBuf )
     
     memcpy(gDevBaseParam.deviceCode.deviceSn,deviceCode,strlen((const char*)deviceCode));
     memcpy(gDevBaseParam.deviceCode.qrSn,deviceID,strlen((const char*)deviceID));
+
     gDevBaseParam.deviceCode.downLoadFlag.iFlag = DEFAULT_INIVAL;    
     
     strcpy ( gDevBaseParam.mqttTopic.publish,DEVICE_PUBLISH );

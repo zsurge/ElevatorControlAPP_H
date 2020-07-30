@@ -464,6 +464,7 @@ uint8_t modifyUserData ( USERDATA_STRU *userData,uint8_t mode )
 	uint8_t times = 3;
 	uint32_t addr = 0;
 	uint16_t index = 0;
+    HEADINFO_STRU head;
 
 	int32_t iTime1, iTime2;
 	//log_d("sizeof(USERDATA_STRU) = %d\r\n",sizeof(USERDATA_STRU));
@@ -482,15 +483,21 @@ uint8_t modifyUserData ( USERDATA_STRU *userData,uint8_t mode )
 
 	if ( mode == CARD_MODE )
 	{
-		memcpy ( header,userData->cardNo,CARD_USER_LEN );
+        asc2bcd (head.headData.sn, userData->cardNo,CARD_NO_LEN_ASC, 1 );
+	
+//		memcpy ( header,userData->cardNo,CARD_USER_LEN );
 	}
 	else
 	{
-		memcpy ( header,userData->userId,CARD_USER_LEN );
+        asc2bcd (head.headData.sn, userData->userId,CARD_NO_LEN_ASC, 1 );
+	
+//		memcpy ( header,userData->userId,CARD_USER_LEN );
 	}
 
 //	ret = searchHeaderIndex ( header,mode,&index );
-	ret = searchFlashIndex(header,mode,&index,fIndex);
+//	ret = searchFlashIndex(header,mode,&index,fIndex);
+
+    index = readHead(&head,mode);
 
 	//log_d("searchHeaderIndex ret = %d",ret);
 
@@ -564,6 +571,7 @@ uint8_t delUserData ( uint8_t* header,uint8_t mode )
 	uint8_t times = 3;
 	uint32_t addr = 0;
 	uint16_t index = 0;
+    HEADINFO_STRU head;
 
 	int32_t iTime1, iTime2;
 	//log_d("sizeof(USERDATA_STRU) = %d\r\n",sizeof(USERDATA_STRU));
@@ -579,9 +587,11 @@ uint8_t delUserData ( uint8_t* header,uint8_t mode )
 		//log_d("not enough speac storage the data\r\n");
 		return 1; //提示已经满了
 	}
+    asc2bcd (head.headData.sn, header,CARD_NO_LEN_ASC, 1 );
 
 //	ret = searchHeaderIndex ( header,mode,&index );
-	ret = searchFlashIndex(header,mode,&index,fIndex);
+//	ret = searchFlashIndex(header,mode,&index,fIndex);
+    index = readHead(&head,mode);
 
 	log_d ( "searchHeaderIndex index = %d",index );
 
@@ -715,23 +725,23 @@ uint8_t writeDelHeader ( uint8_t* header,uint8_t mode )
 	}
 
 	//这里需要保存
-	if ( mode == CARD_MODE )
-	{
-		gRecordIndex.delCardNoIndex++;
-		memset ( headCnt,0x00,sizeof ( headCnt ) );
-		sprintf ( ( char* ) headCnt,"%08d",gRecordIndex.delCardNoIndex );
-		ef_set_env_blob ( "DelCardHeaderIndex",headCnt,CARD_USER_LEN );
+//	if ( mode == CARD_MODE )
+//	{
+//		gRecordIndex.delCardNoIndex++;
+//		memset ( headCnt,0x00,sizeof ( headCnt ) );
+//		sprintf ( ( char* ) headCnt,"%08d",gRecordIndex.delCardNoIndex );
+//		ef_set_env_blob ( "DelCardHeaderIndex",headCnt,CARD_USER_LEN );
 
-	}
-	else
-	{
-		gRecordIndex.delUserIdIndex++;
-		memset ( headCnt,0x00,sizeof ( headCnt ) );
-		sprintf ( ( char* ) headCnt,"%08d",gRecordIndex.delUserIdIndex );
-		ef_set_env_blob ( "DelUserHeaderIndex",headCnt,CARD_USER_LEN );
-	}
+//	}
+//	else
+//	{
+//		gRecordIndex.delUserIdIndex++;
+//		memset ( headCnt,0x00,sizeof ( headCnt ) );
+//		sprintf ( ( char* ) headCnt,"%08d",gRecordIndex.delUserIdIndex );
+//		ef_set_env_blob ( "DelUserHeaderIndex",headCnt,CARD_USER_LEN );
+//	}
 
-	log_d ( "gRecordIndex.delCardNoIndex = %d,gRecordIndex.delUserIdIndex = %d\r\n",gRecordIndex.delCardNoIndex,gRecordIndex.delUserIdIndex );
+//	log_d ( "gRecordIndex.delCardNoIndex = %d,gRecordIndex.delUserIdIndex = %d\r\n",gRecordIndex.delCardNoIndex,gRecordIndex.delUserIdIndex );
 
 
 	return 0;
