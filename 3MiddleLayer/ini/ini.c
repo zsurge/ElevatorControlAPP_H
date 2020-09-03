@@ -847,8 +847,13 @@ void initTemplateParam(void)
         strcpy((char *)gtemplateParam.modeType,"5");
         strcpy((char *)gtemplateParam.templateCode,"100000");
         strcpy((char *)gtemplateParam.templateName,DEFAULT_DEV_NAME);
-        strcpy((char *)gtemplateParam.callingWay,"1,2,3");      
-      
+        strcpy((char *)gtemplateParam.callingWay,"1,2,3");    
+
+        gtemplateParam.peakCallingWay.isIcCard = 1;
+        gtemplateParam.peakCallingWay.isFace  = 1;
+        gtemplateParam.peakCallingWay.isQrCode  = 1;
+
+        log_d("-----------\r\n");
         
         ret = opParam(&gtemplateParam,WRITE_PRARM,sizeof(TEMPLATE_PARAM_STRU),DEVICE_TEMPLATE_PARAM_ADDR);
         if(ret == false)

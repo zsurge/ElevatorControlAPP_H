@@ -435,7 +435,9 @@ static SYSERRORCODE_E packetRemoteRequestToElevator(uint8_t *tagFloor,uint8_t le
     }
     else    //单层权限，直接呼默认权限楼层，自动
     {        
-        floor = tagFloor[0];   
+        floor = tagFloor[0];  
+
+//        log_e("1 floor = %d\r\n",floor);
         
         if(floor == 0)
         {
@@ -478,7 +480,7 @@ static void calcFloor(uint8_t layer,uint8_t regMode,uint8_t *src,uint8_t *outFlo
 {
     uint8_t div = 0;
     uint8_t remainder = 0;
-    uint8_t floor = layer + 3; //这里是因为有地下三层
+    uint8_t floor = 0; //这里是因为有地下三层
     uint8_t sendBuf[MAX_SEND_LEN+1] = {0};
     uint8_t tmpFloor = 0;
     uint8_t index = 0;
@@ -486,6 +488,25 @@ static void calcFloor(uint8_t layer,uint8_t regMode,uint8_t *src,uint8_t *outFlo
     memcpy(sendBuf,src,MAX_SEND_LEN);
 
 //    dbh("before", sendBuf, MAX_SEND_LEN);
+
+    if(layer == 253)
+    {
+        floor = 1;
+    }
+    else if(layer == 254)
+    {
+        floor = 2;
+    }
+    else if(layer == 255)
+    {
+        floor = 3;
+    }
+    else
+    {
+        floor = layer + 3;
+    }
+
+//    log_e("2 floor = %d\r\n",floor);
         
     div = floor / 8;
     remainder = floor % 8;

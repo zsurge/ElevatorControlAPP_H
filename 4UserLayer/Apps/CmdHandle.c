@@ -1174,12 +1174,16 @@ static SYSERRORCODE_E RemoteOptDev ( uint8_t* msgBuf )
 
     log_d("3005 = >> %s\r\n",msgBuf);
 
-    if(gtemplateParam.templateCallingWay.isFace && gDevBaseParam.deviceState.iFlag == DEVICE_ENABLE)
+    log_d("%d,%d\r\n",gtemplateParam.templateCallingWay.isFace,gDevBaseParam.deviceState.iFlag);
+    if(gDevBaseParam.deviceState.iFlag == DEVICE_ENABLE)
+//    if(gtemplateParam.templateCallingWay.isFace && gDevBaseParam.deviceState.iFlag == DEVICE_ENABLE)
     {
         //1.保存目标楼层
         memset(accessFloor,0x00,sizeof(accessFloor));
         strcpy((char *)accessFloor,(const char*)GetJsonItem((const uint8_t *)msgBuf,(const uint8_t *)"currentLayer",1));
         tagFloor[0] = atoi((const char*)accessFloor);
+
+        log_d("tagFloor = %d\r\n",tagFloor[0]);
 
         //3.保存楼层权限
         memset(accessFloor,0x00,sizeof(accessFloor));
@@ -1190,7 +1194,9 @@ static SYSERRORCODE_E RemoteOptDev ( uint8_t* msgBuf )
         {
             for(len=0;len<multipleFloorNum;len++)
             {
-                accessFloor[len] = atoi(multipleFloor[len]);
+                accessFloor[len] = atoi(multipleFloor[len]); 
+                
+                log_d("accessFloor[%d] = %d\r\n",len,accessFloor[len]);
             }
         }   
 

@@ -663,29 +663,29 @@ static void packetUserData(char *src,int icFlag,int qrFlag,READER_BUFF_STRU *des
         log_i("card NO. = %s\r\n",readerBuff.data);
     }
     
-    if(icFlag == 0)
-    {
-        //赋值   
-        if(readerBuff.authMode == AUTH_MODE_CARD)
-        {
-            readerBuff.state = DISABLE;
-            readerBuff.dataLen = 0;
-            memset(readerBuff.data,0x00,sizeof(readerBuff.data)); 
-            log_d("no support IC card\r\n");
-        }
-    }
-    
-    if(qrFlag == 0)
-    {
-        //赋值   
-        if(readerBuff.authMode == AUTH_MODE_QR)
-        {
-            readerBuff.state = DISABLE;
-            readerBuff.dataLen = 0;
-            memset(readerBuff.data,0x00,sizeof(readerBuff.data)); 
-            log_d("no support QR code\r\n");
-        }                              
-    } 
+//    if(icFlag == 0)
+//    {
+//        //赋值   
+//        if(readerBuff.authMode == AUTH_MODE_CARD)
+//        {
+//            readerBuff.state = DISABLE;
+//            readerBuff.dataLen = 0;
+//            memset(readerBuff.data,0x00,sizeof(readerBuff.data)); 
+//            log_d("no support IC card\r\n");
+//        }
+//    }
+//    
+//    if(qrFlag == 0)
+//    {
+//        //赋值   
+//        if(readerBuff.authMode == AUTH_MODE_QR)
+//        {
+//            readerBuff.state = DISABLE;
+//            readerBuff.dataLen = 0;
+//            memset(readerBuff.data,0x00,sizeof(readerBuff.data)); 
+//            log_d("no support QR code\r\n");
+//        }                              
+//    } 
     
     *desc = readerBuff;    
 }
