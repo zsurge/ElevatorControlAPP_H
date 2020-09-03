@@ -78,7 +78,7 @@ void packetSendBuf(READER_BUFF_STRU *pQueue)
     memset(localUserData,0x00,sizeof(USERDATA_STRU));
     
     sendBuf[0] = CMD_STX;
-    sendBuf[1] = bsp_dipswitch_read();
+    sendBuf[1] = 0x01;//bsp_dipswitch_read();
     sendBuf[MAX_SEND_LEN-1] = xorCRC(sendBuf,MAX_SEND_LEN-2);
     log_d("card or QR data = %s\r\n",pQueue->data);
 
@@ -113,7 +113,7 @@ void packetSendBuf(READER_BUFF_STRU *pQueue)
             break;
         case AUTH_MODE_REMOTE:
             //直接发送目标楼层
-            log_d("send desc floor = %s,%d\r\n",pQueue->data,pQueue->dataLen);  
+            log_d("send desc floor = %d,%d\r\n",pQueue->data[0],pQueue->dataLen);  
 
             ret = packetRemoteRequestToElevator(pQueue->data,pQueue->dataLen);
             if(ret != NO_ERR)
@@ -364,7 +364,7 @@ static SYSERRORCODE_E packetToElevator(USERDATA_STRU *localUserData)
     memset(sendBuf,0x00,sizeof(sendBuf));
     
     sendBuf[0] = CMD_STX;
-    sendBuf[1] = bsp_dipswitch_read();
+    sendBuf[1] = 0x01;//bsp_dipswitch_read();
     memcpy(sendBuf+2,tmpBuf,MAX_SEND_LEN-5);
     
     sendBuf[MAX_SEND_LEN-1] = xorCRC(sendBuf,MAX_SEND_LEN-2);  
@@ -448,7 +448,7 @@ static SYSERRORCODE_E packetRemoteRequestToElevator(uint8_t *tagFloor,uint8_t le
     memset(sendBuf,0x00,sizeof(sendBuf));
     
     sendBuf[0] = CMD_STX;
-    sendBuf[1] = bsp_dipswitch_read();
+    sendBuf[1] = 0x01;//bsp_dipswitch_read();
     memcpy(sendBuf+2,tmpBuf,MAX_SEND_LEN-5);
     
     sendBuf[MAX_SEND_LEN-1] = xorCRC(sendBuf,MAX_SEND_LEN-2);  

@@ -65,7 +65,7 @@ void NMI_Handler(void)
   * @retval None
   */
 
-#if 0  
+#if 1 
 void HardFault_Handler(void)
 {
     
@@ -103,14 +103,6 @@ void HardFault_Handler(void)
  	NVIC_SystemReset();
  	while(1)
  	{
-//	 	while(t<6)
-//		{
-//			t++;
-//			BEEP=!BEEP;
-//			for(i=0;i<0X1FF;i++);
-//	 	}
-// 	
-//	  	t = 0;
 	}
 }
 
