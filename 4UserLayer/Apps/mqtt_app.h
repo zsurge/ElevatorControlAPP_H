@@ -26,8 +26,8 @@
 
 
 //#define CONTENT				"7A13DCC67054F72CC07F"//"clientId"DEVICE_NAME"deviceName"DEVICE_NAME"productKey"PRODUCT_KEY"timestamp789"	//计算登录密码用
-//#define CLIENT_ID			DEVICE_NAME"|1233444444434234234234234234"											//客户端ID
-#define USER_NAME			"adm"																													//客户端用户名
+#define CLIENT_ID			DEVICE_NAME"|12334444234234"											//客户端ID
+#define USER_NAME			"admin"																													//客户端用户名
 #define PASSWORD			"1234567812345678"																			//客户端登录password通过hmac_sha1算法得到，大小写不敏感
 
 

@@ -116,16 +116,12 @@ log_e("2 gDevBaseParam.mqttTopic.publish = %s\r\n",gDevBaseParam.mqttTopic.publi
 log_e("2 gDevBaseParam.mqttTopic.subscribe = %s\r\n",gDevBaseParam.mqttTopic.subscribe);       
 log_e("2 gDevBaseParam.deviceCode.qrSn = %s\r\n",gDevBaseParam.deviceCode.qrSn);
 
-
-//	ReadLocalDevSn();
-
-//    strcpy(data.clientID.cstring,gDeviceId.deviceSn);
-//    strcat(data.clientID.cstring,time_to_timestamp());
     
-//	data.clientID.cstring = gDevBaseParam.deviceCode.deviceSn;       
-	memcpy(data.clientID.cstring,gDevBaseParam.deviceCode.deviceSn,20);
+    data.clientID.cstring = gDevBaseParam.deviceCode.deviceSn;		
 	data.keepAliveInterval = KEEPLIVE_TIME;         //保持活跃
-	data.username.cstring = USER_NAME;//gDevBaseParam.deviceCode.deviceSn;              //用户名
+	data.username.cstring = USER_NAME;//gDevBaseParam.deviceCode.deviceSn;              //用户名	
+//	memcpy(data.username.cstring,gDevBaseParam.deviceCode.deviceSn,20);
+
 	data.password.cstring = PASSWORD;               //秘钥
 	data.MQTTVersion = MQTT_VERSION;                //3表示3.1版本，4表示3.11版本
 	data.cleansession = 1;

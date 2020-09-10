@@ -27,7 +27,7 @@
 #include "deviceInfo.h"
 #include "stdlib.h"
 #include "bsp_ds1302.h"
-#include "des.h"
+
 #include "malloc.h"
 //#include "bsp_uart_fifo.h"
 #define LOG_TAG    "BarCode"
@@ -307,8 +307,8 @@ static void vTaskBarCode(void *pvParameters)
         {       
 //            comClearRxFifo(COM5);
 //            bsp_Usart5_RecvReset();
-            log_i("card or qr = %s\r\n",sendBuff);
-            dbh("sendbuff hex",(char *)sendBuff,len);
+            log_d("card or qr = %s\r\n",sendBuff);
+//            dbh("sendbuff hex",(char *)sendBuff,len);
 
             // 获取任务通知 , 没获取到则不等待
             xReturn = xSemaphoreTake(CountSem_Handle,0); /*  等待时间：0 */
@@ -647,10 +647,14 @@ static void packetUserData(char *src,int icFlag,int qrFlag,READER_BUFF_STRU *des
     if(strstr_t((const char*)src,(const char*)"CARD") == NULL)
     {
         //QR
+//        readerBuff.authMode = AUTH_MODE_QR;   
+//        asc2bcd(bcdBuff, (uint8_t *)src, readerBuff.dataLen, 0);
+//        Des3_2(key, bcdBuff, readerBuff.dataLen/2, (uint8_t *)readerBuff.data, 1);
+//        log_d("QR = %s\r\n",readerBuff.data);
+
         readerBuff.authMode = AUTH_MODE_QR;   
-        asc2bcd(bcdBuff, (uint8_t *)src, readerBuff.dataLen, 0);
-        Des3_2(key, bcdBuff, readerBuff.dataLen/2, (uint8_t *)readerBuff.data, 1);
-        log_i("QR = %s\r\n",readerBuff.data);
+        memcpy(readerBuff.data,src,readerBuff.dataLen);
+        log_d("QR = %s\r\n",readerBuff.data);
     }
     else
     {
