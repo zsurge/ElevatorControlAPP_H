@@ -63,7 +63,6 @@ int gConnectStatus = 0;
 int	gMySock = 0;
 uint8_t gUpdateDevSn = 0; 
 
-uint32_t gCurTick = 0;
 
 ELEVATOR_BUFF_STRU gElevtorData;
 
@@ -162,13 +161,9 @@ SYSERRORCODE_E exec_proc ( char* cmd_id, uint8_t *msg_buf )
 
 void Proscess(void* data)
 {
-    char cmd[8+1] = {0};
-    log_d("Start parsing JSON data\r\n");
-    
+    char cmd[8+1] = {0};    
     strcpy(cmd,(const char *)GetJsonItem ( data, ( const uint8_t* ) "commandCode",0 ));  
-
-    log_d("-----commandCode = %s-----\r\n",cmd);
-    
+    log_d("-----commandCode = %s-----\r\n",cmd);    
     exec_proc (cmd ,data);
 }
 
@@ -235,7 +230,6 @@ int mqttSendData(uint8_t *payload_out,uint16_t payload_out_len)
        rc = transport_sendPacketBuffer(gMySock, (unsigned char*)buf, len);
        if(rc == len) 
         {
-           gCurTick =  xTaskGetTickCount();
            log_d("send PUBLISH Successfully,rc = %d,len = %d\r\n",rc,len);
        }
        else
@@ -1320,19 +1314,19 @@ static SYSERRORCODE_E PCOptDev ( uint8_t* msgBuf )
 
 
 log_d("===============CARD_MODE==================\r\n");
-TestFlash(CARD_MODE);
+//TestFlash(CARD_MODE);
 
 
 log_d("===============USER_MODE==================\r\n");
-TestFlash(USER_MODE);
+//TestFlash(USER_MODE);
 
 
 log_d("===============CARD_DEL_MODE==================\r\n");
-TestFlash(CARD_DEL_MODE);
+//TestFlash(CARD_DEL_MODE);
 
 
 log_d("===============USER_DEL_MODE==================\r\n");
-TestFlash(USER_DEL_MODE);
+//TestFlash(USER_DEL_MODE);
 
 
 
@@ -1617,7 +1611,7 @@ static SYSERRORCODE_E SetLocalSn( uint8_t* msgBuf )
     memcpy(gDevBaseParam.deviceCode.deviceSn,deviceCode,gDevBaseParam.deviceCode.deviceSnLen);
     memcpy(gDevBaseParam.deviceCode.qrSn,deviceID,gDevBaseParam.deviceCode.qrSnLen);
 
-    gDevBaseParam.deviceCode.downLoadFlag.iFlag = DEFAULT_INIVAL;    
+    gDevBaseParam.deviceCode.downLoadFlag.iFlag = DEFAULT_BASE_INIVAL;    
     
     strcpy ( gDevBaseParam.mqttTopic.publish,DEVICE_PUBLISH );
     strcpy ( gDevBaseParam.mqttTopic.subscribe,DEVICE_SUBSCRIBE );    

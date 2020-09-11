@@ -956,6 +956,8 @@ SYSERRORCODE_E saveTemplateParam(uint8_t *jsonBuff)
     
     cJSON_Delete(root);
     
+    gtemplateParam.initFlag.iFlag = DEFAULT_INIVAL;   
+    
     ret = optTemplateParam(templateParam,WRITE_PRARM,sizeof(TEMPLATE_PARAM_STRU),DEVICE_TEMPLATE_PARAM_ADDR); 
     log_d("saveTemplateParam took %d ms to save\r\n",xTaskGetTickCount()-curtick);
 
@@ -986,8 +988,8 @@ void initTemplateParam(void)
         //模板数据赋值
         gtemplateParam.id = 1;
         gtemplateParam.templateStatus = 1;
-        gtemplateParam.offlineProcessing = 2;
-        gtemplateParam.initFlag.iFlag = DEFAULT_INIVAL;
+        gtemplateParam.offlineProcessing = 2;       
+        
         strcpy((char *)gtemplateParam.modeType,"5");
         strcpy((char *)gtemplateParam.templateCode,"100000");
         strcpy((char *)gtemplateParam.templateName,DEFAULT_DEV_NAME);
@@ -1099,7 +1101,7 @@ void initDevBaseParam(void)
         return;
     }
 
-    if(gDevBaseParam.deviceCode.downLoadFlag.iFlag != DEFAULT_INIVAL)
+    if(gDevBaseParam.deviceCode.downLoadFlag.iFlag != DEFAULT_BASE_INIVAL)
 	{	
 	    log_d("wirte default base data\r\n");
 	    ClearDevBaseParam();

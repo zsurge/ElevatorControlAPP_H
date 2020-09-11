@@ -73,9 +73,8 @@ void mqtt_thread ( void )
 	unsigned char retained = 0;
 
 	//获取当前滴答，作为心跳包起始时间
-//	uint32_t curtick  =	 xTaskGetTickCount();
-//	uint32_t sendtick =  xTaskGetTickCount(); 
-    gCurTick = xTaskGetTickCount();
+	uint32_t curtick  =	 xTaskGetTickCount();
+	uint32_t sendtick =  xTaskGetTickCount(); 
 
 
 	uint8_t msgtypes = CONNECT;		//消息状态初始化
@@ -128,11 +127,11 @@ log_d("2 gDevBaseParam.deviceCode.qrSn = %s,gDevBaseParam.deviceCode.qrSnLen = %
 
 	while ( 1 )
 	{
-		if ( ( xTaskGetTickCount() - gCurTick ) > ( data.keepAliveInterval*200 ) )		//每秒200次tick
+		if ( ( xTaskGetTickCount() - curtick ) > ( data.keepAliveInterval*200 ) )		//每秒200次tick
 		{
 			if ( msgtypes == 0 )
 			{
-				gCurTick =  xTaskGetTickCount();
+				curtick =  xTaskGetTickCount();
 				msgtypes = PINGREQ;
 			}
 		}

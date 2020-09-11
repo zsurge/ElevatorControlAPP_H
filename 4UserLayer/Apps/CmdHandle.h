@@ -80,7 +80,6 @@ extern ELEVATOR_BUFF_STRU gElevtorData;
 extern int gConnectStatus;
 extern int gMySock;
 extern uint8_t gUpdateDevSn; 
-extern uint32_t gCurTick;
 
 
 //发送消息到服务器

@@ -267,7 +267,7 @@ SYSERRORCODE_E PacketDeviceInfo ( const uint8_t* jsonBuff,const uint8_t* descJso
         cJSON_AddStringToObject(dataObj, "appName", (const char*)gDevinfo.Model);
 
         memset(buf,0x00,sizeof(buf));
-        sprintf(buf,"%d",gRecordIndex.cardNoIndex);
+        sprintf(buf,"%d",gRecordIndex.userIdIndex);
         cJSON_AddStringToObject(dataObj, "regRersion", buf);
         cJSON_AddStringToObject(dataObj, "regface", " ");
         cJSON_AddStringToObject(dataObj, "ip", (const char*)gDevinfo.GetIP());
