@@ -1105,18 +1105,19 @@ void initDevBaseParam(void)
 	    ClearDevBaseParam();
 	    
         //设备状态为启用状态
-        gDevBaseParam.deviceState.iFlag = DEVICE_ENABLE;        
+        gDevBaseParam.deviceState.iFlag = DEVICE_ENABLE;     
 
         calcMac ( (unsigned char*)mac);
         bcd2asc ( (unsigned char*)asc, (unsigned char*)mac, 12, 0 );
         Insertchar ( asc,temp,':' );
-        memcpy ( gDevBaseParam.deviceCode.deviceSn,temp,strlen ( temp )-1 );
+        gDevBaseParam.deviceCode.deviceSnLen = strlen ( temp )-1 ;
+        memcpy ( gDevBaseParam.deviceCode.deviceSn,temp,gDevBaseParam.deviceCode.deviceSnLen);
         strcpy ( gDevBaseParam.mqttTopic.publish,DEV_FACTORY_PUBLISH );
         strcpy ( gDevBaseParam.mqttTopic.subscribe,DEV_FACTORY_SUBSCRIBE );
-        strncat ( gDevBaseParam.mqttTopic.subscribe,gDevBaseParam.deviceCode.deviceSn,strlen ( temp )-1);
+        strncat ( gDevBaseParam.mqttTopic.subscribe,gDevBaseParam.deviceCode.deviceSn,gDevBaseParam.deviceCode.deviceSnLen);
         memcpy ( gDevBaseParam.deviceCode.qrSn,asc,8); //使用前8位做为本机的QRID
 
-        log_d("gDevBaseParam.deviceCode.deviceSn = %s,len = %d\r\n",gDevBaseParam.deviceCode.deviceSn,strlen ( temp )-1);
+        log_d("gDevBaseParam.deviceCode.deviceSn = %s,len = %d\r\n",gDevBaseParam.deviceCode.deviceSn,gDevBaseParam.deviceCode.deviceSnLen);
         log_d("gDevBaseParam.mqttTopic.publish = %s\r\n",gDevBaseParam.mqttTopic.publish);
         log_d("gDevBaseParam.mqttTopic.subscribe = %s\r\n",gDevBaseParam.mqttTopic.subscribe);       
         log_d("gDevBaseParam.deviceCode.qrSn = %s\r\n",gDevBaseParam.deviceCode.qrSn);

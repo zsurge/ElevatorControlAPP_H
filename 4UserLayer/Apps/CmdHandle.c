@@ -1610,21 +1610,19 @@ static SYSERRORCODE_E SetLocalSn( uint8_t* msgBuf )
     ClearDevBaseParam();
     optDevBaseParam(&gDevBaseParam,READ_PRARM,sizeof(DEV_BASE_PARAM_STRU),DEVICE_BASE_PARAM_ADDR);
     
-    log_d("gDevBaseParam.deviceCode.deviceSn = %s,len = %d\r\n",gDevBaseParam.deviceCode.deviceSn,strlen (gDevBaseParam.deviceCode.deviceSn));
-    
-    memcpy(gDevBaseParam.deviceCode.deviceSn,deviceCode,strlen((const char*)deviceCode));
-    memcpy(gDevBaseParam.deviceCode.qrSn,deviceID,strlen((const char*)deviceID));
+    log_d("gDevBaseParam.deviceCode.deviceSn = %s,len = %d\r\n",gDevBaseParam.deviceCode.deviceSn,gDevBaseParam.deviceCode.deviceSnLen);
+
+    gDevBaseParam.deviceCode.qrSnLen = strlen((const char*)deviceID);
+    gDevBaseParam.deviceCode.deviceSnLen = strlen((const char*)deviceCode);
+    memcpy(gDevBaseParam.deviceCode.deviceSn,deviceCode,gDevBaseParam.deviceCode.deviceSnLen);
+    memcpy(gDevBaseParam.deviceCode.qrSn,deviceID,gDevBaseParam.deviceCode.qrSnLen);
 
     gDevBaseParam.deviceCode.downLoadFlag.iFlag = DEFAULT_INIVAL;    
     
     strcpy ( gDevBaseParam.mqttTopic.publish,DEVICE_PUBLISH );
     strcpy ( gDevBaseParam.mqttTopic.subscribe,DEVICE_SUBSCRIBE );    
-    strcat ( gDevBaseParam.mqttTopic.subscribe,deviceCode );     
+    strcat ( gDevBaseParam.mqttTopic.subscribe,(const char*)deviceCode );     
     optDevBaseParam(&gDevBaseParam,WRITE_PRARM,sizeof(DEV_BASE_PARAM_STRU),DEVICE_BASE_PARAM_ADDR);
- 
-
-
-//    ReadLocalDevSn();
 
     gUpdateDevSn = 1;
 

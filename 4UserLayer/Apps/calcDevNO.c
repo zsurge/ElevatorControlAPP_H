@@ -167,11 +167,9 @@ unsigned char findDev(unsigned char *str,unsigned char dataFormat)
     int tmpValue = 0;
 
     memset(tmpBuff,0x00,sizeof(tmpBuff));
+    
+    memcpy(tmpBuff,gDevBaseParam.deviceCode.qrSn,gDevBaseParam.deviceCode.qrSnLen);
 
-//    memcpy(tmpBuff,gDevBaseParam.deviceCode.qrSn,8);
-
-    //Îª²âÊÔ£¬¸ÄÎª4 2020.07.29
-    memcpy(tmpBuff,gDevBaseParam.deviceCode.qrSn,4);
 
     devSN = atoi((const char*)tmpBuff);
 

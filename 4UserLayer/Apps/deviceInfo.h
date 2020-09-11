@@ -139,7 +139,9 @@ typedef struct DEVICE_ID
 {
     DEVICE_SWITCH downLoadFlag;       //
     char qrSn[8];                     //二维码下发的本机ID
+    char qrSnLen;
     char deviceSn[32];                //MQTT 订阅时的SN      
+    char deviceSnLen;
 }DEVICE_ID_STRU;
 
 typedef struct UPGRADE_URL
