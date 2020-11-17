@@ -849,8 +849,8 @@ void TestFlash ( uint8_t mode )
 		memset ( buff,0x00,sizeof ( buff ) );
 		
 		FRAM_Read ( FM24V10_1, addr+i*sizeof ( HEADINFO_STRU ), &tmp, sizeof ( HEADINFO_STRU ) );
-		bcd2asc ( ( uint8_t* ) buff, tmp.headData.sn, CARD_NO_LEN_ASC, 0 );
-		printf ( "the %d ==========> header = %s,flash addr =%d %s\r\n",i,buff,tmp.flashAddr);
+		log_d("the %d card id = %x,the flash addr = %d\r\n",i,tmp.headData.id,tmp.flashAddr);
+
 
 	}
 

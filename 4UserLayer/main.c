@@ -112,25 +112,25 @@ static void AppTaskCreate (void)
 //    CreateLedTask();
 
     //跟电梯通讯
-    CreateCommTask();
+    CreateCommTask();//1
 
     //数码管显示
-    CreateHc595Task();
+    CreateHc595Task();//3
 
     //数据处理
-    CreateDataProcessTask();
+    CreateDataProcessTask();//6
     
 //    //按键
 //    CreateKeyTask();
 
     //二合一读卡器
-    CreateBarCodeTask();
+    CreateBarCodeTask();//4
 
     //MQTT通讯
-    CreateMqttTask();
+    CreateMqttTask();//5
 
     //看门狗
-//    CreateWatchDogTask();
+    CreateWatchDogTask();
 
     //删除本身
     vTaskDelete(xHandleTaskAppCreate); //删除AppTaskCreate任务

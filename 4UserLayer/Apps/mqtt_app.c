@@ -26,6 +26,7 @@
 #include "jsonUtils.h"
 #include "bsp_ds1302.h"
 
+#define send_duration	180	//心跳发送周期（ms）
 
 
 
@@ -58,6 +59,10 @@ void mqtt_thread ( void )
 	unsigned char buf[MQTT_MAX_LEN];
 	int buflen = sizeof ( buf );
 
+	
+	unsigned char heartBeat[128] = {0};
+	unsigned char heartBeatLen = 0;
+
 	uint8_t upack_flag = 1;
 	int payloadlen_in;
 	unsigned char* payload_in;
@@ -71,11 +76,12 @@ void mqtt_thread ( void )
 	unsigned char dup;
 	int qos;
 	unsigned char retained = 0;
-
-	//获取当前滴答，作为心跳包起始时间
-	uint32_t curtick  =	 xTaskGetTickCount();
-	uint32_t sendtick =  xTaskGetTickCount(); 
-
+	char pingEQTimes = 0; 
+	
+	
+    //获取当前滴答，作为心跳包起始时间
+    uint32_t curtick  = 0;
+    uint32_t sendtick = 0; 
 
 	uint8_t msgtypes = CONNECT;		//消息状态初始化
 	uint8_t t=0;    
@@ -116,18 +122,19 @@ log_d("2 gDevBaseParam.mqttTopic.subscribe = %s\r\n",gDevBaseParam.mqttTopic.sub
 log_d("2 gDevBaseParam.deviceCode.qrSn = %s,gDevBaseParam.deviceCode.qrSnLen = %d\r\n",gDevBaseParam.deviceCode.qrSn,gDevBaseParam.deviceCode.qrSnLen);
 
     
-    data.clientID.cstring = gDevBaseParam.deviceCode.deviceSn;		
+	data.clientID.cstring = gDevBaseParam.deviceCode.deviceSn;       
 	data.keepAliveInterval = KEEPLIVE_TIME;         //保持活跃
-	data.username.cstring = USER_NAME;//gDevBaseParam.deviceCode.deviceSn;              //用户名	
-//	memcpy(data.username.cstring,gDevBaseParam.deviceCode.deviceSn,20);
-
+	data.username.cstring = USER_NAME;//gDevBaseParam.deviceCode.deviceSn;              //用户名
 	data.password.cstring = PASSWORD;               //秘钥
 	data.MQTTVersion = MQTT_VERSION;                //3表示3.1版本，4表示3.11版本
 	data.cleansession = 1;
-
+    
+    curtick = xTaskGetTickCount();
+    sendtick = xTaskGetTickCount();
+    
 	while ( 1 )
 	{
-		if ( ( xTaskGetTickCount() - curtick ) > ( data.keepAliveInterval*200 ) )		//每秒200次tick
+		if ( ( xTaskGetTickCount() - curtick ) >= ( data.keepAliveInterval*200 ) )		//每秒200次tick
 		{
 			if ( msgtypes == 0 )
 			{
@@ -142,7 +149,31 @@ log_d("2 gDevBaseParam.deviceCode.qrSn = %s,gDevBaseParam.deviceCode.qrSnLen = %
             msgtypes = CONNECT; 
 			gConnectStatus = 0;
             goto MQTT_reconnect;            
-        }       
+        }   
+
+        //每4分钟跟服务器发一个心跳
+        if(gConnectStatus == 1)
+        {
+            if ( ( xTaskGetTickCount() - sendtick ) >= (send_duration*1000 ) )		//每秒200次tick
+            {
+                sendtick = xTaskGetTickCount();
+                sprintf((char*)heartBeat,"{\"commandCode\":\"99999\",\"deviceCode\":\"%s\"}",gDevBaseParam.deviceCode.deviceSn);
+                heartBeatLen = strlen((const char*)heartBeat);
+                log_d("heartBeatLen = %d,heartbeat = %s\r\n",heartBeatLen,heartBeat);                
+                topicString.cstring = gDevBaseParam.mqttTopic.publish;       //属性上报 发布
+
+                len = MQTTSerialize_publish((unsigned char*)buf, buflen, 0, req_qos, retained, msgid, topicString, heartBeat, heartBeatLen);//发布消息
+                rc = transport_sendPacketBuffer(gMySock, (unsigned char*)buf, len);
+                if(rc == len) 
+                 {
+                    log_d("send PUBLISH Successfully,rc = %d,len = %d\r\n",rc,len);
+                }
+                else
+                {
+                    log_d("send PUBLISH failed,rc = %d,len = %d\r\n",rc,len);     
+                } 
+            } 
+        }
 
 
 		switch ( msgtypes )
@@ -300,6 +331,30 @@ log_d("2 gDevBaseParam.deviceCode.qrSn = %s,gDevBaseParam.deviceCode.qrSnLen = %
 				log_d ( "step = %d,PUBCOMP!\r\n",PUBCOMP );        			//just for qos2
 				msgtypes = 0;
 				break;
+
+			case PINGREQ:   
+//				log_d ( "step = %d,mqtt server ping ,pingEQTimes = %d\r\n",PINGREQ,pingEQTimes);  			//心跳			
+			    len = MQTTSerialize_pingreq((unsigned char*)buf, buflen);							//心跳
+				rc = transport_sendPacketBuffer(gMySock, (unsigned char*)buf, len);
+				if(rc == len)
+				{
+            		if(pingEQTimes++ >= 5)
+                	{
+                	    pingEQTimes = 0;
+                	    msgtypes = 0; 
+                        gConnectStatus = 0;
+                        goto MQTT_reconnect;     
+                	}				    
+					log_d("send PINGREQ Successfully,,pingEQTimes = %d\r\n",pingEQTimes);
+			    }
+				else
+				{
+                    log_d("time to ping mqtt server to take alive!,%d,%d\r\n",rc,len);
+                    NVIC_SystemReset(); 
+                }	
+                msgtypes = 0;
+				break;
+#if 0		//会频繁触发MQTT上下线机制	
 			//心跳请求
 			case PINGREQ://12
 				len = MQTTSerialize_pingreq ( ( unsigned char* ) buf, buflen );		
@@ -329,9 +384,11 @@ log_d("2 gDevBaseParam.deviceCode.qrSn = %s,gDevBaseParam.deviceCode.qrSnLen = %
                     goto MQTT_reconnect;                    
 				}				            
 				break;
+#endif				
 			//心跳响应
 			case PINGRESP://13
-				log_d ( "step = %d,111 mqtt server Pong\r\n",PINGRESP );  			//心跳回执，服务有响应
+			    pingEQTimes--;
+				log_d ( "step = %d,mqtt server Pong\r\n",PINGRESP );  			//心跳回执，服务有响应
 				msgtypes = 0;
 				break;
             case UNSUBSCRIBE:
@@ -368,6 +425,7 @@ log_d("2 gDevBaseParam.deviceCode.qrSn = %s,gDevBaseParam.deviceCode.qrSnLen = %
 MQTT_reconnect:    
 	transport_close ( gMySock );    
 	log_d ( "mqtt thread exit.try again 3 sec\r\n" );  
+
     vTaskDelay (200);
     goto MQTT_START;        
 }

@@ -19,7 +19,7 @@
 #define CMD_ID   "commandCode"
 
 
-#define   KEEPLIVE_TIME   70
+#define   KEEPLIVE_TIME   50
 #define   MQTT_VERSION    4
 
 //以下宏定义固定，不需要修改
