@@ -26,6 +26,8 @@
 #include "tool.h"
 #include "bsp_ds1302.h"
 #include "ini.h"
+#include "bsp_digitaltube.h"
+#include "bsp_led.h"
 
 
 #define LOG_TAG    "handShake"
@@ -99,9 +101,22 @@ static void vTaskHandShake(void *pvParameters)
     
     DisplayDevInfo();
     
-    vTaskDelay(500);
-    
-    vTaskDelete( NULL ); //删除自己
+//    vTaskDelay(500);
+//    
+//    vTaskDelete( NULL ); //删除自己
+
+    while(1)
+    {  
+        bsp_HC595Show('A',0,1);
+        vTaskDelay(800);
+        bsp_HC595Show(0,0,2);
+        vTaskDelay(800);
+
+        LEDERROR = !LEDERROR;
+		/* 发送事件标志，表示任务正常运行 */        
+		xEventGroupSetBits(xCreatedEventGroup, TASK_BIT_0);  
+      
+    }    
 }
 
 void CreateHandShakeTask(void)

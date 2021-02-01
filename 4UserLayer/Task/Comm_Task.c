@@ -30,7 +30,7 @@
 #include "FloorDataProc.h"
 #include "bsp_usart6.h"
 #include "malloc.h"
-
+#include "tool.h"
 
 
 /*----------------------------------------------*
@@ -56,11 +56,11 @@ typedef struct FROMHOST
 }FROMHOST_STRU;
 
  
-#define COMM_TASK_PRIO		(tskIDLE_PRIORITY + 8) 
-#define COMM_STK_SIZE 		(configMINIMAL_STACK_SIZE*8)
-//static uint32_t totalCnt = 0;
-//static uint32_t validCnt = 0;
-//static uint32_t sendCnt = 0;
+#define COMM_TASK_PRIO		(tskIDLE_PRIORITY + 6) 
+#define COMM_STK_SIZE 		(configMINIMAL_STACK_SIZE*4)
+
+uint16_t packetBuf(ELEVATOR_TRANBUFF_STRU *src,uint8_t *desc);
+uint16_t packetDefault(uint8_t devSn ,uint8_t *desc);
 
 /*----------------------------------------------*
  * 常量定义                                     *

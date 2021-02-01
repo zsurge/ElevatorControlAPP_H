@@ -36,7 +36,7 @@
 /*----------------------------------------------*
  * 宏定义                                       *
  *----------------------------------------------*/
-#define BARCODE_TASK_PRIO		(tskIDLE_PRIORITY + 7)
+#define BARCODE_TASK_PRIO		(tskIDLE_PRIORITY + 8)
 #define BARCODE_STK_SIZE 		(configMINIMAL_STACK_SIZE*10)
 
 
@@ -90,185 +90,6 @@ void CreateBarCodeTask(void)
                 (TaskHandle_t*  )&xHandleTaskBarCode);
 }
 
-
-#if 0
-static void vTaskBarCode(void *pvParameters)
-{ 
-    uint8_t recv_buf[255] = {0};
-    uint8_t readyBuff[1024] = {0};
-    uint16_t len = 0; 
-    uint16_t offset = 0; 
-    uint8_t localTime[9] = {0};
-
-    uint8_t relieveControl[38] = {0};
-
-    int cmpTimeFlag = -1;
-    int cmpDateFlag = -1;
-    
-    READER_BUFF_STRU *ptQR; 
- 	/* 初始化结构体指针 */
-	ptQR = &gReaderMsg;
-
-    log_d("start vTaskBarCode\r\n");
-    while(1)
-    {   
-        /* 清零 */
-        ptQR->authMode = 0; 
-        ptQR->dataLen = 0;
-        ptQR->state = ENABLE;
-        memset(ptQR->data,0x00,sizeof(ptQR->data)); 
-
-        memset(recv_buf,0x00,sizeof(recv_buf));           
-        len = RS485_RecvAtTime(COM5,recv_buf,sizeof(recv_buf),800);
-        
-        memcpy(readyBuff+offset,recv_buf,len);
-        offset += len;
-        
-
-//        log_d("reader = %s\r\n",recv_buf);
-
-        
-        if(recv_buf[len-1] == 0x00 && len > 1)
-        {
-            len -= 1; //这里不知道为什么会多了一个0x00
-        }
-       
-        if(len > 0  && recv_buf[len-1] == 0x0A && recv_buf[len-2] == 0x0D)
-        {
-//            log_d("reader = %s\r\n",recv_buf);
-              
-//            dbh("reader", recv_buf, len);
-            //添加模版是否启用的判定
-            if(gtemplateParam.templateStatus == 0)
-            {
-                //2020-03-18 这里应该发送电梯不接受控制的指令，而不是不用continue,
-                //在授权方式那里，添加控制类型，并定义控制指令，发给电梯
-
-                    //add code 发指不受控制指令                    
-                    ptQR->authMode = AUTH_MODE_RELIEVECONTROL;
-                    ptQR->dataLen = sizeof(relieveControl);
-                    memcpy(ptQR->data,relieveControl,ptQR->dataLen);   
-                    log_d("the template is disable\r\n");
-            }
-            else
-            {
-                log_d("the template is enable\r\n");
-                //判定高峰节假日模式是否开启
-                if(gtemplateParam.workMode.isPeakMode || gtemplateParam.workMode.isHolidayMode)
-                {
-                    //读取当前时间
-                    memcpy(localTime,bsp_ds1302_readtime(),8);
-                    
-                    //判定节假日模板有效期
-                    if(compareDate(localTime,gtemplateParam.peakInfo[0].endTime) < 0) //在有效期内
-                    {   
-                        log_d("in the peak mode valid date \r\n");
-                        
-                        //判定有效期内不受控时间段
-                        cmpTimeFlag = compareTime(localTime);
-
-                        log_d("cmpTimeFlag =%d\r\n",cmpTimeFlag);
-
-                        if(cmpTimeFlag == 1)
-                        {
-                            log_d("peak mode - >in the out of control \r\n");
-                            //在不受控时间段，发送脱离控制指令
-                            ptQR->authMode = AUTH_MODE_RELIEVECONTROL;
-                            ptQR->dataLen = sizeof(relieveControl);
-                            memcpy(ptQR->data,relieveControl,sizeof(relieveControl)); 
-                        } 
-                        else
-                        {
-                            log_d("peak mode  >in the control time \r\n");
-                            packetUserData((char *)recv_buf,gtemplateParam.peakCallingWay.isIcCard,gtemplateParam.peakCallingWay.isQrCode,ptQR);
-                            //没有指定不受控日期 或 当前日期在有效期内
-                            //添加节假日的呼梯方式的判定
-//                            if(gtemplateParam.peakCallingWay.isIcCard == 0)
-//                            {
-//                                //赋值   
-//                                if(ptQR->authMode == AUTH_MODE_CARD)
-//                                {
-//                                    ptQR->dataLen = 0;
-//                                    memset(ptQR->data,0x00,sizeof(ptQR->data)); 
-//                                }
-//                            }
-
-//                            if(gtemplateParam.peakCallingWay.isQrCode == 0)
-//                            {
-//                                //赋值   
-//                                if(ptQR->authMode == AUTH_MODE_QR)
-//                                {
-//                                    ptQR->dataLen = 0;
-//                                    memset(ptQR->data,0x00,sizeof(ptQR->data)); 
-//                                }                                
-//                            } 
-                                
-                        }
-                    }
-                    else
-                    {
-                        //不在有效期内
-                        //判定模板的呼梯方式
-//                        if(gtemplateParam.templateCallingWay.isIcCard)
-//                        {
-//                            //赋值                                
-//                        }
-
-//                        if(gtemplateParam.templateCallingWay.isQrCode)
-//                        {
-//                            //赋值                                
-//                        } 
-                        log_d("outside peak mode the valid date \r\n");
-
-                        packetUserData((char *)recv_buf,gtemplateParam.templateCallingWay.isIcCard,gtemplateParam.templateCallingWay.isQrCode,ptQR);
-
-                    }
-
-                 } 
-                 else
-                 {
-                    //判定模板的呼梯方式
-//                    if(gtemplateParam.templateCallingWay.isIcCard)
-//                    {
-//                        //赋值                                
-//                    }
-
-//                    if(gtemplateParam.templateCallingWay.isQrCode)
-//                    {
-//                        //赋值                                
-//                    }  
-                    log_d("Now it's normal operation mode \r\n");
-                    packetUserData((char *)recv_buf,gtemplateParam.templateCallingWay.isIcCard,gtemplateParam.templateCallingWay.isQrCode,ptQR);
-
-                 }  
-
-                log_d("ptQR = %s,len = %d,state = %d\r\n",ptQR->data,ptQR->dataLen,ptQR->state);
-                
-                if(ptQR->state)
-                {
-                	/* 使用消息队列实现指针变量的传递 */
-                	if(xQueueSend(xDataProcessQueue,              /* 消息队列句柄 */
-                				 (void *) &ptQR,   /* 发送指针变量recv_buf的地址 */
-                				 (TickType_t)100) != pdPASS )
-                	{
-                        log_d("the queue is full!\r\n");                
-                        xQueueReset(xDataProcessQueue);
-                    } 
-                    else
-                    {
-                        dbh("the queue is send success",(char *)recv_buf,len);
-                    }   
-                }
-            }
-        }
-
-
-    	/* 发送事件标志，表示任务正常运行 */        
-    	xEventGroupSetBits(xCreatedEventGroup, TASK_BIT_5);  
-        vTaskDelay(500);        
-    }
-}
-#endif 
 
 static void vTaskBarCode(void *pvParameters)
 { 
@@ -404,7 +225,7 @@ static void vTaskBarCode(void *pvParameters)
                     	/* 使用消息队列实现指针变量的传递 */
                     	if(xQueueSend(xDataProcessQueue,              /* 消息队列句柄 */
                     				 (void *) &ptQR,   /* 发送指针变量recv_buf的地址 */
-                    				 (TickType_t)100) != pdPASS )
+                    				 (TickType_t)50) != pdPASS )
                     	{
                             log_d("the queue is full!\r\n");                
                             xQueueReset(xDataProcessQueue);

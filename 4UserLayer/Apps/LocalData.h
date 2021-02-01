@@ -155,6 +155,8 @@ typedef struct CARDHEADINFO
     uint32_t flashAddr; //在FLASH中的索引,其地址=索引*固定卡号内容长度+基地址 
 }HEADINFO_STRU;
 
+extern HEADINFO_STRU gSectorBuff[512];
+
 
 
 #pragma pack(1)
@@ -177,17 +179,6 @@ typedef struct USERDATA
 }USERDATA_STRU;
 #pragma pack()
 
-extern USERDATA_STRU gUserDataStru;
-
-/*
-typedef struct USERSTATE
-{
-    uint8_t isInvalid;
-    uint8_t isValid;
-    uint8_t isTemporary;
-    uint8_t isBlackList;
-}USERSTATE_STRU;
-*/
 
 void eraseHeadSector(void);
 void eraseDataSector(void);
@@ -199,12 +190,11 @@ uint8_t writeUserData(USERDATA_STRU *userData,uint8_t mode);
 
 uint8_t readUserData(uint8_t* header,uint8_t mode,USERDATA_STRU *userData);
 
-uint8_t modifyUserData(USERDATA_STRU *userData,uint8_t mode);
+int modifyCardData(USERDATA_STRU *userData);
 
 uint8_t delUserData(uint8_t *header,uint8_t mode);
 
 uint8_t writeDelHeader(uint8_t* header,uint8_t mode);
-//ISFIND_ENUM fIndex( uint8_t* header,uint8_t mode,uint16_t* index );
 
 void TestFlash(uint8_t mode);
 
@@ -217,6 +207,7 @@ void sortHead(HEADINFO_STRU *head,int length);
 void addHead(uint8_t *head,uint8_t mode);
 
 
+int delHead(uint8_t *headBuff,uint8_t mode);
 
 
 #endif /* __LOCALDATA_H__ */
