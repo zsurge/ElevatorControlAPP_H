@@ -31,14 +31,14 @@ void RTC_TimeAndDate_Set(char *defalutTime)
 	// 初始化日期
     memset(tmp,0x00,sizeof(tmp));
     memcpy(tmp,defalutTime+2,2);	
-	RTC_DateStructure.RTC_Year = atoi(tmp);		
+	RTC_DateStructure.RTC_Year = atoi((const char *)tmp);		
     
     memset(tmp,0x00,sizeof(tmp));
     memcpy(tmp,defalutTime+5,2);  
-	RTC_DateStructure.RTC_Month = atoi(tmp);
+	RTC_DateStructure.RTC_Month = atoi((const char *)tmp);
 
     memcpy(tmp,defalutTime+8,2);  
-	RTC_DateStructure.RTC_Date = atoi(tmp);
+	RTC_DateStructure.RTC_Date = atoi((const char *)tmp);
 
 	RTC_SetDate ( RTC_Format_BINorBCD, &RTC_DateStructure );
 	RTC_WriteBackupRegister ( RTC_BKP_DRX, RTC_BKP_DATA );    
@@ -47,13 +47,13 @@ void RTC_TimeAndDate_Set(char *defalutTime)
 	RTC_TimeStructure.RTC_H12 = RTC_H12_AMorPM;
     
     memcpy(tmp,defalutTime+11,2);  
-	RTC_TimeStructure.RTC_Hours = atoi(tmp);
+	RTC_TimeStructure.RTC_Hours = atoi((const char *)tmp);
 
     memcpy(tmp,defalutTime+14,2);  
-	RTC_TimeStructure.RTC_Minutes = atoi(tmp);
+	RTC_TimeStructure.RTC_Minutes = atoi((const char *)tmp);
 
     memcpy(tmp,defalutTime+17,2);  
-	RTC_TimeStructure.RTC_Seconds = atoi(tmp);
+	RTC_TimeStructure.RTC_Seconds = atoi((const char *)tmp);
 
     
 	RTC_SetTime ( RTC_Format_BINorBCD, &RTC_TimeStructure );

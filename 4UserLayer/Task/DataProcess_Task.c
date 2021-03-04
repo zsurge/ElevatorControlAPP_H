@@ -77,24 +77,22 @@ static void vTaskDataProcess(void *pvParameters)
 {
     BaseType_t xReturn = pdTRUE;/* 定义一个创建信息返回值，默认为pdPASS */
     const TickType_t xMaxBlockTime = pdMS_TO_TICKS(30); /* 设置最大等待时间为100ms */ 
-    uint8_t isFind = 0; 
+    char isFind = 0; 
     uint8_t ret = 0; 
     uint8_t jsonBuf[512] = {0};
     uint8_t cardNo[8] = {0};
     int len = 0;
-    uint8_t i = 0;
     
-    ELEVATOR_BUFF_STRU devSendData;    
+    
     USERDATA_STRU localUserData ;
     READER_BUFF_STRU *ptMsg  = &gReaderMsg;
-    ELEVATOR_TRANBUFF_STRU *sendElevator = &gElevtorData;
+    
     
     while (1)
     {
-        memset(&devSendData,0x00,sizeof(ELEVATOR_BUFF_STRU));
         memset(&localUserData,0x00,sizeof(USERDATA_STRU));     
         memset(&gReaderMsg,0x00,sizeof(READER_BUFF_STRU));    
-        memset(&gElevtorData,0x00,sizeof(ELEVATOR_TRANBUFF_STRU));    
+        memset(&gElevtorData,0x00,sizeof(ELEVATOR_BUFF_STRU));    
 
         /* 清零 */
         ptMsg->authMode = 0; //默认为刷卡
@@ -106,10 +104,6 @@ static void vTaskDataProcess(void *pvParameters)
                                  xMaxBlockTime); /* 设置阻塞时间 */
         if(pdTRUE != xReturn)
         {
-            //消息接收成功，发送接收到的消息
-//            packetSendBuf(ptMsg); 
-//            log_d("exec packetSendBuf end\r\n");
-
             continue;
         }
         
@@ -146,41 +140,15 @@ static void vTaskDataProcess(void *pvParameters)
                 log_d("send = %d\r\n",len);
                 
                 //3.计算电梯数据
-                ret = packetToElevatorExtend(&localUserData,&devSendData);
+                ret = packetToElevator(&localUserData);
                 if(ret != NO_ERR)
                 {
                     log_d("invalid floor\r\n");
                     break;  //无权限   
-                }    
-
-                //单层权限，并且在第2个设备或以后
-                if(devSendData.data[0].devSn > 1)
-                {
-                    sendElevator->devSn = devSendData.data[0].devSn;
-                    sendElevator->value = devSendData.data[0].value;
-                    log_d("value = %x,devsn = %d\r\n",sendElevator->value,sendElevator->devSn);
-                    //发送数据到队列 
-                    sendQueueToDev(sendElevator);                       
-                }
-                else
-                {
-                    //4.发送电梯数据到队列
-                    for(i=0;i<8;i++)
-                    {   
-                        if(devSendData.data[i].devSn == 1)
-                        {
-                            sendElevator->devSn = i+1;
-                            sendElevator->value = devSendData.data[i].value;
-                            log_d("value = %x,devsn = %d\r\n",sendElevator->value,sendElevator->devSn);
-                           //发送数据到队列 
-                           sendQueueToDev(sendElevator);                
-                        }
-                    }     
-                }
-
+                }  
                 break;
             case AUTH_MODE_QR:
-                isFind = parseQrCode(ptMsg->data,&localUserData);
+                isFind = parseQrCode((uint8_t *)ptMsg->data,&localUserData);
                 if(isFind != NO_ERR)
                 {
                     log_d("not find record\r\n");
@@ -198,42 +166,24 @@ static void vTaskDataProcess(void *pvParameters)
                 log_d("send = %d\r\n",len);  
 
                 //3.计算电梯数据
-                ret = packetToElevatorExtend(&localUserData,&devSendData);
+                ret = packetToElevator(&localUserData);
                 if(ret != NO_ERR)
                 {
                     log_d("invalid floor\r\n");
                     break;  //无权限   
                 }
-
-                //4.发送电梯数据到队列
-                for(i=0;i<8;i++)
-                {   
-                    if(devSendData.data[i].devSn == 1)
-                    {
-                        sendElevator->devSn = i+1;
-                        sendElevator->value = devSendData.data[i].value;
-                       //发送数据到队列 
-                       sendQueueToDev(sendElevator);  
-                    }
-                }                 
                 break;
             case AUTH_MODE_REMOTE:
                 //直接发送目标楼层
-                log_d("send desc floor = %d,%d\r\n",ptMsg->data[0],ptMsg->dataLen);  
+                log_d("send desc floor = %s,%d\r\n",ptMsg->data,ptMsg->dataLen);  
                 
                 localUserData.authMode = ptMsg->authMode; 
-                ret = calcSingleFloor(ptMsg->data[0],&devSendData);
+                ret = packetRemoteRequestToElevator((uint8_t *)ptMsg->data,ptMsg->dataLen);
                 if(ret != NO_ERR)
                 {
                     log_d("invalid floor\r\n");
                     break;
-                }
-                sendElevator->devSn = devSendData.data[0].devSn;
-                sendElevator->value = devSendData.data[0].value;
-                
-                log_d("send desc floor = %d,%d\r\n",sendElevator->value,sendElevator->devSn);  
-                
-                sendQueueToDev(sendElevator);
+                }    
                 break;
             case AUTH_MODE_UNBIND:
                 //直接发送停用设备指令

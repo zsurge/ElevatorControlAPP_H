@@ -25,13 +25,14 @@
 #include "des.h"
 #include "ini.h"
 #include "stdlib.h"
-
+#include "bsp_spi_flash.h"
 
 TEMPLATE_PARAM_STRU gtemplateParam;
 DEV_BASE_PARAM_STRU gDevBaseParam;
 RECORDINDEX_STRU gRecordIndex;
 
 static uint8_t opParam(void *Param,uint8_t mode,uint32_t len,uint32_t addr);
+static void eraseUserDataIndex ( void );
 
 
 
@@ -351,272 +352,190 @@ uint8_t packetPayload(USERDATA_STRU *localUserData,uint8_t *descJson)
 
 }
 
-//2020.09.07 注释
-#if 0
-uint8_t parseQrCode(uint8_t *jsonBuff,USERDATA_STRU *qrCodeInfo)
-{
-    cJSON *root ,*tmpArray;
-    uint8_t buf[300] = {0};
-    uint8_t isFind = 0;
-    
-    if(!jsonBuff || !qrCodeInfo)
-    {
-        cJSON_Delete(root);
-        log_d("error json data\r\n");
-        return STR_EMPTY_ERR;
-    }    
-    
-    root = cJSON_Parse((char *)jsonBuff);    //解析数据包
-    if (!root)  
-    {  
-        cJSON_Delete(root);
-        log_d("Error before: [%s]\r\n",cJSON_GetErrorPtr());  
-        return CJSON_PARSE_ERR;
-    } 
-
-
-    tmpArray = cJSON_GetObjectItem(root, "qS");
-    strcpy((char *)qrCodeInfo->startTime,tmpArray->valuestring);
-    log_d("qrCodeInfo->startTime= %s\r\n",qrCodeInfo->startTime); 
-    
-    tmpArray = cJSON_GetObjectItem(root, "qE");
-    strcpy((char *)qrCodeInfo->endTime,tmpArray->valuestring);
-    log_d("qrCodeInfo->endTime= %s\r\n",qrCodeInfo->endTime); 
-    
-    tmpArray = cJSON_GetObjectItem(root, "qI");
-//    strcpy((char *)qrCodeInfo->userId,tmpArray->valueint);
-//modify 2020.07.29
-
-//    log_d("QI= %d\r\n",tmpArray->valueint);
-    sprintf((char*)qrCodeInfo->userId,"%d",tmpArray->valueint);
-//    itoa(tmpArray->valueint, (char*)qrCodeInfo->userId, 10);
-    log_d("qrCodeInfo->qrID= %s\r\n",qrCodeInfo->userId); 
-
-    tmpArray = cJSON_GetObjectItem(root, "t");
-    qrCodeInfo->platformType = tmpArray->valueint;
-    log_d("qrCodeInfo->type= %d\r\n",qrCodeInfo->platformType); 
-    
-    tmpArray = cJSON_GetObjectItem(root, "f1");
-    memcpy(qrCodeInfo->accessFloor,parseAccessFloor(tmpArray->valuestring),FLOOR_ARRAY_LENGTH);
-
-//    dbh("qrCodeInfo->accessFloor",(char *)qrCodeInfo->accessFloor,FLOOR_ARRAY_LENGTH);
-
-    qrCodeInfo->defaultFloor = qrCodeInfo->accessFloor[0];
-    log_d("qrCodeInfo->defaultFloor = %d\r\n",qrCodeInfo->defaultFloor);
-    
-    memset(buf,0x00,sizeof(buf));
-    tmpArray = cJSON_GetObjectItem(root, "d1");
-    strcpy((char *)buf,tmpArray->valuestring);  
-    if(strlen((const char*)buf) > 0)
-    {
-        log_d("d1 = %s\r\n",buf); 
-        if(findDev(buf,1) == 1)
-        {
-            isFind =1;
-            goto QR_END;
-        }
-    }
-
-    memset(buf,0x00,sizeof(buf));
-    tmpArray = cJSON_GetObjectItem(root, "d2");
-    strcpy((char *)buf,tmpArray->valuestring);    
-    if(strlen((const char*)buf) > 0)
-    {
-        log_d("d2 = %s\r\n",buf); 
-        if(findDev(buf,2) == 1)
-        {
-            isFind =1;
-            goto QR_END;
-        }
-    }
-    
-    memset(buf,0x00,sizeof(buf));
-    tmpArray = cJSON_GetObjectItem(root, "d3");
-    strcpy((char *)buf,tmpArray->valuestring);    
-    if(strlen((const char*)buf) > 0)
-    {
-        log_d("d3= %s\r\n",buf); 
-        if(findDev(buf,3) == 1)
-        {
-            isFind =1;
-            goto QR_END;
-        }
-    }
-
-    
-    memset(buf,0x00,sizeof(buf));
-    tmpArray = cJSON_GetObjectItem(root, "d4");
-    strcpy((char *)buf,tmpArray->valuestring);
-    if(strlen((const char*)buf) > 0)
-    {
-        log_d("d4 = %s\r\n",buf);    
-        if(findDev(buf,4) == 1)
-        {
-            isFind =1;
-            goto QR_END;
-        }    
-    }
-
-
-    memset(buf,0x00,sizeof(buf));
-    tmpArray = cJSON_GetObjectItem(root, "d5");
-    strcpy((char *)buf,tmpArray->valuestring);
-    if(strlen((const char*)buf) > 0)
-    {
-        log_d("d5 = %s\r\n",buf);    
-        if(findDev(buf,5) == 1)
-        {
-           isFind =1;
-        }    
-    }
-  
-QR_END:    
-    cJSON_Delete(root);
-    
-    return isFind;
-
-}
-#endif
-
 //2020.09.07 数据格式有变化
 //{"qS":"1599189101","datetime":"1599189101495","qE":"1599189161","expire":60,"f1":"#$%&()*+76543210/.-,","type":1,"ownerId":21310,"d2":".K.L.M.N.O.G"}
 
-uint8_t parseQrCode(uint8_t *jsonBuff,USERDATA_STRU *qrCodeInfo)
+char parseQrCode ( uint8_t* jsonBuff,USERDATA_STRU* qrCodeInfo )
 {
-    cJSON *root ,*tmpArray;
-    uint8_t buf[300] = {0};
-    uint8_t isFind = 0;
-    uint32_t endTime = 0;    
-    uint8_t key[16] ={ 0x82,0x5d,0x82,0xd8,0xd5,0x2f,0xdf,0x85,0x28,0xa2,0xb5,0xd8,0x88,0x88,0x88,0x88 }; 
-    uint8_t bcd[17] = {0};
-    
-    if(!jsonBuff || !qrCodeInfo)
-    {
-        cJSON_Delete(root);
-        log_d("error json data\r\n");
-        return STR_EMPTY_ERR;
-    }    
-    
-    root = cJSON_Parse((char *)jsonBuff);    //解析数据包
-    if (!root)  
-    {  
-        cJSON_Delete(root);
-        log_d("Error before: [%s]\r\n",cJSON_GetErrorPtr());  
-        return CJSON_PARSE_ERR;
-    } 
+	cJSON* root=NULL,*tmpArray=NULL;
+	uint8_t buf[300] = {0};
+	uint8_t isFind = 0;
+	uint32_t endTime = 0;
+	uint8_t key[16] = { 0x82,0x5d,0x82,0xd8,0xd5,0x2f,0xdf,0x85,0x28,0xa2,0xb5,0xd8,0x88,0x88,0x88,0x88 };
+	uint8_t bcd[17] = {0};
+	uint8_t floorLen = 0;
+	uint8_t i = 0;
 
+	if ( !jsonBuff )
+	{
+		cJSON_Delete ( root );
+		log_d ( "error json data\r\n" );
+		return STR_EMPTY_ERR;
+	}
 
-    tmpArray = cJSON_GetObjectItem(root, "qS");
-    strcpy((char *)qrCodeInfo->startTime,tmpArray->valuestring);
-    log_d("qrCodeInfo->startTime= %s\r\n",qrCodeInfo->startTime); 
+	root = cJSON_Parse ( ( char* ) jsonBuff ); //解析数据包
+	if ( !root )
+	{
+		cJSON_Delete ( root );
+		log_d ( "Error before: [%s]\r\n",cJSON_GetErrorPtr() );
+		return CJSON_PARSE_ERR;
+	}
 
-    
-    endTime = atoi(qrCodeInfo->startTime) + 60;
-    sprintf((char *)qrCodeInfo->endTime,"%d",endTime);
+	tmpArray = cJSON_GetObjectItem ( root, "qS" );
+	if ( tmpArray )
+	{
+		strcpy ( ( char* ) qrCodeInfo->startTime,tmpArray->valuestring );
+		log_d ( "qrCodeInfo->startTime= %s\r\n",qrCodeInfo->startTime );
+
+		endTime = atoi ( (const char *)qrCodeInfo->startTime ) + 60;
+		sprintf ( ( char* ) qrCodeInfo->endTime,"%d",endTime );
+	}
 
 //    tmpArray = cJSON_GetObjectItem(root, "qE");
 //    strcpy((char *)qrCodeInfo->endTime,tmpArray->valuestring);
-//    log_d("qrCodeInfo->endTime= %s\r\n",qrCodeInfo->endTime); 
-    
+//    log_d("qrCodeInfo->endTime= %s\r\n",qrCodeInfo->endTime);
+
 //    tmpArray = cJSON_GetObjectItem(root, "ownerId");
 //    sprintf((char*)qrCodeInfo->userId,"%d",tmpArray->valueint);
-//    log_d("qrCodeInfo->qrID= %s\r\n",qrCodeInfo->userId); 
+//    log_d("qrCodeInfo->qrID= %s\r\n",qrCodeInfo->userId);
 
 //    tmpArray = cJSON_GetObjectItem(root, "t");
 //    qrCodeInfo->platformType = tmpArray->valueint;
-//    log_d("qrCodeInfo->type= %d\r\n",qrCodeInfo->platformType); 
+//    log_d("qrCodeInfo->type= %d\r\n",qrCodeInfo->platformType);
 
-    tmpArray = cJSON_GetObjectItem(root, "i");
-    if(tmpArray->valuestring != NULL)
-    {
-        log_d("user id = %s,len = %d\r\n",tmpArray->valuestring,strlen((const char*)tmpArray->valuestring));
+	tmpArray = NULL;
+	tmpArray = cJSON_GetObjectItem ( root, "i" );
 
-        asc2bcd(bcd, (uint8_t *)tmpArray->valuestring, strlen((const char*)tmpArray->valuestring), 1);
+	if ( tmpArray )
+	{
+		log_d ( "user id = %s,len = %d\r\n",tmpArray->valuestring,strlen ( ( const char* ) tmpArray->valuestring ) );
+
+		asc2bcd ( bcd, ( uint8_t* ) tmpArray->valuestring, strlen ( ( const char* ) tmpArray->valuestring ), 1 );
+
+		Des3_2 ( key, bcd, strlen ( ( const char* ) tmpArray->valuestring ) /2, qrCodeInfo->userId, 1 );
+
+		log_d ( "qrCodeInfo->qrID= %s,value = %d\r\n",qrCodeInfo->userId,atoi ( (const char *)qrCodeInfo->userId ) );
+	}
+
+
+	tmpArray = NULL;
+	tmpArray = cJSON_GetObjectItem ( root, "f1" );
+	if ( tmpArray )
+	{
+	    floorLen = strlen ( ( const char* ) tmpArray->valuestring );
+		memcpy ( qrCodeInfo->accessFloor,parseAccessFloor ( tmpArray->valuestring ),strlen ( ( const char* ) tmpArray->valuestring ) );
+	}
+
+	memset ( buf,0x00,sizeof ( buf ) );
+	tmpArray = NULL;
+	tmpArray = cJSON_GetObjectItem ( root, "f2" );
+	if ( tmpArray )
+	{
+		memcpy ( buf,parseAccessFloor ( tmpArray->valuestring ),strlen ( ( const char* ) tmpArray->valuestring ) );
+        if(FLOOR_ARRAY_LENGTH - floorLen >= strlen ( ( const char* ) tmpArray->valuestring ))
+        {
+            for(i=0;i<strlen ( ( const char* ) tmpArray->valuestring );i++)
+            {
+                qrCodeInfo->accessFloor[floorLen+i] = buf[i]+MAX_FLOOR; //最高200层，超过200层，按负楼层处理
+            }
+        }
+
+        dbh ( "qrCodeInfo->accessFloor  buf", ( char* ) qrCodeInfo->accessFloor,floorLen + strlen ( ( const char* ) tmpArray->valuestring ) );
         
-        Des3_2(key, bcd, strlen((const char*)tmpArray->valuestring)/2, qrCodeInfo->userId, 1); 
-        
-        log_d("qrCodeInfo->qrID= %s,value = %d\r\n",qrCodeInfo->userId,atoi(qrCodeInfo->userId)); 
-    }
+	}
 
-    
-    tmpArray = cJSON_GetObjectItem(root, "f1");
-    memcpy(qrCodeInfo->accessFloor,parseAccessFloor(tmpArray->valuestring),FLOOR_ARRAY_LENGTH);
+	qrCodeInfo->defaultFloor = qrCodeInfo->accessFloor[0];
+	log_d ( "qrCodeInfo->defaultFloor = %d\r\n",qrCodeInfo->defaultFloor );
 
-//    dbh("qrCodeInfo->accessFloor",(char *)qrCodeInfo->accessFloor,FLOOR_ARRAY_LENGTH);
+	memset ( buf,0x00,sizeof ( buf ) );
+	tmpArray = NULL;
+	tmpArray = cJSON_GetObjectItem ( root, "d1" );
+	if ( tmpArray )
+	{
+		strcpy ( ( char* ) buf,tmpArray->valuestring );
+		if ( strlen ( ( const char* ) buf ) > 0 )
+		{
+			log_d ( "d1 = %s\r\n",buf );
+			if ( findDev ( buf,1 ) == 1 )
+			{
+				isFind =1;
+				goto QR_END;
+			}
+		}
+	}
 
-    qrCodeInfo->defaultFloor = qrCodeInfo->accessFloor[0];
-    log_d("qrCodeInfo->defaultFloor = %d\r\n",qrCodeInfo->defaultFloor);
-    
-    memset(buf,0x00,sizeof(buf));
-    tmpArray = cJSON_GetObjectItem(root, "d1");
-    strcpy((char *)buf,tmpArray->valuestring);  
-    if(strlen((const char*)buf) > 0)
-    {
-        log_d("d1 = %s\r\n",buf); 
-        if(findDev(buf,1) == 1)
-        {
-            isFind =1;
-            goto QR_END;
-        }
-    }
+	memset ( buf,0x00,sizeof ( buf ) );
+	tmpArray = NULL;
+	tmpArray = cJSON_GetObjectItem ( root, "d2" );
+	if ( tmpArray )
+	{
+		strcpy ( ( char* ) buf,tmpArray->valuestring );
+		if ( strlen ( ( const char* ) buf ) > 0 )
+		{
+			log_d ( "d2 = %s\r\n",buf );
+			if ( findDev ( buf,2 ) == 1 )
+			{
+				isFind =1;
+				goto QR_END;
+			}
+		}
+	}
 
-    memset(buf,0x00,sizeof(buf));
-    tmpArray = cJSON_GetObjectItem(root, "d2");
-    strcpy((char *)buf,tmpArray->valuestring);    
-    if(strlen((const char*)buf) > 0)
-    {
-        log_d("d2 = %s\r\n",buf); 
-        if(findDev(buf,2) == 1)
-        {
-            isFind =1;
-            goto QR_END;
-        }
-    }
-    
-    memset(buf,0x00,sizeof(buf));
-    tmpArray = cJSON_GetObjectItem(root, "d3");
-    strcpy((char *)buf,tmpArray->valuestring);    
-    if(strlen((const char*)buf) > 0)
-    {
-        log_d("d3= %s\r\n",buf); 
-        if(findDev(buf,3) == 1)
-        {
-            isFind =1;
-            goto QR_END;
-        }
-    }
-
-    
-    memset(buf,0x00,sizeof(buf));
-    tmpArray = cJSON_GetObjectItem(root, "d4");
-    strcpy((char *)buf,tmpArray->valuestring);
-    if(strlen((const char*)buf) > 0)
-    {
-        log_d("d4 = %s\r\n",buf);    
-        if(findDev(buf,4) == 1)
-        {
-            isFind =1;
-            goto QR_END;
-        }    
-    }
+	memset ( buf,0x00,sizeof ( buf ) );
+	tmpArray = NULL;
+	tmpArray = cJSON_GetObjectItem ( root, "d3" );
+	if ( tmpArray )
+	{
+		strcpy ( ( char* ) buf,tmpArray->valuestring );
+		if ( strlen ( ( const char* ) buf ) > 0 )
+		{
+			log_d ( "d3= %s\r\n",buf );
+			if ( findDev ( buf,3 ) == 1 )
+			{
+				isFind =1;
+				goto QR_END;
+			}
+		}
+	}
 
 
-    memset(buf,0x00,sizeof(buf));
-    tmpArray = cJSON_GetObjectItem(root, "d5");
-    strcpy((char *)buf,tmpArray->valuestring);
-    if(strlen((const char*)buf) > 0)
-    {
-        log_d("d5 = %s\r\n",buf);    
-        if(findDev(buf,5) == 1)
-        {
-           isFind =1;
-        }    
-    }
-  
-QR_END:    
-    cJSON_Delete(root);
-    
-    return isFind;
+	memset ( buf,0x00,sizeof ( buf ) );
+	tmpArray = NULL;
+	tmpArray = cJSON_GetObjectItem ( root, "d4" );
+	if ( tmpArray )
+	{
+		strcpy ( ( char* ) buf,tmpArray->valuestring );
+		if ( strlen ( ( const char* ) buf ) > 0 )
+		{
+			log_d ( "d4 = %s\r\n",buf );
+			if ( findDev ( buf,4 ) == 1 )
+			{
+				isFind =1;
+				goto QR_END;
+			}
+		}
+	}
+
+	memset ( buf,0x00,sizeof ( buf ) );
+	tmpArray = NULL;
+	tmpArray = cJSON_GetObjectItem ( root, "d5" );
+	if ( tmpArray )
+	{
+		strcpy ( ( char* ) buf,tmpArray->valuestring );
+		if ( strlen ( ( const char* ) buf ) > 0 )
+		{
+			log_d ( "d5 = %s\r\n",buf );
+			if ( findDev ( buf,5 ) == 1 )
+			{
+				isFind =1;
+			}
+		}
+	}
+
+QR_END:
+	cJSON_Delete ( root );
+
+	return isFind;
 
 }
 
@@ -631,7 +550,7 @@ SYSERRORCODE_E saveTemplateParam(uint8_t *jsonBuff)
     
     int holidayTimeMapCnt=0,peakTimeMapCnt=0,index = 0;
     uint8_t ret = 0;
-    char tmpbuf[8] = {0};
+    //char tmpbuf[8] = {0};
     char tmpIndex[2] = {0};
     char tmpKey[32] = {0};
     char *callingWay[4] = {0}; //存放分割后的子字符串 
@@ -1227,5 +1146,40 @@ uint8_t optRecordIndex(RECORDINDEX_STRU *recoIndex,uint8_t mode)
 
 	return ret;
 }
+
+void eraseUserDataAll ( void )
+{
+	int32_t iTime1, iTime2;
+	iTime1 = xTaskGetTickCount();	/* 记下开始时间 */
+	eraseHeadSector();
+	eraseDataSector();
+	clearTemplateFRAM();
+    initTemplateParam();	
+	iTime2 = xTaskGetTickCount();	/* 记下结束时间 */
+	log_d ( "eraseUserDataAll成功，耗时: %dms\r\n",iTime2 - iTime1 );
+}
+
+static void eraseUserDataIndex ( void )
+{
+    ClearRecordIndex();
+    optRecordIndex(&gRecordIndex,WRITE_PRARM);
+}
+
+
+void eraseHeadSector ( void )
+{
+	FRAM_Erase ( FM24V10_1,0,122880 );	
+}
+void eraseDataSector ( void )
+{
+	uint16_t i = 0;
+
+	for ( i=0; i<DATA_SECTOR_NUM; i++ )
+	{
+		bsp_sf_EraseSector ( CARD_NO_DATA_ADDR+i*SECTOR_SIZE );
+		bsp_sf_EraseSector ( USER_ID_DATA_ADDR+i*SECTOR_SIZE );
+	}
+}
+
 
 

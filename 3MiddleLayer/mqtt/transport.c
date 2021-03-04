@@ -248,9 +248,10 @@ int transport_open(char* addr, int port)
 	if(server == NULL)
 	{
 		log_d("[ERROR] Get host ip failed\r\n");
-		close(*sock);        
-        return -1;		
-    }
+        //πÿ±’¡¥Ω”
+        close(*sock);        
+        return -1;    		
+	}
 	
 	memset(&serv_addr,0,sizeof(serv_addr));
 	serv_addr.sin_family = AF_INET;

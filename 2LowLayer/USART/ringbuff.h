@@ -30,7 +30,7 @@
   
 #define  USE_MUTEX   0
 
-#define ERR_OK        ( 0 )
+#define SUCCESS        ( 0 )
 #define ERR_NOK       ( -1 )
 #define ERR_NULL      ( -2 )
 #define ERR_UNUSE     ( -3 )

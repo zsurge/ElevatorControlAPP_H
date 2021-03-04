@@ -109,13 +109,15 @@ static void AppTaskCreate (void)
     CreateHandShakeTask();
 
     //LED灯
-//    CreateLedTask();
+    /* BEGIN: Deleted by  , 2021/2/2   问题单号:012 */
+    /* CreateLedTask();  */
+    /* END: Deleted by  , 2021/2/2 */
 
     //跟电梯通讯
     CreateCommTask();//1
 
     //数码管显示
-    CreateHc595Task();//3
+//    CreateHc595Task();//3
 
     //数据处理
     CreateDataProcessTask();//6

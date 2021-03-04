@@ -324,8 +324,7 @@ static SYSERRORCODE_E DelUserId( uint8_t* msgBuf )
     uint8_t buf[MQTT_TEMP_LEN] = {0};
     uint8_t userId[CARD_USER_LEN] = {0};
     uint8_t tmp[CARD_USER_LEN] = {0};
-    uint16_t len = 0;
-    uint8_t rRet=1;
+    int len = 0;
     uint8_t wRet=1;
     
     USERDATA_STRU userData = {0};
@@ -344,26 +343,6 @@ static SYSERRORCODE_E DelUserId( uint8_t* msgBuf )
     strcpy((char *)tmp,(const char *)GetJsonItem((const uint8_t *)msgBuf,(const uint8_t *)"userId",1));
     sprintf((char *)userId,"%08s",tmp);
     log_d("userId = %s\r\n",userId);
-
-//    log_d("=================================\r\n");
-//    rRet = readUserData(userId,USER_MODE,&userData);
-
-//    log_d("ret = %d\r\n",rRet);    
-//    log_d("userData.cardState = %d\r\n",userData.cardState);    
-//    log_d("userData.userState = %d\r\n",userData.userState);
-//    log_d("userData.cardNo = %s\r\n",userData.cardNo);
-//    log_d("userData.userId = %s\r\n",userData.userId);
-//    log_d("userData.accessFloor = %s\r\n",userData.accessFloor);
-//    log_d("userData.defaultFloor = %d\r\n",userData.defaultFloor);
-//    log_d("userData.startTime = %s\r\n",userData.startTime);
-
-
-//    if(rRet == 0)
-//    {
-//        userData.head = TABLE_HEAD;
-//        userData.userState = USER_DEL; //ÉèÖÃ¿¨×´Ì¬Îª0£¬É¾³ý¿¨
-//        wRet = modifyUserData(&userData,USER_MODE);
-//    }
 
     wRet = delUserData(userId,USER_MODE);
 
@@ -391,6 +370,7 @@ static SYSERRORCODE_E DelUserId( uint8_t* msgBuf )
 
     memset(&userData,0x00,sizeof(userData));
     len = readUserData(userId,USER_MODE,&userData);
+    
     log_d("ret = %d\r\n",len);    
     log_d("userData.cardState = %d\r\n",userData.cardState);    
     log_d("userData.userState = %d\r\n",userData.userState);
@@ -414,7 +394,7 @@ SYSERRORCODE_E AddCardNo ( uint8_t* msgBuf )
     uint8_t userId[CARD_USER_LEN] = {0};
     uint16_t len = 0;  
     USERDATA_STRU userData = {0};  
-    uint8_t ret = 0;
+    char ret = 0;
  
 
     if(!msgBuf)
@@ -530,7 +510,6 @@ SYSERRORCODE_E DelCardNo ( uint8_t* msgBuf )
     uint8_t userId[CARD_USER_LEN] = {0};
     uint8_t tmp[CARD_USER_LEN] = {0};
     uint16_t len = 0;
-    uint8_t rRet=1;
     uint8_t wRet=1;
     uint8_t num=0;
     int i = 0;  
@@ -817,6 +796,8 @@ SYSERRORCODE_E GetDevInfo ( uint8_t* msgBuf )
     mqttSendData(buf,len);
     
     my_free(identification);
+
+    manualSortCard();
     
 	return result;
 
@@ -826,7 +807,7 @@ SYSERRORCODE_E GetDevInfo ( uint8_t* msgBuf )
 static SYSERRORCODE_E DelCard( uint8_t* msgBuf )
 {
 	SYSERRORCODE_E result = NO_ERR;
-	uint8_t rRet = 1;
+	char rRet = 1;
 	uint8_t wRet = 1;
     uint8_t buf[MQTT_TEMP_LEN] = {0};
     uint8_t cardNo[CARD_USER_LEN] = {0};
@@ -1314,23 +1295,23 @@ static SYSERRORCODE_E PCOptDev ( uint8_t* msgBuf )
 //    log_d("userData.startTime = %s\r\n",userData.startTime);
 
 
-
+#ifdef DEBUG_PRINT
 log_d("===============CARD_MODE==================\r\n");
-//TestFlash(CARD_MODE);
+TestFlash(CARD_MODE);
 
 
 log_d("===============USER_MODE==================\r\n");
-//TestFlash(USER_MODE);
+TestFlash(USER_MODE);
 
 
 log_d("===============CARD_DEL_MODE==================\r\n");
-//TestFlash(CARD_DEL_MODE);
+TestFlash(CARD_DEL_MODE);
 
 
 log_d("===============USER_DEL_MODE==================\r\n");
-//TestFlash(USER_DEL_MODE);
+TestFlash(USER_DEL_MODE);
 
-
+#endif
 
 
 

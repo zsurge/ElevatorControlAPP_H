@@ -29,7 +29,7 @@
 #include "malloc.h"
 #include "bsp_MB85RC128.h"
 #include "deviceInfo.h"
-
+#include "ini.h"
 
 
 #define LOG_TAG    "localData"
@@ -61,89 +61,9 @@ HEADINFO_STRU gSectorBuff[512] = {0};
  * 内部函数原型说明                             *
  *----------------------------------------------*/
 static uint8_t checkFlashSpace ( uint8_t mode );
-static void eraseUserDataIndex ( void );
-static ISFIND_ENUM findIndex ( uint8_t* header,uint32_t address,uint16_t curIndex,uint16_t* index );
-static uint32_t readDelIndexValue ( uint8_t mode,uint16_t curIndex );
 
-static uint8_t delSourceHeader ( uint16_t index,uint8_t mode );
-static ISFIND_ENUM fIndex( uint8_t* header,uint8_t mode,uint16_t* index );
-
-typedef ISFIND_ENUM(*opFindIndex)(uint8_t* header,uint8_t mode,uint16_t* index); //获取index回调
-
-static int Bin_Search(HEADINFO_STRU *num,int numsSize,int target);
+//static int Bin_Search(HEADINFO_STRU *num,int numsSize,int target);
 static int Bin_Search_addr(uint32_t startAddr,int numsSize,int target);
-
-
-
-
-
-
-uint32_t readDelIndexValue ( uint8_t mode,uint16_t curIndex )
-{
-	uint8_t readBuff[HEAD_lEN+1] = {0};
-	uint8_t temp[HEAD_lEN*2+1] = {0};
-	uint32_t addr = 0;
-	uint32_t value = 0;
-
-	memset ( readBuff,0x00,sizeof ( readBuff ) );
-	//写入已删除的空间中,根据已删除索引，获取到当前索引下卡或者用户的索引
-
-	if ( mode == CARD_MODE )
-	{
-		addr = CARD_DEL_HEAD_ADDR + curIndex * HEAD_lEN;
-	}
-	else if ( mode == USER_MODE )
-	{
-		addr = USER_DEL_HEAD_ADDR + curIndex * HEAD_lEN;
-	}
-
-	FRAM_Read ( FM24V10_1, addr, readBuff, HEAD_lEN );
-
-
-	bcd2asc ( temp, readBuff,CARD_NO_LEN_ASC, 0 );
-
-	value = atoi ( ( const char* ) temp );
-
-	//log_d("readDelIndexValue = %s,value =%d\r\n",temp,value);
-
-	return value;
-
-}
-
-
-void eraseUserDataAll ( void )
-{
-	int32_t iTime1, iTime2;
-	iTime1 = xTaskGetTickCount();	/* 记下开始时间 */
-	eraseHeadSector();
-	eraseDataSector();
-	clearTemplateFRAM();
-    initTemplateParam();	
-	iTime2 = xTaskGetTickCount();	/* 记下结束时间 */
-	log_d ( "eraseUserDataAll成功，耗时: %dms\r\n",iTime2 - iTime1 );
-}
-
-static void eraseUserDataIndex ( void )
-{
-    ClearRecordIndex();
-    optRecordIndex(&gRecordIndex,WRITE_PRARM);
-}
-
-
-void eraseHeadSector ( void )
-{
-	FRAM_Erase ( FM24V10_1,0,122880 );	
-}
-void eraseDataSector ( void )
-{
-	uint16_t i = 0;
-
-	for ( i=0; i<DATA_SECTOR_NUM; i++ )
-	{
-		bsp_sf_EraseSector ( CARD_NO_DATA_ADDR+i*SECTOR_SIZE );
-		bsp_sf_EraseSector ( USER_ID_DATA_ADDR+i*SECTOR_SIZE );
-	}
-}
 
 
 uint8_t writeUserData ( USERDATA_STRU *userData,uint8_t mode )
@@ -155,7 +75,6 @@ uint8_t writeUserData ( USERDATA_STRU *userData,uint8_t mode )
 	uint8_t ret = 0;
 	uint8_t times = 3;
 	uint32_t addr = 0;
-	uint32_t index = 0;
     uint8_t head[8] = {0};
     int tmpIndex = 0;
 	HEADINFO_STRU tmpHead;
@@ -263,12 +182,11 @@ int modifyCardData(USERDATA_STRU *userData)
 {
 	uint8_t wBuff[255] = {0};
 	uint8_t rBuff[255] = {0};
-	uint8_t isFull = 0;
 	uint8_t crc=0;
 	uint8_t ret = 0;
 	uint8_t times = 3;
 	uint32_t addr = CARD_NO_DATA_ADDR;	
-	uint32_t index = 0;
+	
     uint8_t head[4] = {0};
     int tmpIndex = 0;
     uint32_t flashIndex = 0;
@@ -372,7 +290,7 @@ int modifyCardData(USERDATA_STRU *userData)
 
 
 
-uint8_t readUserData ( uint8_t* header,uint8_t mode,USERDATA_STRU* userData )
+char readUserData ( uint8_t* header,uint8_t mode,USERDATA_STRU* userData )
 {
 	uint8_t rBuff[255] = {0};
 	uint8_t crc = 0;
@@ -505,16 +423,16 @@ uint8_t delUserData ( uint8_t* header,uint8_t mode )
 {
 	uint8_t wBuff[255] = {0};
 	uint8_t rBuff[255] = {0};
-	uint8_t isFull = 0;
+	
 	uint8_t ret = 0;
 	uint8_t times = 3;
 	uint32_t addr = 0;
-	uint16_t index = 0;
-    uint8_t headBcd[4] = 0;
+	
+    uint8_t headBcd[4] = {0};
     int flashIndex = 0;
-	uint8_t multiple = 0;
-	uint16_t remainder = 0;  
-	uint32_t address = 0;
+	
+	
+	
 
 	int32_t iTime1, iTime2;
 	//log_d("sizeof(USERDATA_STRU) = %d\r\n",sizeof(USERDATA_STRU));
@@ -721,7 +639,7 @@ uint8_t writeDelHeader ( uint8_t* header,uint8_t mode )
 	uint8_t times = 3;
 	uint8_t readBuff[HEAD_lEN+1] = {0};
 	uint8_t ret = 0;
-	uint8_t headCnt[CARD_USER_LEN] = {0};
+	
 	uint8_t temp[HEAD_lEN+1] = {0};
 	uint32_t addr = 0;
 
@@ -795,54 +713,7 @@ uint8_t writeDelHeader ( uint8_t* header,uint8_t mode )
 
 }
 
-static uint8_t delSourceHeader ( uint16_t index,uint8_t mode )
-{
-	uint8_t times = 3;
-	uint8_t readBuff[HEAD_lEN+1] = {0};
-	uint8_t ret = 0;
-	uint8_t temp[HEAD_lEN+1] = {0};
-	uint32_t addr = 0;
 
-	if ( mode == CARD_MODE )
-	{
-		addr = CARD_NO_HEAD_ADDR + index * HEAD_lEN;
-	}
-	else if ( mode == USER_MODE )
-	{
-		addr = USER_ID_HEAD_ADDR + index * HEAD_lEN;
-	}
-
-	memset ( temp,0xFF,sizeof ( temp ) );
-
-	while ( times )
-	{
-//        ret = bsp_sf_WriteBuffer (temp, addr, HEAD_lEN);
-		ret = FRAM_Write ( FM24V10_1, addr, temp,HEAD_lEN );
-
-		//再读出来，对比是否一致
-		memset ( readBuff,0x00,sizeof ( readBuff ) );
-//        bsp_sf_ReadBuffer (readBuff, addr, HEAD_lEN);
-		FRAM_Read ( FM24V10_1, addr, readBuff, HEAD_lEN );
-
-		ret = compareArray ( temp,readBuff,HEAD_lEN );
-
-		if ( ret == 0 )
-		{
-			break;
-		}
-
-		if ( ret != 0 && times == 1 )
-		{
-			log_d ( "write header error\r\n" );
-			return 3;
-		}
-
-		times--;
-	}
-
-	return 0;
-
-}
 
 
 
@@ -917,7 +788,7 @@ int readHead(HEADINFO_STRU *head,uint8_t mode)
 	uint8_t i = 0;
 	uint8_t multiple = 0;
 	uint16_t remainder = 0;
-	uint16_t loop = 0;
+	
 	uint32_t address = 0;
 	uint32_t curIndex = 0;
 	int ret = 0;
@@ -1105,29 +976,105 @@ void sortHead(HEADINFO_STRU *head,int length)
     }
 }
 
-//return:<0,未找到，>=0在FLASH中的索引值
-static int Bin_Search(HEADINFO_STRU *num,int numsSize,int target)
+
+void manualSortCard(void)
 {
-	int left = 0,right = numsSize-1,mid;
-	
-	while(left <= right)
-	{
-		mid = (left + right) / 2;//确定中间元素	
-		if(num[mid].headData.id > target)
-		{
-			right = mid-1; //mid已经交换过了,right往前移一位
-		}
-		else if(num[mid].headData.id < target)
-		{
-			left = mid+1;//mid已经交换过了,left往后移一位
-		}	
-		else //判断是否相等
-		{		    
-            return num[mid].flashAddr;
-		}
-	}        
-    return NO_FIND_HEAD;
+    uint8_t multiple = 0;
+	uint16_t remainder = 0;
+	int ret = 0;
+
+	int i = 0;
+	uint32_t addr = CARD_NO_HEAD_ADDR;
+
+    int32_t iTime1, iTime2;   
+       
+   //1.先判定当前有多少个卡号;
+    ClearRecordIndex();
+    optRecordIndex(&gRecordIndex,READ_PRARM);
+    
+	addr = CARD_NO_HEAD_ADDR;    
+    multiple = gRecordIndex.cardNoIndex / HEAD_NUM_SECTOR;
+    remainder = gRecordIndex.cardNoIndex % HEAD_NUM_SECTOR;
+
+    memset(gSectorBuff,0x00,sizeof(gSectorBuff));
+    iTime1 = xTaskGetTickCount();   /* 记下开始时间 */
+    if(remainder != 0)
+    {
+        //2.计算最后一页地址
+        addr += multiple * HEAD_NUM_SECTOR  * sizeof(HEADINFO_STRU);    
+        
+        //3.读取最后一页
+        ret = FRAM_Read (FM24V10_1, addr, gSectorBuff, remainder* sizeof(HEADINFO_STRU));
+        if(ret == 0)
+        {
+            log_e("read fram error\r\n");
+            return ;
+        } 
+        
+        //5.排序        
+        sortHead(gSectorBuff,remainder);   
+        
+        ret = FRAM_Write ( FM24V10_1, addr, gSectorBuff,remainder* sizeof(HEADINFO_STRU));        
+        if(ret == 0)
+        {
+            log_e("write fram error\r\n");
+            return ;
+        }          
+    }    
+
+    
+    for(i=0;i<multiple;i++)
+    {
+        addr = CARD_NO_HEAD_ADDR;//从零开始读;
+        addr += i * HEAD_NUM_SECTOR  * CARD_USER_LEN; 
+        memset(gSectorBuff,0x00,sizeof(gSectorBuff));
+        
+        //3.读当前页      
+        ret = FRAM_Read (FM24V10_1, addr, gSectorBuff, HEAD_NUM_SECTOR* sizeof(HEADINFO_STRU));
+        if(ret == 0)
+        {
+            log_e("read fram error\r\n");
+            return ;
+        }         
+        //排序
+        sortHead(gSectorBuff,HEAD_NUM_SECTOR); 
+        //写回数据
+        ret = FRAM_Write ( FM24V10_1, addr, gSectorBuff,HEAD_NUM_SECTOR* sizeof(HEADINFO_STRU));        
+        if(ret == 0)
+        {
+            log_e("write fram error\r\n");
+            return ;
+        }        
+     }
+
+	iTime2 = xTaskGetTickCount();	/* 记下结束时间 */
+	log_e( "sort all card success，use time: %dms\r\n",iTime2 - iTime1 );  	
 }
+
+
+//return:<0,未找到，>=0在FLASH中的索引值
+//static int Bin_Search(HEADINFO_STRU *num,int numsSize,int target)
+//{
+//	int left = 0,right = numsSize-1,mid;
+//	
+//	while(left <= right)
+//	{
+//		mid = (left + right) / 2;//确定中间元素	
+//		if(num[mid].headData.id > target)
+//		{
+//			right = mid-1; //mid已经交换过了,right往前移一位
+//		}
+//		else if(num[mid].headData.id < target)
+//		{
+//			left = mid+1;//mid已经交换过了,left往后移一位
+//		}	
+//		else //判断是否相等
+//		{		    
+//            return num[mid].flashAddr;
+//		}
+//	}        
+//    return NO_FIND_HEAD;
+//}
 
 //返回查找到值的FLASH索引
 static int Bin_Search_addr(uint32_t startAddr,int numsSize,int target)
@@ -1173,10 +1120,10 @@ void addHead(uint8_t *head,uint8_t mode)
 	uint32_t addr = 0;
 	uint8_t ret = 0;
 	uint32_t curIndex = 0;
-	uint8_t i = 0;
+	
 
     int32_t iTime1, iTime2;	
-    HEADINFO_STRU rxCard;
+    
     
     
    iTime1 = xTaskGetTickCount();   /* 记下开始时间 */
