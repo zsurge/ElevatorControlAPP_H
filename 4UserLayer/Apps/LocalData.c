@@ -324,7 +324,7 @@ char readUserData ( uint8_t* header,uint8_t mode,USERDATA_STRU* userData )
 	if(index == NO_FIND_HEAD)
 	{
         log_d("no find head\r\n");
-        return 2;
+        return NO_FIND_HEAD;
 	}
 
 	if ( mode == CARD_MODE )

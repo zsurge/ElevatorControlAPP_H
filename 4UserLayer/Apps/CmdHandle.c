@@ -95,6 +95,7 @@ static SYSERRORCODE_E getRemoteTime ( uint8_t* msgBuf );//获取远程服务器时间
 
 //static SYSERRORCODE_E ReturnDefault ( uint8_t* msgBuf ); //返回默认消息
 
+//static void reverseArray(uint8_t *array);
 
 typedef SYSERRORCODE_E ( *cmd_fun ) ( uint8_t *msgBuf ); 
 
@@ -130,6 +131,23 @@ const CMD_HANDLE_T CmdList[] =
     {"3013", SetLocalTime}, 
     {"30131", getRemoteTime},
 };
+
+
+
+//static void reverseArray(uint8_t *array) 
+//{
+//    int i,temp;
+//    int size = sizeof(array)/sizeof(array[0]);
+
+//    
+//    for(i=0; i<size/2; i++)
+//    {
+//        temp = array[i];
+//        array[i] = array[size-i-1];
+//        array[size-i-1] = temp;
+//    }   
+
+//}
 
 
 SYSERRORCODE_E exec_proc ( char* cmd_id, uint8_t *msg_buf )
@@ -185,7 +203,7 @@ static SYSERRORCODE_E SendToQueue(uint8_t *buf,int len,uint8_t authMode)
     /* 使用消息队列实现指针变量的传递 */
     if(xQueueSend(xDataProcessQueue,              /* 消息队列句柄 */
                  (void *) &ptQR,   /* 发送指针变量recv_buf的地址 */
-                 (TickType_t)300) != pdPASS )
+                 (TickType_t)50) != pdPASS )
     {
         DBG("the queue is full!\r\n");                
         xQueueReset(xDataProcessQueue);
@@ -424,36 +442,8 @@ SYSERRORCODE_E AddCardNo ( uint8_t* msgBuf )
     log_d("userData.userState = %d\r\n",userData.userState);
     log_d("userData.cardNo = %s\r\n",userData.cardNo);
     log_d("userData.userId = %s\r\n",userData.userId);
-//    dbh("userData.accessFloor", userData.accessFloor, sizeof(userData.accessFloor));
     log_d("userData.defaultFloor = %d\r\n",userData.defaultFloor);
     log_d("userData.startTime = %s\r\n",userData.startTime);
-
-//      userData.accessFloor[0] = 8;
-//      userData.accessFloor[0] = 25;
-//      userData.accessFloor[1] = 24;
-//      userData.accessFloor[2] = 23;
-//      userData.accessFloor[3] = 22;
-//      userData.accessFloor[4] = 21;
-//      userData.accessFloor[5] = 20;
-//      userData.accessFloor[6] = 19;
-//      userData.accessFloor[7] = 18;
-//      userData.accessFloor[8] = 17;
-//      userData.accessFloor[9] = 16;
-//      userData.accessFloor[10] = 15;
-//      userData.accessFloor[11] = 14;
-//      userData.accessFloor[12] = 13;
-//      userData.accessFloor[13] = 12;
-//      userData.accessFloor[14] = 11;
-//      userData.accessFloor[15] = 10;
-//      userData.accessFloor[16] = 9;
-//      userData.accessFloor[17] = 7;
-//      userData.accessFloor[18] = 6;
-//      userData.accessFloor[19] = 5;
-//      userData.accessFloor[20] = 4;
-//      userData.accessFloor[21] = 3;
-//      userData.accessFloor[22] = 2;
-//      userData.accessFloor[23] = 1;
-//      userData.accessFloor[24] = 8;
   
  
     

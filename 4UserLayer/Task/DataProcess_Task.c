@@ -90,6 +90,7 @@ static void vTaskDataProcess(void *pvParameters)
     
     while (1)
     {
+    
         memset(&localUserData,0x00,sizeof(USERDATA_STRU));     
         memset(&gReaderMsg,0x00,sizeof(READER_BUFF_STRU));    
         memset(&gElevtorData,0x00,sizeof(ELEVATOR_BUFF_STRU));    
@@ -98,7 +99,10 @@ static void vTaskDataProcess(void *pvParameters)
         ptMsg->authMode = 0; //默认为刷卡
         ptMsg->dataLen = 0;
         memset(ptMsg->data,0x00,sizeof(ptMsg->data));
-    
+
+        /* 发送事件标志，表示任务正常运行 */        
+        xEventGroupSetBits(xCreatedEventGroup, TASK_BIT_6);  
+        
         xReturn = xQueueReceive( xDataProcessQueue,    /* 消息队列的句柄 */
                                  (void *)&ptMsg,  /*这里获取的是结构体的地址 */
                                  xMaxBlockTime); /* 设置阻塞时间 */
@@ -195,11 +199,9 @@ static void vTaskDataProcess(void *pvParameters)
                 xQueueReset(xDataProcessQueue); 
                 log_d("send AUTH_MODE_BIND floor\r\n");
                 break;                
-        }
+        }       
         
-        
-        /* 发送事件标志，表示任务正常运行 */        
-        xEventGroupSetBits(xCreatedEventGroup, TASK_BIT_6);  
+
         vTaskDelay(100);
 
     }
