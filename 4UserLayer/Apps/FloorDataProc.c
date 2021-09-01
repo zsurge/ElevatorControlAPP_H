@@ -143,7 +143,7 @@ SYSERRORCODE_E packetToElevator(USERDATA_STRU *localUserData)
     
     memcpy(devSendData->data,sendBuf,MAX_SEND_LEN);
     
-//    dbh("send single1", (char *)devSendData->data, MAX_SEND_LEN);
+    dbh("send single", (char *)devSendData->data, MAX_SEND_LEN);
 
     for(i = 0 ;i<7;i++)
     {
