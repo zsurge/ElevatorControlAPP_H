@@ -371,14 +371,14 @@ static SYSERRORCODE_E packetToElevator(USERDATA_STRU *localUserData)
     
     memcpy(devSendData->data,sendBuf,MAX_SEND_LEN);
     
-//    dbh("send single1", (char *)devSendData->data, MAX_SEND_LEN);
+    dbh("send single", (char *)devSendData->data, MAX_SEND_LEN);
 
     for(i = 0 ;i<7;i++)
     {
         /* 使用消息队列实现指针变量的传递 */
         if(xQueueSend(xTransDataQueue,              /* 消息队列句柄 */
         			 (void *) &devSendData,   /* 发送指针变量recv_buf的地址 */
-        			 (TickType_t)10) != pdPASS )
+        			 (TickType_t)30) != pdPASS )
         {
             log_d("the queue is full!\r\n");                
             xQueueReset(xTransDataQueue);

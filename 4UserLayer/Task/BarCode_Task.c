@@ -404,7 +404,7 @@ static void vTaskBarCode(void *pvParameters)
                     	/* 使用消息队列实现指针变量的传递 */
                     	if(xQueueSend(xDataProcessQueue,              /* 消息队列句柄 */
                     				 (void *) &ptQR,   /* 发送指针变量recv_buf的地址 */
-                    				 (TickType_t)100) != pdPASS )
+                    				 (TickType_t)50) != pdPASS )
                     	{
                             log_d("the queue is full!\r\n");                
                             xQueueReset(xDataProcessQueue);
@@ -623,8 +623,8 @@ static int compareTime(uint8_t *currentTime)
 static void packetUserData(char *src,int icFlag,int qrFlag,READER_BUFF_STRU *desc)
 {
     READER_BUFF_STRU readerBuff = {0}; 
-    uint8_t key[16] ={ 0x82,0x5d,0x82,0xd8,0xd5,0x2f,0xdf,0x85,0x28,0xa2,0xb5,0xd8,0x88,0x88,0x88,0x88 }; 
-    uint8_t bcdBuff[512] = {0};
+//    uint8_t key[16] ={ 0x82,0x5d,0x82,0xd8,0xd5,0x2f,0xdf,0x85,0x28,0xa2,0xb5,0xd8,0x88,0x88,0x88,0x88 }; 
+//    uint8_t bcdBuff[512] = {0};
     memset(&readerBuff,0x00,sizeof(READER_BUFF_STRU));  
 
 //    uint8_t offset = 0;

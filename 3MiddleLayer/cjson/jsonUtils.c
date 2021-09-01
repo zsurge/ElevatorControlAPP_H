@@ -338,7 +338,7 @@ SYSERRORCODE_E upgradeDataPacket(uint8_t *descBuf)
         //无升级动作
     }    
  
-    strcpy((char *)descBuf,send);
+    strcpy((char *)descBuf,(const char *)send);
 
 
     return result;

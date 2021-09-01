@@ -44,7 +44,7 @@
 /*----------------------------------------------*
  * 包含头文件                                   *
  *----------------------------------------------*/
-#include<stdio.h>
+#include<stdlib.h>
 #include<string.h>
 #include "calcDevNO.h"
 #include "deviceinfo.h"
@@ -123,11 +123,10 @@ int myAtoi(const char *str)
     //char chars[] = {'!','#','$','%','&','(',')','*','+',',','-','.','/','0','1','2','3','4','5','6','7','8','9',':',';','<','=','>','?','@','A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S','T','U','V','W','X','Y','Z','[',']','^','_','`','a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v','w','x','y','z','{','}','~'};
     const char *p = str;
 
-    char temp = '!';
+    int temp = '!';
 
     if(NULL == p)           //判断指针的合法性
     {
-        printf("error");
         return -1;
     }
     
@@ -144,10 +143,8 @@ int myAtoi(const char *str)
     {        
         temp = findChar(*p++);
 
-        //if(total != 0)     //滤除字符串开始的0字符
         if(total != 0||temp != -1)     //滤除字符串开始的0字符
         {
-            //temp -= '0';
             total = total*DEVICE_NO_FMT + temp;
         }
     }
@@ -180,7 +177,7 @@ unsigned char findDev(unsigned char *str,unsigned char dataFormat)
         memset(buf,0x00,sizeof(buf));
         memcpy(buf,str+i*dataFormat,dataFormat);
         tmpValue = myAtoi(buf);
-        printf("current devSn = %d,format(90) = %s,decimal = %d\r\n",devSN,buf,tmpValue);
+        //printf("current devSn = %d,format(90) = %s,decimal = %d\r\n",devSN,buf,tmpValue);
         if(devSN == tmpValue)
         {
             isFind = 1;

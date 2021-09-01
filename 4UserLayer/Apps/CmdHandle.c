@@ -185,7 +185,7 @@ static SYSERRORCODE_E SendToQueue(uint8_t *buf,int len,uint8_t authMode)
     /* 使用消息队列实现指针变量的传递 */
     if(xQueueSend(xDataProcessQueue,              /* 消息队列句柄 */
                  (void *) &ptQR,   /* 发送指针变量recv_buf的地址 */
-                 (TickType_t)300) != pdPASS )
+                 (TickType_t)50) != pdPASS )
     {
         DBG("the queue is full!\r\n");                
         xQueueReset(xDataProcessQueue);
@@ -224,7 +224,7 @@ int mqttSendData(uint8_t *payload_out,uint16_t payload_out_len)
    { 
        topicString.cstring = gDevBaseParam.mqttTopic.publish;       //属性上报 发布
 
-       log_d("payloadlen = %d,payload = %s",payload_out_len,payload_out);
+       log_d("payloadlen = %d,payload = %s\r\n",payload_out_len,payload_out);
 
        len = MQTTSerialize_publish((unsigned char*)buf, buflen, 0, req_qos, retained, msgid, topicString, payload_out, payload_out_len);//发布消息
        rc = transport_sendPacketBuffer(gMySock, (unsigned char*)buf, len);
@@ -244,7 +244,7 @@ int mqttSendData(uint8_t *payload_out,uint16_t payload_out_len)
    }
   
 
-   return len;
+   return rc;
 }
 
 
@@ -1057,7 +1057,11 @@ static SYSERRORCODE_E GetUserInfo ( uint8_t* msgBuf )
         if(ret != 0)
         {   
             log_e("write user id error\r\n");
-            result = FLASH_W_ERR;
+            if(ret!=4)//add 2021.01.13 若是已有，也回复成功
+            {
+                result = FLASH_W_ERR;
+            }
+
         }        
     }   
     
@@ -1076,8 +1080,12 @@ static SYSERRORCODE_E GetUserInfo ( uint8_t* msgBuf )
 
             if(ret != 0)
             {    
-                log_e("write card id error\r\n");            
-                result = FLASH_W_ERR;
+                log_e("write card id error\r\n"); 
+                if(ret!=4)//add 2021.01.13 若是已存在，也回复成功
+                {
+                    result = FLASH_W_ERR;
+                }
+
             }
 
         }
@@ -1312,7 +1320,7 @@ static SYSERRORCODE_E PCOptDev ( uint8_t* msgBuf )
 //    log_d("userData.startTime = %s\r\n",userData.startTime);
 
 
-
+#ifdef DEBUG_PRINT
 log_d("===============CARD_MODE==================\r\n");
 //TestFlash(CARD_MODE);
 
@@ -1328,7 +1336,7 @@ log_d("===============CARD_DEL_MODE==================\r\n");
 log_d("===============USER_DEL_MODE==================\r\n");
 //TestFlash(USER_DEL_MODE);
 
-
+#endif
 
 
 
