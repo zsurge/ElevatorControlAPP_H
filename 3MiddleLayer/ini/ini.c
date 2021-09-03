@@ -903,7 +903,9 @@ void initTemplateParam(void)
 
 
 	if(gtemplateParam.initFlag.iFlag != DEFAULT_INIVAL)
-	{	    
+	{	
+	    log_d("init initTemplate  Param \r\n");
+	    
         //模板数据赋值
         gtemplateParam.id = 1;
         gtemplateParam.templateStatus = 1;

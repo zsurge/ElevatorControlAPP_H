@@ -993,6 +993,7 @@ static SYSERRORCODE_E GetUserInfo ( uint8_t* msgBuf )
         for(len=0;len<multipleFloorNum;len++)
         {
             tempUserData.accessFloor[len] = atoi(multipleFloor[len]);
+            log_d("tempUserData.accessFloor[%d] = %d\r\n",len,tempUserData.accessFloor[len]);
         }
     }
     else
@@ -1053,7 +1054,7 @@ static SYSERRORCODE_E GetUserInfo ( uint8_t* msgBuf )
 
             if(ret != 0)
             {    
-                log_e("write card id error\r\n"); 
+                log_d("write card id error ret = %d\r\n",ret); 
                 if(ret!=4)//add 2021.01.13 若是已存在，也回复成功
                 {
                     result = FLASH_W_ERR;
@@ -1455,7 +1456,7 @@ static SYSERRORCODE_E AddSingleUser( uint8_t* msgBuf )
         log_d("write user id = %d\r\n",ret);    
         if(ret != 0)
         {   
-            log_e("write card id error\r\n"); 
+            log_d("write card id error ret = %d\r\n",ret); 
             if(ret!=4)//add 2021.01.13 若是已存在，也回复成功
             {
                 result = FLASH_W_ERR;
@@ -1478,7 +1479,7 @@ static SYSERRORCODE_E AddSingleUser( uint8_t* msgBuf )
 
             if(ret != 0)
             {    
-                log_e("write card id error\r\n"); 
+                log_d("write card id error ret = %d\r\n",ret); 
                 if(ret!=4)//add 2021.01.13 若是已存在，也回复成功
                 {
                     result = FLASH_W_ERR;
