@@ -111,7 +111,6 @@ uint8_t writeUserData(USERDATA_STRU *userData,uint8_t mode);
 
 char readUserData(uint8_t* header,uint8_t mode,USERDATA_STRU *userData);
 
-int modifyCardData(USERDATA_STRU *userData);
 
 uint8_t delUserData(uint8_t *header,uint8_t mode);
 

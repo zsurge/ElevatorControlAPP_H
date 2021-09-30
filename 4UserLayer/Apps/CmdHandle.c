@@ -1473,9 +1473,9 @@ static SYSERRORCODE_E AddSingleUser( uint8_t* msgBuf )
             memset(tempUserData.cardNo,0x00,sizeof(tempUserData.cardNo));
             memcpy(tempUserData.cardNo,cardArray[i],CARD_USER_LEN);   
 
-            log_d("->%d th,cardid = %s\r\n",i,tempUserData.cardNo);
+            log_d("->%d th,cardid = %s\r\n",i,tempUserData.cardNo);   
+            ret = writeUserData(&tempUserData,CARD_MODE);
             
-            ret = modifyCardData(&tempUserData);
 
             if(ret != 0)
             {    
