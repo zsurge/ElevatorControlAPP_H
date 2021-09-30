@@ -255,7 +255,7 @@ int32_t Create_RingBuff(RingBuff_t* rb,
   }
 #endif
 	printf("create ringBuff ok!");
-	return ERR_OK;
+	return SUCCESS;
 }
 
 /************************************************************
@@ -286,7 +286,7 @@ int32_t Delete_RingBuff(RingBuff_t *rb)
     return ERR_NOK;
   }
 #endif
-	return ERR_OK;
+	return SUCCESS;
 }
 
 /************************************************************

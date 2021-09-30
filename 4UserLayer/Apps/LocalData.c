@@ -29,7 +29,7 @@
 #include "malloc.h"
 #include "bsp_MB85RC128.h"
 #include "deviceInfo.h"
-
+#include "ini.h"
 
 
 #define LOG_TAG    "localData"
@@ -53,201 +53,17 @@
 //volatile uint16_t gDelCardHeaderIndex = 0;    //已删除卡号索引
 //volatile uint16_t gDelUserHeaderIndex = 0;    //已删除用户ID索引
 
-USERDATA_STRU gUserDataStru = {0};
+//USERDATA_STRU gUserDataStru = {0};
 
+HEADINFO_STRU gSectorBuff[512] = {0};
 
 /*----------------------------------------------*
  * 内部函数原型说明                             *
  *----------------------------------------------*/
 static uint8_t checkFlashSpace ( uint8_t mode );
-static void eraseUserDataIndex ( void );
-static ISFIND_ENUM findIndex ( uint8_t* header,uint32_t address,uint16_t curIndex,uint16_t* index );
-static uint32_t readDelIndexValue ( uint8_t mode,uint16_t curIndex );
 
-static uint8_t delSourceHeader ( uint16_t index,uint8_t mode );
-static ISFIND_ENUM fIndex( uint8_t* header,uint8_t mode,uint16_t* index );
-
-typedef ISFIND_ENUM(*opFindIndex)(uint8_t* header,uint8_t mode,uint16_t* index); //获取index回调
-
-static int Bin_Search(HEADINFO_STRU *num,int numsSize,int target);
-
-
-
-
-
-
-uint32_t readDelIndexValue ( uint8_t mode,uint16_t curIndex )
-{
-	uint8_t readBuff[HEAD_lEN+1] = {0};
-	uint8_t temp[HEAD_lEN*2+1] = {0};
-	uint32_t addr = 0;
-	uint32_t value = 0;
-
-	memset ( readBuff,0x00,sizeof ( readBuff ) );
-	//写入已删除的空间中,根据已删除索引，获取到当前索引下卡或者用户的索引
-
-	if ( mode == CARD_MODE )
-	{
-		addr = CARD_DEL_HEAD_ADDR + curIndex * HEAD_lEN;
-	}
-	else if ( mode == USER_MODE )
-	{
-		addr = USER_DEL_HEAD_ADDR + curIndex * HEAD_lEN;
-	}
-
-	FRAM_Read ( FM24V10_1, addr, readBuff, HEAD_lEN );
-
-
-	bcd2asc ( temp, readBuff,CARD_NO_LEN_ASC, 0 );
-
-	value = atoi ( ( const char* ) temp );
-
-	//log_d("readDelIndexValue = %s,value =%d\r\n",temp,value);
-
-	return value;
-
-}
-
-
-ISFIND_ENUM searchFlashIndex( uint8_t* header,uint8_t mode,uint16_t* index, opFindIndex funFindex)
-{
-	return funFindex(header,mode,index);
-}
-
-
-ISFIND_ENUM fIndex( uint8_t* header,uint8_t mode,uint16_t* index )
-{
-	ISFIND_ENUM isFind = ISFIND_NO;
-	uint8_t i = 0;
-	uint8_t multiple = 0;
-	uint16_t remainder = 0;
-	uint16_t loop = 0;
-	uint32_t address = 0;
-	uint32_t curIndex = 0;
-    uint8_t temp[HEAD_lEN] = {0};
-    
-    char *buff = mymalloc(SRAMIN,SECTOR_SIZE);
-
-    if (buff == NULL)
-    {
-       myfree(SRAMIN,buff);
-       log_d("my_malloc error\r\n");
-       return isFind;
-    }
-
-	if ( header == NULL )
-	{
-	    myfree(SRAMIN,buff);
-		return isFind;
-	}	
-	
-	memset ( temp,0x00,sizeof ( temp ) );
-    memset ( buff,0x00,sizeof ( buff ) );	
-    
-	asc2bcd ( temp, header,CARD_NO_LEN_ASC, 0 );	
-
-	if ( mode == CARD_MODE )
-	{
-		address = CARD_NO_HEAD_ADDR;
-		curIndex = gRecordIndex.cardNoIndex;
-	}
-	else if ( mode == USER_MODE )
-	{
-		address = USER_ID_HEAD_ADDR;
-		curIndex = gRecordIndex.userIdIndex;		
-	}
-	else if ( mode == CARD_DEL_MODE )
-	{
-		address = CARD_DEL_HEAD_ADDR;
-		curIndex = gRecordIndex.delCardNoIndex;		
-	}
-	else if ( mode == USER_DEL_HEAD_ADDR )
-	{
-		address = USER_DEL_HEAD_ADDR;
-		curIndex = gRecordIndex.delUserIdIndex;
-	}	
-	
-	multiple = curIndex / HEAD_NUM_SECTOR;
-	remainder = curIndex % HEAD_NUM_SECTOR;
-
-	//log_d("multiple = %d,remainder = %d\r\n",multiple,remainder);
-
-	for ( i= 0; i<multiple; i++ )
-	{
-		memset ( buff,0x00,sizeof ( buff ) );
-		FRAM_Read ( FM24V10_1, address+i*SECTOR_SIZE, buff, SECTOR_SIZE );
-
-        
-		for ( loop=0; loop<HEAD_NUM_SECTOR; loop++ )
-		{
-//            dbh("1read", buff+loop*HEAD_lEN,HEAD_lEN);
-			if ( memcmp ( temp,buff+loop*HEAD_lEN,HEAD_lEN ) == 0 )
-			{
-				isFind = ISFIND_YES;
-				*index = loop + i*HEAD_NUM_SECTOR;
-				
-                myfree(SRAMIN,buff);
-				return isFind;
-			}
-		}
-	}
-
-	memset ( buff,0x00,sizeof ( buff ) );
-	FRAM_Read ( FM24V10_1,address + multiple*SECTOR_SIZE, buff, remainder*HEAD_lEN );
-
-	for ( loop=0; loop<remainder; loop++ )
-	{
-//            dbh("2read", buff+loop*HEAD_lEN,HEAD_lEN);
-		if ( memcmp ( temp,buff+loop*HEAD_lEN,HEAD_lEN ) == 0 )
-		{
-			isFind = ISFIND_YES;
-			*index = loop + i*HEAD_NUM_SECTOR;
-			log_d("index = %d\r\n",*index);
-            myfree(SRAMIN,buff);			
-			return isFind;
-		}
-	}
-	
-    myfree(SRAMIN,buff);
-	*index = 0;
-	return isFind;
-}
-
-
-
-void eraseUserDataAll ( void )
-{
-	int32_t iTime1, iTime2;
-	iTime1 = xTaskGetTickCount();	/* 记下开始时间 */
-	eraseHeadSector();
-	eraseDataSector();
-	clearTemplateFRAM();
-    initTemplateParam();	
-	iTime2 = xTaskGetTickCount();	/* 记下结束时间 */
-	log_d ( "eraseUserDataAll成功，耗时: %dms\r\n",iTime2 - iTime1 );
-}
-
-static void eraseUserDataIndex ( void )
-{
-    ClearRecordIndex();
-    optRecordIndex(&gRecordIndex,WRITE_PRARM);
-}
-
-
-void eraseHeadSector ( void )
-{
-	FRAM_Erase ( FM24V10_1,0,122880 );	
-}
-void eraseDataSector ( void )
-{
-	uint16_t i = 0;
-
-	for ( i=0; i<DATA_SECTOR_NUM; i++ )
-	{
-		bsp_sf_EraseSector ( CARD_NO_DATA_ADDR+i*SECTOR_SIZE );
-		bsp_sf_EraseSector ( USER_ID_DATA_ADDR+i*SECTOR_SIZE );
-	}
-}
+//static int Bin_Search(HEADINFO_STRU *num,int numsSize,int target);
+static int Bin_Search_addr(uint32_t startAddr,int numsSize,int target);
 
 
 uint8_t writeUserData ( USERDATA_STRU *userData,uint8_t mode )
@@ -261,6 +77,9 @@ uint8_t writeUserData ( USERDATA_STRU *userData,uint8_t mode )
 	uint32_t addr = 0;
 	uint32_t index = 0;
     uint8_t head[8] = {0};
+    int tmpIndex = 0;
+	HEADINFO_STRU tmpHead,getFlashHead;
+	uint32_t flashIndex = 0;
 
 	int32_t iTime1, iTime2;
 
@@ -283,21 +102,52 @@ uint8_t writeUserData ( USERDATA_STRU *userData,uint8_t mode )
 	    asc2bcd ( head, userData->userId,CARD_NO_LEN_ASC, 1 );		
 	}	
 
-    //写表头
-	addHead(head,mode);
+    memcpy(tmpHead.headData.sn,head,CARD_NO_LEN_BCD);
+    tmpIndex = readHead(&tmpHead,mode);
 
-    //读当前FLASH的索引
-	ClearRecordIndex();
-    optRecordIndex(&gRecordIndex,READ_PRARM);
+    //卡号或者是USERID不存在
+    if(tmpIndex == NO_FIND_HEAD)
+    { 
+        //写表头
+    	addHead(head,mode);
 
-	//获取地址
-	if ( mode == CARD_MODE )
-	{
-		addr = CARD_NO_DATA_ADDR + (gRecordIndex.cardNoIndex-1) * ( sizeof ( USERDATA_STRU ) );;
+        //读当前FLASH的索引
+    	ClearRecordIndex();
+        optRecordIndex(&gRecordIndex,READ_PRARM);
+
+    	//获取地址
+    	if ( mode == CARD_MODE )
+    	{
+    		addr = CARD_NO_DATA_ADDR + (gRecordIndex.cardNoIndex-1) * ( sizeof ( USERDATA_STRU ) );;
+    	}
+    	else if ( mode == USER_MODE )
+    	{
+    		addr = USER_ID_DATA_ADDR + (gRecordIndex.userIdIndex-1) * ( sizeof ( USERDATA_STRU ) );
+    	}
 	}
-	else if ( mode == USER_MODE )
+	else
 	{
-		addr = USER_ID_DATA_ADDR + (gRecordIndex.userIdIndex-1) * ( sizeof ( USERDATA_STRU ) );
+
+        getFlashHead.flashAddr = 0;
+        getFlashHead.headData.id = 0;	
+        ret = FRAM_Read (FM24V10_1, addr+tmpIndex*CARD_USER_LEN, &getFlashHead,CARD_USER_LEN);    
+        if(ret == 0)
+        {
+            log_e("read fram error\r\n");
+            return NO_FIND_HEAD; 
+        }
+
+        flashIndex = getFlashHead.flashAddr;
+    
+    	//获取地址
+    	if ( mode == CARD_MODE )
+    	{
+    		addr = CARD_NO_DATA_ADDR + flashIndex * ( sizeof ( USERDATA_STRU ) );;
+    	}
+    	else if ( mode == USER_MODE )
+    	{
+    		addr = USER_ID_DATA_ADDR + flashIndex * ( sizeof ( USERDATA_STRU ) );
+    	}	
 	}
 
 	//packet write buff
@@ -350,7 +200,8 @@ uint8_t writeUserData ( USERDATA_STRU *userData,uint8_t mode )
 	return 0;
 }
 
-uint8_t readUserData ( uint8_t* header,uint8_t mode,USERDATA_STRU* userData )
+
+char readUserData ( uint8_t* header,uint8_t mode,USERDATA_STRU* userData )
 {
 	uint8_t rBuff[255] = {0};
 	uint8_t crc = 0;
@@ -358,6 +209,7 @@ uint8_t readUserData ( uint8_t* header,uint8_t mode,USERDATA_STRU* userData )
 	int index = 0;
 	uint32_t addr = 0;
 	HEADINFO_STRU head;
+	uint32_t flashIndex = 0;
 
     int32_t iTime1, iTime2;
 
@@ -374,6 +226,7 @@ uint8_t readUserData ( uint8_t* header,uint8_t mode,USERDATA_STRU* userData )
 
     log_d("1 want find head = %x\r\n",head.headData.id);
 
+    //这里是head的序列号，要想知道FLASH的索引，还需要读取
 	index = readHead(&head,mode);
 	
     iTime2 = xTaskGetTickCount();	/* 记下结束时间 */
@@ -382,16 +235,38 @@ uint8_t readUserData ( uint8_t* header,uint8_t mode,USERDATA_STRU* userData )
 	if(index == NO_FIND_HEAD)
 	{
         log_d("no find head\r\n");
-        return 2;
+        return NO_FIND_HEAD;
 	}
 
 	if ( mode == CARD_MODE )
 	{
-        addr = CARD_NO_DATA_ADDR + index * ( sizeof ( USERDATA_STRU ) );
+		addr = CARD_NO_HEAD_ADDR;
+	}
+	else if ( mode == USER_MODE )
+	{
+		addr = USER_ID_HEAD_ADDR;
+	}
+	
+    head.flashAddr = 0;
+    head.headData.id = 0;	
+    ret = FRAM_Read (FM24V10_1, addr+index*CARD_USER_LEN, &head,CARD_USER_LEN);    
+    if(ret == 0)
+    {
+        log_e("read fram error\r\n");
+        return NO_FIND_HEAD; 
+    }
+
+    flashIndex = head.flashAddr;
+
+    log_d("readUserData head = %x,readUserData flashIndex = %d\r\n",head.headData.id,flashIndex);
+
+	if ( mode == CARD_MODE )
+	{
+        addr = CARD_NO_DATA_ADDR + flashIndex * ( sizeof ( USERDATA_STRU ) );
 	}
 	else if(mode == USER_MODE)
 	{
-		addr = USER_ID_DATA_ADDR + index * ( sizeof ( USERDATA_STRU ) );
+		addr = USER_ID_DATA_ADDR + flashIndex * ( sizeof ( USERDATA_STRU ) );
 	}		
 
 	bsp_sf_ReadBuffer ( rBuff, addr, sizeof ( USERDATA_STRU ) );
@@ -453,114 +328,7 @@ static uint8_t checkFlashSpace ( uint8_t mode )
 
 
 
-uint8_t modifyUserData ( USERDATA_STRU *userData,uint8_t mode )
-{
-	uint8_t wBuff[255] = {0};
-	uint8_t rBuff[255] = {0};
-	uint8_t isFull = 0;
-	uint8_t header[CARD_USER_LEN] = {0};
-	uint8_t crc=0;
-	uint8_t ret = 0;
-	uint8_t times = 3;
-	uint32_t addr = 0;
-	uint16_t index = 0;
-    HEADINFO_STRU head;
 
-	int32_t iTime1, iTime2;
-	//log_d("sizeof(USERDATA_STRU) = %d\r\n",sizeof(USERDATA_STRU));
-
-	iTime1 = xTaskGetTickCount();	/* 记下开始时间 */
-
-
-	//检查存储空间是否已满；
-	isFull = checkFlashSpace ( mode );
-
-	if ( isFull == 1 )
-	{
-		//log_d("not enough speac storage the data\r\n");
-		return 1; //提示已经满了
-	}
-
-	if ( mode == CARD_MODE )
-	{
-        asc2bcd (head.headData.sn, userData->cardNo,CARD_NO_LEN_ASC, 1 );
-	
-//		memcpy ( header,userData->cardNo,CARD_USER_LEN );
-	}
-	else
-	{
-        asc2bcd (head.headData.sn, userData->userId,CARD_NO_LEN_ASC, 1 );
-	
-//		memcpy ( header,userData->userId,CARD_USER_LEN );
-	}
-
-//	ret = searchHeaderIndex ( header,mode,&index );
-//	ret = searchFlashIndex(header,mode,&index,fIndex);
-
-    index = readHead(&head,mode);
-
-	//log_d("searchHeaderIndex ret = %d",ret);
-
-	if ( ret != 1 )
-	{
-		//log_d("can't find the head index\r\n");
-		return 3;//提示未找到索引
-	}
-
-	if ( mode == CARD_MODE )
-	{
-		addr = CARD_NO_DATA_ADDR + index * ( sizeof ( USERDATA_STRU ) );
-	}
-	else
-	{
-		addr = USER_ID_DATA_ADDR + index * ( sizeof ( USERDATA_STRU ) );
-	}
-
-	//packet write buff
-	memset ( wBuff,0x00,sizeof ( wBuff ) );
-
-	//copy to buff
-	memcpy ( wBuff, userData, sizeof ( USERDATA_STRU ) );
-
-	//calc crc
-	crc = xorCRC ( wBuff, sizeof ( USERDATA_STRU )-1 );
-
-	//copy crc
-	wBuff[sizeof ( USERDATA_STRU ) - 1] = crc;
-
-
-	//write flash
-	while ( times )
-	{
-
-		bsp_sf_WriteBuffer ( wBuff, addr, sizeof ( USERDATA_STRU ) );
-
-		//再读出来，对比是否一致
-		memset ( rBuff,0x00,sizeof ( rBuff ) );
-		bsp_sf_ReadBuffer ( rBuff, addr, sizeof ( USERDATA_STRU ) );
-
-		ret = compareArray ( wBuff,rBuff,sizeof ( USERDATA_STRU ) );
-
-		if ( ret == 0 )
-		{
-			break;
-		}
-
-
-		if ( ret != 0 && times == 1 )
-		{
-			//log_d("modify record is error\r\n");
-			return 3;
-		}
-
-		times--;
-	}
-
-	iTime2 = xTaskGetTickCount();	/* 记下结束时间 */
-	log_d ( "修改记录成功，耗时: %dms\r\n",iTime2 - iTime1 );
-
-	return 0;
-}
 
 uint8_t delUserData ( uint8_t* header,uint8_t mode )
 {
@@ -571,47 +339,37 @@ uint8_t delUserData ( uint8_t* header,uint8_t mode )
 	uint8_t times = 3;
 	uint32_t addr = 0;
 	uint16_t index = 0;
-    HEADINFO_STRU head;
+    uint8_t headBcd[4] = 0;
+    int flashIndex = 0;
+	uint8_t multiple = 0;
+	uint16_t remainder = 0;  
+	uint32_t address = 0;
 
 	int32_t iTime1, iTime2;
-	//log_d("sizeof(USERDATA_STRU) = %d\r\n",sizeof(USERDATA_STRU));
 
 	iTime1 = xTaskGetTickCount();   /* 记下开始时间 */
 
+    asc2bcd (headBcd, header,CARD_NO_LEN_ASC, 1 );
 
-	//检查存储空间是否已满；
-	isFull = checkFlashSpace ( mode );
+	//读取FLASH索引
+    flashIndex = delHead(headBcd,mode);	
 
-	if ( isFull == 1 )
+	if ( flashIndex == NO_FIND_HEAD)
 	{
-		//log_d("not enough speac storage the data\r\n");
-		return 1; //提示已经满了
-	}
-    asc2bcd (head.headData.sn, header,CARD_NO_LEN_ASC, 1 );
-
-//	ret = searchHeaderIndex ( header,mode,&index );
-//	ret = searchFlashIndex(header,mode,&index,fIndex);
-    index = readHead(&head,mode);
-
-	log_d ( "searchHeaderIndex index = %d",index );
-
-	if ( ret != 1 )
-	{
-		//log_d("can't find the head index\r\n");
-		return 3;//提示未找到索引
-	}
-
+		return 6;//提示未找到索引
+	}	
+	
 	if ( mode == CARD_MODE )
 	{
-		addr = CARD_NO_DATA_ADDR + index * ( sizeof ( USERDATA_STRU ) );
+		addr = CARD_NO_DATA_ADDR + flashIndex * ( sizeof ( USERDATA_STRU ) );
 	}
 	else if ( mode == USER_MODE )
 	{
-		addr = USER_ID_DATA_ADDR + index * ( sizeof ( USERDATA_STRU ) );
+		addr = USER_ID_DATA_ADDR + flashIndex * ( sizeof ( USERDATA_STRU ) );
 	}
 
 	//packet write buff
-	memset ( wBuff,0xFF,sizeof ( wBuff ) );
+	memset ( wBuff,0x00,sizeof ( wBuff ) );
 
 	//write flash
 	while ( times )
@@ -638,35 +396,159 @@ uint8_t delUserData ( uint8_t* header,uint8_t mode )
 
 		times--;
 	}
-
-	//写删除索引
-	//删除索引值为原索引的值
-	memset ( header,0x00,sizeof ( ( const char* ) header ) );
-	sprintf ( ( char* ) header,"%08d",index );
-
-	//log_d("need del header value = %s,\r\n",header);
-
-	ret = writeDelHeader ( header,mode );
-	if ( ret != 0 )
-	{
-		//log_d("write del index error\r\n");
-		return 5;//提示未找到索引
-	}
-
-	//删除原索引
-	ret = delSourceHeader ( index,mode );
-	if ( ret != 0 )
-	{
-		//log_d("write del source index error\r\n");
-		return 6;//提示未找到索引
-	}
-
-
+	
 	iTime2 = xTaskGetTickCount();   /* 记下结束时间 */
 	log_d ( "修改记录成功，耗时: %dms\r\n",iTime2 - iTime1 );
 
 	return 0;
 }
+
+int delHead(uint8_t *headBuff,uint8_t mode)
+{
+	int ret = 0;
+	uint8_t multiple = 0;
+	uint16_t remainder = 0;
+    HEADINFO_STRU tmpCard;
+    uint32_t addr = 0;    
+    int num = 0;
+    uint32_t flashIndex = 0;
+
+    if ( headBuff == NULL )
+	{
+		return NO_FIND_HEAD;
+	}	
+	
+	if ( mode == CARD_MODE )
+	{
+		addr = CARD_NO_HEAD_ADDR;
+	}
+	else if ( mode == USER_MODE )
+	{
+		addr = USER_ID_HEAD_ADDR;
+	}
+	else if ( mode == CARD_DEL_MODE )
+	{
+		addr = CARD_DEL_HEAD_ADDR;
+	}
+	else if ( mode == USER_DEL_HEAD_ADDR )
+	{
+		addr = USER_DEL_HEAD_ADDR;
+	}	
+
+    memcpy(tmpCard.headData.sn,headBuff,sizeof(tmpCard.headData.sn));
+
+    //1.查找要删除的对的索引
+    ret = readHead(&tmpCard,mode);
+
+    if(ret == NO_FIND_HEAD)
+    {
+        return NO_FIND_HEAD;
+    }
+
+    //2.计算要删除卡号的地址
+    multiple = ret / HEAD_NUM_SECTOR;
+	remainder = ret % HEAD_NUM_SECTOR;	
+
+	log_d("multiple = %d,remainder=%d\r\n",multiple,remainder);	
+
+    addr += (multiple * HEAD_NUM_SECTOR + remainder)  * sizeof(HEADINFO_STRU);
+    
+    tmpCard.headData.id = 0;    
+    tmpCard.flashAddr = 0;
+    ret = FRAM_Read (FM24V10_1, addr, &tmpCard,sizeof(HEADINFO_STRU)); 
+	if(ret == 0)
+    {
+        log_e("read fram error\r\n");
+        return NO_FIND_HEAD; 
+    }  
+
+    
+	//读取FLASH索引
+    flashIndex = tmpCard.flashAddr;	  
+
+    log_d("delHead head =%x,delHead flashIndex = %d\r\n",tmpCard.headData.id,tmpCard.flashAddr);
+
+    //3.将要删除的头置全0    
+    tmpCard.headData.id = 0;    
+    tmpCard.flashAddr = 0;
+    ret = FRAM_Write ( FM24V10_1, addr, &tmpCard,1* sizeof(HEADINFO_STRU));    
+    if(ret == 0)
+    {
+        log_e("write fram error\r\n");
+        return NO_FIND_HEAD;
+    } 
+
+
+	if ( mode == CARD_MODE )
+	{
+		addr = CARD_NO_HEAD_ADDR;	
+	}
+	else if ( mode == USER_MODE )
+	{
+		addr = USER_ID_HEAD_ADDR;
+	}
+    	
+    //4.对这一页重新排序
+    if(multiple >= 1)
+    {
+        if(remainder == 0)
+        {            
+            addr += (multiple-1) * HEAD_NUM_SECTOR  * sizeof(HEADINFO_STRU);
+        }
+        else
+        {
+            addr += multiple * HEAD_NUM_SECTOR  * sizeof(HEADINFO_STRU);
+        }
+        num = HEAD_NUM_SECTOR;
+    }
+    else
+    {
+        //这里因为总的卡数量小于1024，所以NUM取最大值
+    	if ( mode == CARD_MODE )
+    	{
+            ClearRecordIndex();
+            optRecordIndex(&gRecordIndex,READ_PRARM);        
+            num = gRecordIndex.cardNoIndex % HEAD_NUM_SECTOR;
+
+    	}
+    	else if ( mode == USER_MODE )
+    	{
+            ClearRecordIndex();
+            optRecordIndex(&gRecordIndex,READ_PRARM);        
+            num = gRecordIndex.userIdIndex % HEAD_NUM_SECTOR;
+    	}        
+    }
+
+    memset(gSectorBuff,0x00,sizeof(gSectorBuff));  
+    log_d("del add = %x,num = %d\r\n",addr,num);
+    
+    //读一页数据
+    ret = FRAM_Read (FM24V10_1, addr, gSectorBuff, num* sizeof(HEADINFO_STRU));
+    if(ret == 0)
+    {
+        log_e("read fram error\r\n");
+        return NO_FIND_HEAD;
+    }    
+    
+    //排序
+    sortHead(gSectorBuff,num);  
+    
+    //写回数据
+    ret = FRAM_Write ( FM24V10_1, addr, gSectorBuff,num* sizeof(HEADINFO_STRU));
+    if(ret == 0)
+    {
+        log_e("write fram error\r\n");
+        return NO_FIND_HEAD;
+    }  
+    
+    log_d("qSortCard success\r\n");
+    
+
+    
+    return flashIndex;
+  
+}
+
 
 
 uint8_t writeDelHeader ( uint8_t* header,uint8_t mode )
@@ -748,54 +630,7 @@ uint8_t writeDelHeader ( uint8_t* header,uint8_t mode )
 
 }
 
-static uint8_t delSourceHeader ( uint16_t index,uint8_t mode )
-{
-	uint8_t times = 3;
-	uint8_t readBuff[HEAD_lEN+1] = {0};
-	uint8_t ret = 0;
-	uint8_t temp[HEAD_lEN+1] = {0};
-	uint32_t addr = 0;
 
-	if ( mode == CARD_MODE )
-	{
-		addr = CARD_NO_HEAD_ADDR + index * HEAD_lEN;
-	}
-	else if ( mode == USER_MODE )
-	{
-		addr = USER_ID_HEAD_ADDR + index * HEAD_lEN;
-	}
-
-	memset ( temp,0xFF,sizeof ( temp ) );
-
-	while ( times )
-	{
-//        ret = bsp_sf_WriteBuffer (temp, addr, HEAD_lEN);
-		ret = FRAM_Write ( FM24V10_1, addr, temp,HEAD_lEN );
-
-		//再读出来，对比是否一致
-		memset ( readBuff,0x00,sizeof ( readBuff ) );
-//        bsp_sf_ReadBuffer (readBuff, addr, HEAD_lEN);
-		FRAM_Read ( FM24V10_1, addr, readBuff, HEAD_lEN );
-
-		ret = compareArray ( temp,readBuff,HEAD_lEN );
-
-		if ( ret == 0 )
-		{
-			break;
-		}
-
-		if ( ret != 0 && times == 1 )
-		{
-			log_d ( "write header error\r\n" );
-			return 3;
-		}
-
-		times--;
-	}
-
-	return 0;
-
-}
 
 
 
@@ -851,7 +686,6 @@ void TestFlash ( uint8_t mode )
 		FRAM_Read ( FM24V10_1, addr+i*sizeof ( HEADINFO_STRU ), &tmp, sizeof ( HEADINFO_STRU ) );
 		log_d("the %d card id = %x,the flash addr = %d\r\n",i,tmp.headData.id,tmp.flashAddr);
 
-
 	}
 
 	for ( i=0; i<num; i++ )
@@ -871,24 +705,17 @@ int readHead(HEADINFO_STRU *head,uint8_t mode)
 	uint8_t i = 0;
 	uint8_t multiple = 0;
 	uint16_t remainder = 0;
-	uint16_t loop = 0;
+	
 	uint32_t address = 0;
 	uint32_t curIndex = 0;
 	int ret = 0;
+    int32_t iTime1, iTime2;
 
     //512个头，1页的空间
-    HEADINFO_STRU * sectorBuff = (HEADINFO_STRU*)mymalloc(SRAMIN,sizeof(HEADINFO_STRU)*HEAD_NUM_SECTOR);    
+    HEADINFO_STRU firstData,lastData;
     
-    if (sectorBuff == NULL)
-    {
-       myfree(SRAMIN,sectorBuff);
-       log_d("my_malloc error\r\n");
-       return NO_FIND_HEAD;
-    }
-
 	if ( head == NULL )
 	{
-	    myfree(SRAMIN,sectorBuff);
 		return NO_FIND_HEAD;
 	}	
 
@@ -924,61 +751,93 @@ int readHead(HEADINFO_STRU *head,uint8_t mode)
 	remainder = curIndex % HEAD_NUM_SECTOR;
 
     //1.读取单页或者多页最后一页的地址
-    if(multiple > 0)
-    {
-        address += multiple * HEAD_NUM_SECTOR  * HEAD_lEN;
-    }
+    address += multiple * HEAD_NUM_SECTOR  * HEAD_lEN;
 
     log_d("addr = %x,multiple = %d,remainder=%d\r\n",address,multiple,remainder);
     
     
     //2.读取最后一页第一个卡号和最后一个卡号；
-    ret = FRAM_Read (FM24V10_1, address, sectorBuff, (remainder)* HEAD_lEN);
+    firstData.headData.id = 0;
+    lastData.headData.id = 0;   
+
+    iTime1 = xTaskGetTickCount();   /* 记下开始时间 */
     
+    ret = FRAM_Read (FM24V10_1, address, &firstData,CARD_USER_LEN);
     if(ret == 0)
     {
         log_e("read fram error\r\n");
-    }   
-
+        return NO_FIND_HEAD; 
+    }
     
-    log_d("head = %x,last page %x,%x\r\n",head->headData.id,sectorBuff[0].headData.id,sectorBuff[remainder-1].headData.id);
-
-    
-    if((head->headData.id >= sectorBuff[0].headData.id) && (head->headData.id <= sectorBuff[remainder-1].headData.id))
+    ret = FRAM_Read (FM24V10_1, address+(remainder-1)* CARD_USER_LEN, &lastData,CARD_USER_LEN); 
+    if(ret == 0)
     {
-        ret = Bin_Search(sectorBuff,remainder,head->headData.id);
+        log_e("read fram error\r\n");
+        return NO_FIND_HEAD;
+    }  
+    log_d("head = %x,last page %x,%x\r\n",head->headData.id,firstData.headData.id,lastData.headData.id);
+
+
+    
+    if((head->headData.id >= firstData.headData.id) && (head->headData.id <= lastData.headData.id))
+    {
+//        ret = Bin_Search(sectorBuff,remainder,head->headData.id);
+        ret = Bin_Search_addr(address,remainder,head->headData.id); 
+        
         if(ret != NO_FIND_HEAD)
         {
-            myfree(SRAMIN,sectorBuff);
-            return ret;
+            //直接返回当前目标值的FLASH索引
+            iTime2 = xTaskGetTickCount();   /* 记下结束时间 */
+            log_d ( "find it，use %d ms,head addr = %d\r\n",iTime2 - iTime1,multiple*HEAD_NUM_SECTOR+ret);              
+            return multiple*HEAD_NUM_SECTOR+ret;
         }
     }    
     
     for(i=0;i<multiple;i++)
     {
-        address += i * HEAD_NUM_SECTOR  * HEAD_lEN;
+        address = CARD_NO_HEAD_ADDR;//从零开始读;
+        address += i * HEAD_NUM_SECTOR  * CARD_USER_LEN;
+        
         
         //2.读取第一个卡号和最后一个卡号；
-        ret = FRAM_Read (FM24V10_1, address, sectorBuff, HEAD_NUM_SECTOR * HEAD_lEN);
+        firstData.headData.id = 0;
+        lastData.headData.id = 0;   
         
+        ret = FRAM_Read (FM24V10_1, address, &firstData,CARD_USER_LEN);
         if(ret == 0)
         {
             log_e("read fram error\r\n");
-        }  
+            return NO_FIND_HEAD; 
+        }
         
-        if(head->headData.id >= sectorBuff[0].headData.id && head->headData.id <= sectorBuff[HEAD_NUM_SECTOR-1].headData.id)
+        ret = FRAM_Read (FM24V10_1, address+(HEAD_NUM_SECTOR-1)* CARD_USER_LEN, &lastData,CARD_USER_LEN); 
+        if(ret == 0)
         {
-            ret = Bin_Search(sectorBuff,HEAD_NUM_SECTOR,head->headData.id);
+            log_e("read fram error\r\n");
+            return NO_FIND_HEAD;
+        }  
+        log_d("head = %x,last page %x,%x\r\n",head->headData.id,firstData.headData.id,lastData.headData.id);
+
+        
+        if(head->headData.id >= firstData.headData.id && head->headData.id <= lastData.headData.id)
+        {
+//            ret = Bin_Search(sectorBuff,HEAD_NUM_SECTOR,head->headData.id);
+            ret = Bin_Search_addr(address,HEAD_NUM_SECTOR,head->headData.id);       
             if(ret != NO_FIND_HEAD)
             {
-                myfree(SRAMIN,sectorBuff);
-                return ret;
+            	iTime2 = xTaskGetTickCount();	/* 记下结束时间 */
+            	log_d ( "find it，use %d ms,index = %d\r\n",iTime2 - iTime1,i*HEAD_NUM_SECTOR+ret);      
+                
+                return i*HEAD_NUM_SECTOR+ret;
             }
+
         }
     
     }
+    
+	iTime2 = xTaskGetTickCount();	/* 记下结束时间 */
+	log_d ( "read all Head，use %d ms\r\n",iTime2 - iTime1 );    
 
-    myfree(SRAMIN,sectorBuff);
     return NO_FIND_HEAD;
 
 }
@@ -1034,25 +893,137 @@ void sortHead(HEADINFO_STRU *head,int length)
     }
 }
 
-//return:<0,未找到，>=0在FLASH中的索引值
-static int Bin_Search(HEADINFO_STRU *num,int numsSize,int target)
+
+void manualSortCard(void)
 {
-	int left = 0,right = numsSize-1,mid;
-	
-	while(left <= right)
+    uint8_t multiple = 0;
+	uint16_t remainder = 0;
+	int ret = 0;
+
+	int i = 0;
+	uint32_t addr = CARD_NO_HEAD_ADDR;
+
+    int32_t iTime1, iTime2;   
+       
+   //1.先判定当前有多少个卡号;
+    ClearRecordIndex();
+    optRecordIndex(&gRecordIndex,READ_PRARM);
+    
+	addr = CARD_NO_HEAD_ADDR;    
+    multiple = gRecordIndex.cardNoIndex / HEAD_NUM_SECTOR;
+    remainder = gRecordIndex.cardNoIndex % HEAD_NUM_SECTOR;
+
+    memset(gSectorBuff,0x00,sizeof(gSectorBuff));
+    iTime1 = xTaskGetTickCount();   /* 记下开始时间 */
+    if(remainder != 0)
+    {
+        //2.计算最后一页地址
+        addr += multiple * HEAD_NUM_SECTOR  * sizeof(HEADINFO_STRU);    
+        
+        //3.读取最后一页
+        ret = FRAM_Read (FM24V10_1, addr, gSectorBuff, remainder* sizeof(HEADINFO_STRU));
+        if(ret == 0)
+        {
+            log_e("read fram error\r\n");
+            return ;
+        } 
+        
+        //5.排序        
+        sortHead(gSectorBuff,remainder);   
+        
+        ret = FRAM_Write ( FM24V10_1, addr, gSectorBuff,remainder* sizeof(HEADINFO_STRU));        
+        if(ret == 0)
+        {
+            log_e("write fram error\r\n");
+            return ;
+        }          
+    }    
+
+    
+    for(i=0;i<multiple;i++)
+    {
+        addr = CARD_NO_HEAD_ADDR;//从零开始读;
+        addr += i * HEAD_NUM_SECTOR  * CARD_USER_LEN; 
+        memset(gSectorBuff,0x00,sizeof(gSectorBuff));
+        
+        //3.读当前页      
+        ret = FRAM_Read (FM24V10_1, addr, gSectorBuff, HEAD_NUM_SECTOR* sizeof(HEADINFO_STRU));
+        if(ret == 0)
+        {
+            log_e("read fram error\r\n");
+            return ;
+        }         
+        //排序
+        sortHead(gSectorBuff,HEAD_NUM_SECTOR); 
+        //写回数据
+        ret = FRAM_Write ( FM24V10_1, addr, gSectorBuff,HEAD_NUM_SECTOR* sizeof(HEADINFO_STRU));        
+        if(ret == 0)
+        {
+            log_e("write fram error\r\n");
+            return ;
+        }        
+     }
+
+	iTime2 = xTaskGetTickCount();	/* 记下结束时间 */
+	log_e( "sort all card success，use time: %dms\r\n",iTime2 - iTime1 );  	
+}
+
+
+//return:<0,未找到，>=0在FLASH中的索引值
+//static int Bin_Search(HEADINFO_STRU *num,int numsSize,int target)
+//{
+//	int left = 0,right = numsSize-1,mid;
+//	
+//	while(left <= right)
+//	{
+//		mid = (left + right) / 2;//确定中间元素	
+//		if(num[mid].headData.id > target)
+//		{
+//			right = mid-1; //mid已经交换过了,right往前移一位
+//		}
+//		else if(num[mid].headData.id < target)
+//		{
+//			left = mid+1;//mid已经交换过了,left往后移一位
+//		}	
+//		else //判断是否相等
+//		{		    
+//            return num[mid].flashAddr;
+//		}
+//	}        
+//    return NO_FIND_HEAD;
+//}
+
+//返回查找到值的FLASH索引
+static int Bin_Search_addr(uint32_t startAddr,int numsSize,int target)
+{
+	int low = 0,high = numsSize-1,mid;
+	HEADINFO_STRU tmpData;
+	uint8_t ret = 0;
+	    
+	while(low <= high)
 	{
-		mid = (left + right) / 2;//确定中间元素	
-		if(num[mid].headData.id > target)
+		mid = low + ((high - low) >> 1); //获取中间值
+
+        ret = FRAM_Read (FM24V10_1, startAddr+(mid)*CARD_USER_LEN, &tmpData, (1)* CARD_USER_LEN);
+      
+        if(ret == 0)
+        {
+            log_e("read fram error\r\n");
+            return NO_FIND_HEAD; 
+        }  
+        
+		if(tmpData.headData.id == target)
 		{
-			right = mid-1; //mid已经交换过了,right往前移一位
+		    //return tmpData.flashAddr;
+		    return mid;
 		}
-		else if(num[mid].headData.id < target)
+		else if(tmpData.headData.id < target)
 		{
-			left = mid+1;//mid已经交换过了,left往后移一位
-		}	
-		else //判断是否相等
-		{		    
-            return num[mid].flashAddr;
+		    low = mid+1;//mid已经交换过了,low往后移一位
+		}
+		else
+		{
+		    high = mid-1; //mid已经交换过了,right往前移一位
 		}
 	}        
     return NO_FIND_HEAD;
@@ -1066,24 +1037,11 @@ void addHead(uint8_t *head,uint8_t mode)
 	uint32_t addr = 0;
 	uint8_t ret = 0;
 	uint32_t curIndex = 0;
-	uint8_t i = 0;
-
-    int32_t iTime1, iTime2;
 	
-    //512个头，1页的空间
-    HEADINFO_STRU * sectorBuff = (HEADINFO_STRU*)mymalloc(SRAMIN,sizeof(HEADINFO_STRU)*HEAD_NUM_SECTOR);    
 
-
-    if(sectorBuff == NULL)
-    {
-        myfree(SRAMIN, sectorBuff);
-        log_e("create sectorBuff is error\r\n");
-        return;
-    }
-//    log_d("sizeof(HEADINFO_STRU) = %d\r\n",sizeof(HEADINFO_STRU));
-
-//    memset(sectorBuff,0x00,sizeof(HEADINFO_STRU)*HEAD_NUM_SECTOR);
-
+    int32_t iTime1, iTime2;	
+    
+    
     
    iTime1 = xTaskGetTickCount();   /* 记下开始时间 */
    //1.先判定当前有多少个卡号;
@@ -1114,20 +1072,18 @@ void addHead(uint8_t *head,uint8_t mode)
     multiple = curIndex / HEAD_NUM_SECTOR;
     remainder = curIndex % HEAD_NUM_SECTOR;
 
-//    log_d("mode = %d,addr = %x,multiple = %d,remainder=%d\r\n",mode,addr,multiple,remainder);
-
+    memset(gSectorBuff,0x00,sizeof(gSectorBuff));
 
     //索引要从1开始    
     if(multiple==0 && remainder==0)
     {
-        //第一条记录
-        sectorBuff[0].flashAddr = curIndex;
-        memcpy(sectorBuff[0].headData.sn,head,CARD_NO_LEN_BCD);  
-
-//        log_d("add = %x,sectorBuff[0].headData.sn = %02x,%02x,%02x,%02x,addr = %d\r\n",addr,sectorBuff[0].headData.sn[0],sectorBuff[0].headData.sn[1],sectorBuff[0].headData.sn[2],sectorBuff[0].headData.sn[3],sectorBuff[0].flashAddr);
+        //第一条记录赋值
+        gSectorBuff[0].flashAddr = curIndex;
+        memcpy(gSectorBuff[0].headData.sn,head,CARD_NO_LEN_BCD);
+        
         
         //写入到存储区域
-        ret = FRAM_Write ( FM24V10_1, addr, sectorBuff,1 * sizeof(HEADINFO_STRU));
+        ret = FRAM_Write ( FM24V10_1, addr,  gSectorBuff,1 * sizeof(HEADINFO_STRU));
         
         if(ret == 0)
         {
@@ -1141,48 +1097,35 @@ void addHead(uint8_t *head,uint8_t mode)
         {
             addr += multiple * HEAD_NUM_SECTOR  * sizeof(HEADINFO_STRU);  
         }
-
+        
+        memset(gSectorBuff,0x00,sizeof(gSectorBuff));
+        
         //3.读取最后一页
-        ret = FRAM_Read (FM24V10_1, addr, sectorBuff, (remainder)* sizeof(HEADINFO_STRU));
+        ret = FRAM_Read (FM24V10_1, addr, gSectorBuff, (remainder)* sizeof(HEADINFO_STRU));
         if(ret == 0)
         {
             log_e("read fram error\r\n");
         }
-
-//        log_d("FRAM_Read SUCCESS addr = %d,remainder = %d\r\n",addr,remainder);
-        
-//        for(i=0;i<remainder;i++)
-//        {
-//            log_d("add = %d,id =%x,sn = %02x,%02x,%02x,%02x,flashAddr = %d\r\n",addr,sectorBuff[i].headData.id,sectorBuff[i].headData.sn[0],sectorBuff[i].headData.sn[1],sectorBuff[i].headData.sn[2],sectorBuff[i].headData.sn[3],sectorBuff[i].flashAddr);
-//        }        
         
         //4.赋值,追加需要添加的卡号到最后一个位置
-        sectorBuff[remainder].flashAddr = curIndex;
-        memcpy(sectorBuff[remainder].headData.sn,head,CARD_NO_LEN_BCD);
-        
-//        dbh("add head", sectorBuff[remainder].headData.sn, CARD_NO_LEN_BCD);  
+        gSectorBuff[remainder].flashAddr = curIndex;
+        memcpy(gSectorBuff[remainder].headData.sn,head,CARD_NO_LEN_BCD);
 
-        
-        //5.排序
-        sortHead(sectorBuff,remainder+1);
+        log_d("gSectorBuff[remainder].headData.id = %x gSectorBuff[remainder].flashAddr = %d\r\n",gSectorBuff[remainder].headData.id,gSectorBuff[remainder].flashAddr);
 
-//        log_d("<<<<<<<<<< >>>>>>>>>>\r\n");
-        
-//        for(i=0;i<remainder+1;i++)
-//        {
-//            log_d("add = %d,id =%x,sn =%02x,%02x,%02x,%02x,sectorBuff.flashAddr = %d\r\n",addr,sectorBuff[i].headData.id,sectorBuff[i].headData.sn[0],sectorBuff[i].headData.sn[1],sectorBuff[i].headData.sn[2],sectorBuff[i].headData.sn[3],sectorBuff[i].flashAddr);
-//        }
+       //5.排序
+        sortHead(gSectorBuff,remainder+1);
 
         //6.写入到存储区域
-        ret = FRAM_Write ( FM24V10_1, addr, sectorBuff,(remainder+1)* sizeof(HEADINFO_STRU));
+        ret = FRAM_Write ( FM24V10_1, addr, gSectorBuff,(remainder+1)* sizeof(HEADINFO_STRU));
         
         if(ret == 0)
         {
             log_e("write fram error\r\n");
-        }        
+        }          
+
     }
-
-
+    
 	if ( mode == CARD_MODE )
 	{
         gRecordIndex.cardNoIndex++;
@@ -1200,13 +1143,12 @@ void addHead(uint8_t *head,uint8_t mode)
         gRecordIndex.delUserIdIndex++;
 	}
 
-//    log_d("cardNoIndex = %d,userIdIndex = %d\r\n",gRecordIndex.cardNoIndex,gRecordIndex.userIdIndex);	
+    log_d("cardNoIndex = %d,userIdIndex = %d\r\n",gRecordIndex.cardNoIndex,gRecordIndex.userIdIndex);	
     optRecordIndex(&gRecordIndex,WRITE_PRARM);
 
 	iTime2 = xTaskGetTickCount();	/* 记下结束时间 */
 	log_e ( "add head成功，耗时: %dms\r\n",iTime2 - iTime1 );
 
-    myfree(SRAMIN,sectorBuff);
   
 }
 

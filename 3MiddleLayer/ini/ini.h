@@ -25,7 +25,7 @@
 #include "string.h"
 #include "deviceInfo.h"
 #include "tool.h"
-#include "LocalData.h"
+#include "pub_data_type.h"
 #include "eth_cfg.h"
 #include "cJSON.h"
 #include "errorcode.h"
@@ -51,6 +51,8 @@
 #define DIRECTION_IN            1
 #define DIRECTION_OUT           2
 
+#define MAX_FLOOR               200 //最高200层，超过200层，按负楼层处理
+
 typedef uint8_t(*CallBackParam)(void * struParam,uint8_t mode,uint32_t len,uint32_t addr);
 
 void readTemplateData(void);
@@ -69,9 +71,14 @@ void SaveDevState(uint32_t     state);
 
 uint8_t packetPayload(USERDATA_STRU *localUserData,uint8_t *descJson);
 //解析QRCODE数据
-uint8_t parseQrCode(uint8_t *jsonBuff,USERDATA_STRU *qrCodeInfo);
+char parseQrCode(uint8_t *jsonBuff,USERDATA_STRU *qrCodeInfo);
 //保存模板信息
 SYSERRORCODE_E saveTemplateParam(uint8_t *jsonBuff);
+
+
+void eraseHeadSector(void);
+void eraseDataSector(void);
+void eraseUserDataAll(void);
 
 
 //add 2020.07.06
@@ -85,10 +92,8 @@ uint8_t optDevBaseParam(void *stParam,uint8_t mode,uint32_t len,uint32_t addr);
 
 void initRecordIndex(void);
 void ClearRecordIndex(void);
+
 uint8_t optRecordIndex(RECORDINDEX_STRU *recoIndex,uint8_t mode);
-
-
-
 void clearTemplateFRAM(void);
 
 

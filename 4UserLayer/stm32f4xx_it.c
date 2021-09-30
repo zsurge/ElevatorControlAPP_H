@@ -85,10 +85,6 @@ void HardFault_Handler(void)
 //  while (1)
 //  {
 //  }
-
-	u32 i;
-	u8 t=0;
-
 	static u32 temp=8;
 	
 	temp=SCB->CFSR;					//fault×´Ì¬¼Ä´æÆ÷(@0XE000ED28)°üÀ¨:MMSR,BFSR,UFSR

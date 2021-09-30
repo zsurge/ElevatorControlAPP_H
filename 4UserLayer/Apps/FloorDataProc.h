@@ -60,11 +60,9 @@
  *----------------------------------------------*/
 
 void packetDefaultSendBuf(uint8_t *buf);
-void packetSendBuf(READER_BUFF_STRU *pQueue);
-
-
-SYSERRORCODE_E authRemote(READER_BUFF_STRU *pQueue,USERDATA_STRU *localUserData);
-
+SYSERRORCODE_E packetToElevator(USERDATA_STRU *localUserData);
+void calcFloor(uint8_t layer,uint8_t regMode,uint8_t *src,uint8_t *outFloor);
+SYSERRORCODE_E packetRemoteRequestToElevator(uint8_t *tagFloor,uint8_t len);
 
 
 #endif

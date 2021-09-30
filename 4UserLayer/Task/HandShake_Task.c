@@ -26,6 +26,8 @@
 #include "tool.h"
 #include "bsp_ds1302.h"
 #include "ini.h"
+#include "bsp_digitaltube.h"
+#include "bsp_led.h"
 
 
 #define LOG_TAG    "handShake"
@@ -58,28 +60,6 @@ static void DisplayDevInfo (void);
 
 static void vTaskHandShake(void *pvParameters)
 {
-//    uint32_t i_boot_times = NULL;
-//    char *c_old_boot_times, c_new_boot_times[12] = {0};
-//    uint8_t bcdbuf[6] = {0};  
-
-
-//    log_d("start vTaskHandShake\r\n");
-//    
-//    /* get the boot count number from Env */
-//    c_old_boot_times = ef_get_env("boot_times");
-
-//    i_boot_times = atol(c_old_boot_times);
-//    
-//    /* boot count +1 */
-//    i_boot_times ++;
-
-//    /* interger to string */
-//    sprintf(c_new_boot_times,"%012ld", i_boot_times);
-//    
-//    /* set and store the boot count number to Env */
-//    ef_set_env("boot_times", c_new_boot_times);    
-
-//    asc2bcd(bcdbuf,(uint8_t *)c_new_boot_times , 12, 0);
 
     //读取本地时间
     log_d("bsp_ds1302_readtime= %s\r\n",bsp_ds1302_readtime());
@@ -97,22 +77,33 @@ static void vTaskHandShake(void *pvParameters)
 
     initTemplateParam();
     
-    DisplayDevInfo();
-    
-    vTaskDelay(500);
-    
-    vTaskDelete( NULL ); //删除自己
+    DisplayDevInfo();   
+
+
+    while(1)
+    {  
+        bsp_HC595Show('A',1,1);
+        vTaskDelay(800);
+        bsp_HC595Show(0,0,1);
+        vTaskDelay(800);
+
+        LEDERROR = !LEDERROR;
+		/* 发送事件标志，表示任务正常运行 */        
+		xEventGroupSetBits(xCreatedEventGroup, TASK_BIT_0);  
+      
+    }    
 }
 
 void CreateHandShakeTask(void)
 {  
     //跟android握手
     xTaskCreate((TaskFunction_t )vTaskHandShake,
-    (const char*    )handShakeTaskName,       
-    (uint16_t       )HANDSHAKE_STK_SIZE, 
-    (void*          )NULL,              
-    (UBaseType_t    )HANDSHAKE_TASK_PRIO,    
-    (TaskHandle_t*  )&xHandleTaskHandShake);  
+                (const char*    )handShakeTaskName,       
+                (uint16_t       )HANDSHAKE_STK_SIZE, 
+                (void*          )NULL,              
+                (UBaseType_t    )HANDSHAKE_TASK_PRIO,    
+                (TaskHandle_t*  )&xHandleTaskHandShake);  
+                
 
 }
 

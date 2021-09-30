@@ -95,6 +95,7 @@ static SYSERRORCODE_E getRemoteTime ( uint8_t* msgBuf );//获取远程服务器时间
 
 //static SYSERRORCODE_E ReturnDefault ( uint8_t* msgBuf ); //返回默认消息
 
+//static void reverseArray(uint8_t *array);
 
 typedef SYSERRORCODE_E ( *cmd_fun ) ( uint8_t *msgBuf ); 
 
@@ -130,6 +131,23 @@ const CMD_HANDLE_T CmdList[] =
     {"3013", SetLocalTime}, 
     {"30131", getRemoteTime},
 };
+
+
+
+//static void reverseArray(uint8_t *array) 
+//{
+//    int i,temp;
+//    int size = sizeof(array)/sizeof(array[0]);
+
+//    
+//    for(i=0; i<size/2; i++)
+//    {
+//        temp = array[i];
+//        array[i] = array[size-i-1];
+//        array[size-i-1] = temp;
+//    }   
+
+//}
 
 
 SYSERRORCODE_E exec_proc ( char* cmd_id, uint8_t *msg_buf )
@@ -324,8 +342,7 @@ static SYSERRORCODE_E DelUserId( uint8_t* msgBuf )
     uint8_t buf[MQTT_TEMP_LEN] = {0};
     uint8_t userId[CARD_USER_LEN] = {0};
     uint8_t tmp[CARD_USER_LEN] = {0};
-    uint16_t len = 0;
-    uint8_t rRet=1;
+    int len = 0;
     uint8_t wRet=1;
     
     USERDATA_STRU userData = {0};
@@ -345,25 +362,7 @@ static SYSERRORCODE_E DelUserId( uint8_t* msgBuf )
     sprintf((char *)userId,"%08s",tmp);
     log_d("userId = %s\r\n",userId);
 
-    log_d("=================================\r\n");
-    rRet = readUserData(userId,USER_MODE,&userData);
-
-    log_d("ret = %d\r\n",rRet);    
-    log_d("userData.cardState = %d\r\n",userData.cardState);    
-    log_d("userData.userState = %d\r\n",userData.userState);
-    log_d("userData.cardNo = %s\r\n",userData.cardNo);
-    log_d("userData.userId = %s\r\n",userData.userId);
-    log_d("userData.accessFloor = %s\r\n",userData.accessFloor);
-    log_d("userData.defaultFloor = %d\r\n",userData.defaultFloor);
-    log_d("userData.startTime = %s\r\n",userData.startTime);
-
-
-    if(rRet == 0)
-    {
-        userData.head = TABLE_HEAD;
-        userData.userState = USER_DEL; //设置卡状态为0，删除卡
-        wRet = modifyUserData(&userData,USER_MODE);
-    }
+    wRet = delUserData(userId,USER_MODE);
 
     if(wRet ==0)
     {
@@ -389,6 +388,7 @@ static SYSERRORCODE_E DelUserId( uint8_t* msgBuf )
 
     memset(&userData,0x00,sizeof(userData));
     len = readUserData(userId,USER_MODE,&userData);
+    
     log_d("ret = %d\r\n",len);    
     log_d("userData.cardState = %d\r\n",userData.cardState);    
     log_d("userData.userState = %d\r\n",userData.userState);
@@ -412,7 +412,7 @@ SYSERRORCODE_E AddCardNo ( uint8_t* msgBuf )
     uint8_t userId[CARD_USER_LEN] = {0};
     uint16_t len = 0;  
     USERDATA_STRU userData = {0};  
-    uint8_t ret = 0;
+    char ret = 0;
  
 
     if(!msgBuf)
@@ -442,36 +442,8 @@ SYSERRORCODE_E AddCardNo ( uint8_t* msgBuf )
     log_d("userData.userState = %d\r\n",userData.userState);
     log_d("userData.cardNo = %s\r\n",userData.cardNo);
     log_d("userData.userId = %s\r\n",userData.userId);
-//    dbh("userData.accessFloor", userData.accessFloor, sizeof(userData.accessFloor));
     log_d("userData.defaultFloor = %d\r\n",userData.defaultFloor);
     log_d("userData.startTime = %s\r\n",userData.startTime);
-
-//      userData.accessFloor[0] = 8;
-//      userData.accessFloor[0] = 25;
-//      userData.accessFloor[1] = 24;
-//      userData.accessFloor[2] = 23;
-//      userData.accessFloor[3] = 22;
-//      userData.accessFloor[4] = 21;
-//      userData.accessFloor[5] = 20;
-//      userData.accessFloor[6] = 19;
-//      userData.accessFloor[7] = 18;
-//      userData.accessFloor[8] = 17;
-//      userData.accessFloor[9] = 16;
-//      userData.accessFloor[10] = 15;
-//      userData.accessFloor[11] = 14;
-//      userData.accessFloor[12] = 13;
-//      userData.accessFloor[13] = 12;
-//      userData.accessFloor[14] = 11;
-//      userData.accessFloor[15] = 10;
-//      userData.accessFloor[16] = 9;
-//      userData.accessFloor[17] = 7;
-//      userData.accessFloor[18] = 6;
-//      userData.accessFloor[19] = 5;
-//      userData.accessFloor[20] = 4;
-//      userData.accessFloor[21] = 3;
-//      userData.accessFloor[22] = 2;
-//      userData.accessFloor[23] = 1;
-//      userData.accessFloor[24] = 8;
   
  
     
@@ -506,16 +478,16 @@ SYSERRORCODE_E AddCardNo ( uint8_t* msgBuf )
     
     mqttSendData(buf,len); 
 
-    ret  = readUserData(userData.cardNo,CARD_MODE,&userData);
-    log_d("ret = %d\r\n",ret);    
-    log_d("userData.cardState = %d\r\n",userData.cardState);    
-    log_d("userData.userState = %d\r\n",userData.userState);
-    log_d("userData.cardNo = %s\r\n",userData.cardNo);
-    log_d("userData.userId = %s\r\n",userData.userId);
-    log_d("userData.accessFloor = %s\r\n",userData.accessFloor);
-	dbh("userData.accessFloor", userData.accessFloor, sizeof(userData.accessFloor));
-    log_d("userData.defaultFloor = %d\r\n",userData.defaultFloor);
-    log_d("userData.startTime = %s\r\n",userData.startTime);    
+//    ret  = readUserData(userData.cardNo,CARD_MODE,&userData);
+//    log_d("ret = %d\r\n",ret);    
+//    log_d("userData.cardState = %d\r\n",userData.cardState);    
+//    log_d("userData.userState = %d\r\n",userData.userState);
+//    log_d("userData.cardNo = %s\r\n",userData.cardNo);
+//    log_d("userData.userId = %s\r\n",userData.userId);
+//    log_d("userData.accessFloor = %s\r\n",userData.accessFloor);
+//	  dbh("userData.accessFloor", userData.accessFloor, sizeof(userData.accessFloor));
+//    log_d("userData.defaultFloor = %d\r\n",userData.defaultFloor);
+//    log_d("userData.startTime = %s\r\n",userData.startTime);    
   
 	return result;
 }
@@ -528,7 +500,6 @@ SYSERRORCODE_E DelCardNo ( uint8_t* msgBuf )
     uint8_t userId[CARD_USER_LEN] = {0};
     uint8_t tmp[CARD_USER_LEN] = {0};
     uint16_t len = 0;
-    uint8_t rRet=1;
     uint8_t wRet=1;
     uint8_t num=0;
     int i = 0;  
@@ -605,18 +576,18 @@ SYSERRORCODE_E DelCardNo ( uint8_t* msgBuf )
 
     mqttSendData(buf,len);    
 
-    log_d("=================================\r\n");  
+    log_d("=================================\r\n");
     
-    memset(&userData,0x00,sizeof(userData));
-    rRet = readUserData(userId,USER_MODE,&userData);
-    log_d("ret = %d\r\n",rRet);    
-    log_d("userData.cardState = %d\r\n",userData.cardState);    
-    log_d("userData.userState = %d\r\n",userData.userState);
-    log_d("userData.cardNo = %s\r\n",userData.cardNo);
-    log_d("userData.userId = %s\r\n",userData.userId);
-    log_d("userData.accessFloor = %s\r\n",userData.accessFloor);
-    log_d("userData.defaultFloor = %d\r\n",userData.defaultFloor);
-    log_d("userData.startTime = %s\r\n",userData.startTime);
+//    memset(&userData,0x00,sizeof(userData));
+//    rRet = readUserData(userId,USER_MODE,&userData);
+//    log_d("ret = %d\r\n",rRet);    
+//    log_d("userData.cardState = %d\r\n",userData.cardState);    
+//    log_d("userData.userState = %d\r\n",userData.userState);
+//    log_d("userData.cardNo = %s\r\n",userData.cardNo);
+//    log_d("userData.userId = %s\r\n",userData.userId);
+//    log_d("userData.accessFloor = %s\r\n",userData.accessFloor);
+//    log_d("userData.defaultFloor = %d\r\n",userData.defaultFloor);
+//    log_d("userData.startTime = %s\r\n",userData.startTime);
 
     for (i = 0; i < 20; i++)
     {
@@ -815,6 +786,8 @@ SYSERRORCODE_E GetDevInfo ( uint8_t* msgBuf )
     mqttSendData(buf,len);
     
     my_free(identification);
+
+    manualSortCard();
     
 	return result;
 
@@ -824,7 +797,7 @@ SYSERRORCODE_E GetDevInfo ( uint8_t* msgBuf )
 static SYSERRORCODE_E DelCard( uint8_t* msgBuf )
 {
 	SYSERRORCODE_E result = NO_ERR;
-	uint8_t rRet = 1;
+	char rRet = 1;
 	uint8_t wRet = 1;
     uint8_t buf[MQTT_TEMP_LEN] = {0};
     uint8_t cardNo[CARD_USER_LEN] = {0};
@@ -1020,6 +993,7 @@ static SYSERRORCODE_E GetUserInfo ( uint8_t* msgBuf )
         for(len=0;len<multipleFloorNum;len++)
         {
             tempUserData.accessFloor[len] = atoi(multipleFloor[len]);
+            log_d("tempUserData.accessFloor[%d] = %d\r\n",len,tempUserData.accessFloor[len]);
         }
     }
     else
@@ -1079,8 +1053,8 @@ static SYSERRORCODE_E GetUserInfo ( uint8_t* msgBuf )
             ret = writeUserData(&tempUserData,CARD_MODE);
 
             if(ret != 0)
-            {    
-                log_e("write card id error\r\n"); 
+            {   
+                log_d("write card id error ret = %d\r\n",ret); 
                 if(ret!=4)//add 2021.01.13 若是已存在，也回复成功
                 {
                     result = FLASH_W_ERR;
@@ -1322,19 +1296,23 @@ static SYSERRORCODE_E PCOptDev ( uint8_t* msgBuf )
 
 #ifdef DEBUG_PRINT
 log_d("===============CARD_MODE==================\r\n");
-//TestFlash(CARD_MODE);
+TestFlash(CARD_MODE);
 
 
 log_d("===============USER_MODE==================\r\n");
-//TestFlash(USER_MODE);
+TestFlash(USER_MODE);
 
 
 log_d("===============CARD_DEL_MODE==================\r\n");
-//TestFlash(CARD_DEL_MODE);
+TestFlash(CARD_DEL_MODE);
 
 
 log_d("===============USER_DEL_MODE==================\r\n");
+<<<<<<< HEAD
 //TestFlash(USER_DEL_MODE);
+=======
+TestFlash(USER_DEL_MODE);
+>>>>>>> dev20210201
 
 #endif
 
@@ -1409,6 +1387,10 @@ static SYSERRORCODE_E AddSingleUser( uint8_t* msgBuf )
     uint8_t tmp[128] = {0};
     char *multipleFloor[64] = {0};
     int multipleFloorNum = 0;
+    char *cardArray[20] = {0};
+    int multipleCardNum=0;    
+     uint16_t i = 0;
+     
     memset(&tempUserData,0x00,sizeof(USERDATA_STRU));
 
     if(!msgBuf)
@@ -1416,7 +1398,7 @@ static SYSERRORCODE_E AddSingleUser( uint8_t* msgBuf )
         return STR_EMPTY_ERR;
     }
 
-    printf("msgBuf = %s\r\n",msgBuf);
+    log_d("msgBuf = %s\r\n",msgBuf);
 
     //1.添加起始标志
     tempUserData.head = TABLE_HEAD; 
@@ -1464,14 +1446,56 @@ static SYSERRORCODE_E AddSingleUser( uint8_t* msgBuf )
     strcpy((char *)tempUserData.endTime,  (const char*)GetJsonItem((const uint8_t *)msgBuf,(const uint8_t *)"endTime",1));
     log_d("tempUserData.endTime = %s\r\n",tempUserData.endTime);
 
+    //2.保存卡号
+    memset(buf,0x00,sizeof(buf));
+    strcpy((char *)buf,  (const char*)GetJsonItem((const uint8_t *)msgBuf,(const uint8_t *)"cardNo",1));
+    split((char *)buf,",",cardArray,&multipleCardNum); //调用函数进行分割 
+    
 
     //全0的USER ID不记录
     if(memcmp(tempUserData.userId,"00000000",CARD_USER_LEN) != 0)
     {
         tempUserData.userState = USER_VALID;
         ret = writeUserData(&tempUserData,USER_MODE);
-        log_d("write user id = %d\r\n",ret);       
-    }      
+        log_d("write user id = %d\r\n",ret);    
+        if(ret != 0)
+        {   
+            log_d("write card id error ret = %d\r\n",ret); 
+            if(ret!=4)//add 2021.01.13 若是已存在，也回复成功
+            {
+                result = FLASH_W_ERR;
+            }
+
+        }         
+    }   
+    
+    if(multipleCardNum >= 1)
+    {
+        for(i=0;i<multipleCardNum;i++)
+        {
+            tempUserData.cardState = CARD_VALID;     
+            memset(tempUserData.cardNo,0x00,sizeof(tempUserData.cardNo));
+            memcpy(tempUserData.cardNo,cardArray[i],CARD_USER_LEN);   
+
+            log_d("->%d th,cardid = %s\r\n",i,tempUserData.cardNo);   
+            ret = writeUserData(&tempUserData,CARD_MODE);
+            
+
+            if(ret != 0)
+            {    
+                log_d("write card id error ret = %d\r\n",ret); 
+                if(ret!=4)//add 2021.01.13 若是已存在，也回复成功
+                {
+                    result = FLASH_W_ERR;
+                }
+            }
+
+        }
+    }
+    else
+    {
+        log_d("the empty card Number\r\n");
+    }   
 
 
     result = modifyJsonItem((const uint8_t *)msgBuf,(const uint8_t *)"commandCode","3004",0,buf);

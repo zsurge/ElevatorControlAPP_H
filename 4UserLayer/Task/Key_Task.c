@@ -112,7 +112,6 @@ static void vTaskKey(void *pvParameters)
 //                    bsp_ds1302_mdifytime("2020-01-17 09:24:15");
                     
                     log_d("read gpio = %02x\r\n",bsp_dipswitch_read());
-//                      searchHeadTest("24450854");
 //                    farm_test();
 
 //                    testSplit();
@@ -122,7 +121,6 @@ static void vTaskKey(void *pvParameters)
 					break;
 				case KEY_LL_PRES:   
                     log_i("KEY_DOWN_K3\r\n");
-//                    searchHeadTest("16707692");
 //                    ef_env_set_default();
 //                    calcRunTime();       
 //                    bsp_ds1302_mdifytime("2020-03-31 10:18:20");

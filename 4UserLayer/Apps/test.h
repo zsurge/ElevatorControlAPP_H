@@ -37,7 +37,6 @@
 
 
 
-void searchHeadTest(uint8_t* header);
 
 
 
